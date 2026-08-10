@@ -38,6 +38,10 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := h.sessionManager.RenewToken(r.Context()); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	h.sessionManager.Put(r.Context(), sessionUserIDKey, user.Id)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -66,6 +70,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := h.sessionManager.RenewToken(r.Context()); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	h.sessionManager.Put(r.Context(), sessionUserIDKey, user.Id)
 
 	w.Header().Set("Content-Type", "application/json")
