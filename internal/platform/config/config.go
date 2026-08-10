@@ -5,8 +5,9 @@ import (
 )
 
 type Config struct {
-	AppPort int    `env:"APP_PORT" envDefault:"8080"`
-	AppEnv  string `env:"APP_ENV" envDefault:"development"`
+	AppPort     int    `env:"APP_PORT" envDefault:"8080"`
+	AppEnv      string `env:"APP_ENV" envDefault:"development"`
+	DatabaseURL string `env:"DATABASE_URL,required"`
 }
 
 func Load() (*Config, error) {
