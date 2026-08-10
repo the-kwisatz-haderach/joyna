@@ -5,10 +5,10 @@ import (
 	"os"
 )
 
-func New() *slog.Logger {
+func New(appEnv string) *slog.Logger {
 	var logHandler slog.Handler
 
-	if os.Getenv("APP_ENV") == "production" {
+	if appEnv == "production" {
 		logHandler = slog.NewJSONHandler(os.Stdout, nil)
 	} else {
 		logHandler = slog.NewTextHandler(os.Stderr, nil)

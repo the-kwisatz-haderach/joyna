@@ -1,14 +1,22 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/the-kwisatz-haderach/joyna/internal/platform/config"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/logging"
 )
 
 func main() {
-	logging.New()
+	cfg, err := config.Load()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	logging.New(cfg.AppEnv)
 
 	mux := http.NewServeMux()
 
@@ -16,5 +24,5 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.AppPort), mux))
 }
