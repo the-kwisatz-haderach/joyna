@@ -19,13 +19,13 @@ func main() {
 	cfg, err := config.Load()
 
 	if err != nil {
-		log.Fatal(err)
+		logging.Fatal("failed to load config", err)
 	}
 	logging.New(cfg.AppEnv)
 
 	pool, err := db.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		log.Fatal(err)
+		logging.Fatal("failed to initialize database", err)
 	}
 
 	sessionManager := scs.New()
