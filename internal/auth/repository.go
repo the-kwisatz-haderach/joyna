@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -27,13 +26,13 @@ func (r *Repository) CreateUser(ctx context.Context, name, email, passwordHash s
 	}
 	defer tx.Rollback(ctx)
 
-	user := User{Id: uuid.NewString(), Name: name, Email: email}
+	user := User{Name: name, Email: email}
 
 	row := tx.QueryRow(ctx,
-		`INSERT INTO users (id, name, email) VALUES ($1, $2, $3) RETURNING joined_at`,
-		user.Id, user.Name, user.Email,
+		`INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id, joined_at`,
+		user.Name, user.Email,
 	)
-	if err := row.Scan(&user.JoinedAt); err != nil {
+	if err := row.Scan(&user.Id, &user.JoinedAt); err != nil {
 		return User{}, fmt.Errorf("inserting user: %w", err)
 	}
 
