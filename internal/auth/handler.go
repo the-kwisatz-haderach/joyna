@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/alexedwards/scs/v2"
@@ -39,7 +40,8 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.sessionManager.RenewToken(r.Context()); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		slog.Error("failed to renew token during register", err)
+		http.Error(w, "unauthorized", http.StatusInternalServerError)
 		return
 	}
 	h.sessionManager.Put(r.Context(), sessionUserIDKey, user.Id)
@@ -71,7 +73,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.sessionManager.RenewToken(r.Context()); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		slog.Error("failed to renew token during login", err)
+		http.Error(w, "unauthorized", http.StatusInternalServerError)
 		return
 	}
 	h.sessionManager.Put(r.Context(), sessionUserIDKey, user.Id)
