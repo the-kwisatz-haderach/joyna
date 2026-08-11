@@ -1,6 +1,6 @@
 CREATE TABLE
   events (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT GEN_RANDOM_UUID (),
     owner_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     description TEXT,
