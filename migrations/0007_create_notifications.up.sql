@@ -8,4 +8,4 @@ CREATE TABLE
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW ()
   );
 
-CREATE INDEX idx_notifications_user_id ON notifications (user_id)
+CREATE INDEX idx_notifications_user_id ON notifications (user_id);
