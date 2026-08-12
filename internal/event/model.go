@@ -43,7 +43,7 @@ type EventSortField string
 
 const (
 	EventSortFieldDate      EventSortField = "date"
-	EventSortFieldCreatedAt EventSortField = "created_at"
+	EventSortFieldCreatedAt EventSortField = "createdAt"
 )
 
 type SortOrder string
@@ -67,7 +67,7 @@ func ParseEventSortField(s string) (EventSortField, error) {
 func ParseSortOrder(s string) (SortOrder, error) {
 	switch SortOrder(s) {
 	case "":
-		return SortOrderAsc, nil
+		return SortOrderDesc, nil
 	case SortOrderAsc, SortOrderDesc:
 		return SortOrder(s), nil
 	default:
