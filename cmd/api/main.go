@@ -25,11 +25,12 @@ func main() {
 	logging.New(cfg.AppEnv)
 
 	pool, err := db.New(ctx, cfg.DatabaseURL)
-	defer pool.Close()
 
 	if err != nil {
 		logging.Fatal("failed to initialize database", err)
 	}
+
+	defer pool.Close()
 
 	sessionManager := scs.New()
 	sessionManager.Lifetime = 24 * time.Hour
