@@ -39,13 +39,13 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "user already exists with this email", http.StatusConflict)
 			return
 		}
-		slog.Error("failed to register user", err)
+		slog.Error("failed to register user", "error", err)
 		http.Error(w, "could not register user", http.StatusInternalServerError)
 		return
 	}
 
 	if err := h.sessionManager.RenewToken(r.Context()); err != nil {
-		slog.Error("failed to renew token during register", err)
+		slog.Error("failed to renew token during register", "error", err)
 		http.Error(w, "unauthorized", http.StatusInternalServerError)
 		return
 	}
@@ -63,7 +63,7 @@ type loginRequest struct {
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Error("failed to decode login request", err)
+		slog.Error("failed to decode login request", "error", err)
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -79,7 +79,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.sessionManager.RenewToken(r.Context()); err != nil {
-		slog.Error("failed to renew token during login", err)
+		slog.Error("failed to renew token during login", "error", err)
 		http.Error(w, "unauthorized", http.StatusInternalServerError)
 		return
 	}
@@ -91,7 +91,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if err := h.sessionManager.Destroy(r.Context()); err != nil {
-		slog.Error("logout failed", err)
+		slog.Error("logout failed", "error", err)
 		http.Error(w, "could not log out", http.StatusInternalServerError)
 		return
 	}

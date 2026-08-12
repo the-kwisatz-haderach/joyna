@@ -62,7 +62,6 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(created)
 }
 
@@ -110,7 +109,6 @@ func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(updated)
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) GetEvents(w http.ResponseWriter, r *http.Request) {
@@ -121,7 +119,7 @@ func (h *Handler) GetEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	events, err := h.service.GetEvents(r.Context(), ownerID)
 	if err != nil {
-		slog.Error("failed to get events", err)
+		slog.Error("failed to get events", "error", err)
 		http.Error(w, "failed to get events", http.StatusInternalServerError)
 		return
 	}

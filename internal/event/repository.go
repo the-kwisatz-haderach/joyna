@@ -81,7 +81,7 @@ func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, e
 
 func (r *Repository) GetEventsByOwner(ctx context.Context, ownerID string) ([]Event, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT * FROM events e WHERE e.owner_id = $1`,
+		`SELECT * FROM events WHERE owner_id = $1`,
 		ownerID,
 	)
 	if err != nil {
