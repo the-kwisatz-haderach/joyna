@@ -78,3 +78,23 @@ func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, e
 	}
 	return event, nil
 }
+
+func (r *Repository) GetEventsByOwner(ctx context.Context, ownerID string) ([]Event, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT * FROM events e WHERE e.owner_id = $1`,
+		ownerID,
+	)
+	if err != nil {
+		return []Event{}, fmt.Errorf("listing events query: %w", err)
+	}
+
+	events, err := pgx.CollectRows(rows, pgx.RowToStructByName[Event])
+	if err != nil {
+		return []Event{}, fmt.Errorf("listing events: %w", err)
+	}
+	if events == nil {
+		events = []Event{}
+	}
+
+	return events, nil
+}
