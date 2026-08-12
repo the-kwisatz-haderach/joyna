@@ -15,7 +15,7 @@ type repository interface {
 	CreateEvent(ctx context.Context, event Event) (Event, error)
 	UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error)
 	DeleteEvent(ctx context.Context, eventID, ownerID string) error
-	GetEventsByOwner(ctx context.Context, ownerID string) ([]Event, error)
+	GetEventsByOwner(ctx context.Context, ownerID string, sortField EventSortField, order SortOrder) ([]Event, error)
 }
 
 type Service struct {
@@ -45,6 +45,6 @@ func (s *Service) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, even
 	return s.repo.UpdateEvent(ctx, eventUpdate, eventID, ownerID)
 }
 
-func (s *Service) GetEvents(ctx context.Context, ownerID string) ([]Event, error) {
-	return s.repo.GetEventsByOwner(ctx, ownerID)
+func (s *Service) GetEvents(ctx context.Context, ownerID string, sortField EventSortField, order SortOrder) ([]Event, error) {
+	return s.repo.GetEventsByOwner(ctx, ownerID, sortField, order)
 }

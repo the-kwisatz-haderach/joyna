@@ -1,6 +1,9 @@
 package event
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Event struct {
 	ID                   string     `json:"id" db:"id"`
@@ -34,4 +37,40 @@ type EventUpdate struct {
 	RsvpDeadline         *time.Time `json:"rsvpDeadline,omitempty"`
 	Type                 *EventType `json:"type,omitempty"`
 	DefaultSpreadAllowed *int       `json:"defaultSpreadAllowed,omitempty"`
+}
+
+type EventSortField string
+
+const (
+	EventSortFieldDate      EventSortField = "date"
+	EventSortFieldCreatedAt EventSortField = "created_at"
+)
+
+type SortOrder string
+
+const (
+	SortOrderAsc  SortOrder = "asc"
+	SortOrderDesc SortOrder = "desc"
+)
+
+func ParseEventSortField(s string) (EventSortField, error) {
+	switch EventSortField(s) {
+	case "":
+		return EventSortFieldDate, nil
+	case EventSortFieldDate, EventSortFieldCreatedAt:
+		return EventSortField(s), nil
+	default:
+		return "", fmt.Errorf("invalid sort field: %q", s)
+	}
+}
+
+func ParseSortOrder(s string) (SortOrder, error) {
+	switch SortOrder(s) {
+	case "":
+		return SortOrderAsc, nil
+	case SortOrderAsc, SortOrderDesc:
+		return SortOrder(s), nil
+	default:
+		return "", fmt.Errorf("invalid sort order: %q", s)
+	}
 }

@@ -117,7 +117,18 @@ func (h *Handler) GetEvents(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	events, err := h.service.GetEvents(r.Context(), ownerID)
+	sortField, err := ParseEventSortField(r.URL.Query().Get("sort"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	order, err := ParseSortOrder(r.URL.Query().Get("order"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	events, err := h.service.GetEvents(r.Context(), ownerID, sortField, order)
 	if err != nil {
 		slog.Error("failed to get events", "error", err)
 		http.Error(w, "failed to get events", http.StatusInternalServerError)
