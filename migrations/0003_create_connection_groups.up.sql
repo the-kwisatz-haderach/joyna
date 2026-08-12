@@ -5,4 +5,6 @@ CREATE TABLE
     owner_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW (),
     is_favorite BOOL NOT NULL DEFAULT FALSE
-  )
+  );
+
+CREATE INDEX idx_connection_groups_owner_id ON connection_groups (owner_id)
