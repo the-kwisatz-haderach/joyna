@@ -39,10 +39,12 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (Use
 		if errors.Is(err, ErrUserNotFound) {
 			return User{}, ErrInvalidCredentials
 		}
+		slog.Error("couldn't find user", err)
 		return User{}, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
+		slog.Debug("password comparison failed", err)
 		return User{}, ErrInvalidCredentials
 	}
 

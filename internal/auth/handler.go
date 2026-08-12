@@ -35,6 +35,10 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.service.Register(r.Context(), req.Name, req.Email, req.Password)
 	if err != nil {
+		if errors.Is(err, ErrUserAlreadyExists) {
+			http.Error(w, "user already exists with this email", http.StatusConflict)
+			return
+		}
 		slog.Error("failed to register user", err)
 		http.Error(w, "could not register user", http.StatusInternalServerError)
 		return
@@ -87,6 +91,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if err := h.sessionManager.Destroy(r.Context()); err != nil {
+		slog.Error("logout failed", err)
 		http.Error(w, "could not log out", http.StatusInternalServerError)
 		return
 	}

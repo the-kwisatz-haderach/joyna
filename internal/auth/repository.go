@@ -6,10 +6,17 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var ErrUserNotFound = errors.New("user not found")
+var (
+	ErrUserNotFound             = errors.New("user not found")
+	ErrUserAlreadyExists        = errors.New("user already exists")
+	ErrCredentialsAlreadyExists = errors.New("user credentials already exists")
+)
+
+const pgUniqueViolation = "23505"
 
 type Repository struct {
 	pool *pgxpool.Pool
@@ -33,6 +40,10 @@ func (r *Repository) CreateUser(ctx context.Context, name, email, passwordHash s
 		user.Name, user.Email,
 	)
 	if err := row.Scan(&user.Id, &user.JoinedAt); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
+			return User{}, ErrUserAlreadyExists
+		}
 		return User{}, fmt.Errorf("inserting user: %w", err)
 	}
 
@@ -40,6 +51,10 @@ func (r *Repository) CreateUser(ctx context.Context, name, email, passwordHash s
 		`INSERT INTO credentials (user_id, email, password_hash) VALUES ($1, $2, $3)`,
 		user.Id, user.Email, passwordHash,
 	); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
+			return User{}, ErrCredentialsAlreadyExists
+		}
 		return User{}, fmt.Errorf("inserting credentials: %w", err)
 	}
 
