@@ -25,6 +25,8 @@ func main() {
 	logging.New(cfg.AppEnv)
 
 	pool, err := db.New(ctx, cfg.DatabaseURL)
+	defer pool.Close()
+
 	if err != nil {
 		logging.Fatal("failed to initialize database", err)
 	}
