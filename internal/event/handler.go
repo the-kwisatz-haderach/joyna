@@ -104,6 +104,7 @@ func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		http.Error(w, "failed to update event", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

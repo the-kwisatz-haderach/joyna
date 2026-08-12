@@ -67,11 +67,14 @@ func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, e
 		return Event{}, fmt.Errorf("updating event: %w", err)
 	}
 	event, err = pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[Event])
-	if errors.Is(err, pgx.ErrNoRows) {
-		return Event{}, ErrEventNotFound
-	}
-	if errors.Is(err, pgx.ErrTooManyRows) {
-		return Event{}, ErrMultipleEventsFound
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Event{}, ErrEventNotFound
+		}
+		if errors.Is(err, pgx.ErrTooManyRows) {
+			return Event{}, ErrMultipleEventsFound
+		}
+		return Event{}, fmt.Errorf("updating event: %w", err)
 	}
 	return event, nil
 }

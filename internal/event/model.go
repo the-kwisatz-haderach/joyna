@@ -18,7 +18,7 @@ type Event struct {
 type EventInvite struct {
 	EventID       string    `json:"eventId" db:"event_id"`
 	InvitedBy     string    `json:"invitedBy" db:"invited_by"`
-	InvitedUserID string    `json:"invitedUserId" db:"invited_user"`
+	InvitedUserID string    `json:"invitedUserId" db:"invited_user_id"`
 	Status        string    `json:"status" db:"status"`
 	SpreadAllowed int       `json:"spreadAllowed" db:"spread_allowed"`
 	CreatedAt     time.Time `json:"createdAt" db:"created_at"`

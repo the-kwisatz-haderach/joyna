@@ -35,6 +35,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.service.Register(r.Context(), req.Name, req.Email, req.Password)
 	if err != nil {
+		slog.Error("failed to register user", err)
 		http.Error(w, "could not register user", http.StatusInternalServerError)
 		return
 	}
@@ -58,6 +59,7 @@ type loginRequest struct {
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Error("failed to decode login request", err)
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
