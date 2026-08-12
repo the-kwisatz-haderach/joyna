@@ -33,7 +33,7 @@ DELETE {{baseUrl}}/events/{{createEvent.response.body.$.id}}
 GET {{baseUrl}}/events
 
 ### Get events sorted by creation date, newest first
-GET {{baseUrl}}/events?sort=created_at&order=desc
+GET {{baseUrl}}/events?sort=createdAt&order=desc
 
 ### Get events sorted by event date, soonest first (same as the default)
 GET {{baseUrl}}/events?sort=date&order=asc
