@@ -7,4 +7,6 @@ CREATE TABLE
     spread_allowed INT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW (),
     PRIMARY KEY (event_id, invited_user_id)
-  )
+  );
+
+CREATE INDEX idx_event_invites_invited_user_id ON event_invites (invited_user_id)
