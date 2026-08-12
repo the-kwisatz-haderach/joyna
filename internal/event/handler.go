@@ -103,6 +103,10 @@ func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
+		if errors.Is(err, ErrPastEventDate) || errors.Is(err, ErrInvalidRsvpDeadline) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		http.Error(w, "failed to update event", http.StatusInternalServerError)
 		return
 	}

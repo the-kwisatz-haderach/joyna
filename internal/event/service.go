@@ -16,6 +16,7 @@ type repository interface {
 	UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error)
 	DeleteEvent(ctx context.Context, eventID, ownerID string) error
 	GetEventsByOwner(ctx context.Context, ownerID string, sortField EventSortField, order SortOrder) ([]Event, error)
+	GetEvent(ctx context.Context, eventID, ownerID string) (Event, error)
 }
 
 type Service struct {
@@ -42,6 +43,27 @@ func (s *Service) DeleteEvent(ctx context.Context, eventID, ownerID string) erro
 }
 
 func (s *Service) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error) {
+	existing, err := s.repo.GetEvent(ctx, eventID, ownerID)
+	if err != nil {
+		return Event{}, err
+	}
+
+	date := existing.Date
+	if eventUpdate.Date != nil {
+		date = *eventUpdate.Date
+	}
+	rsvpDeadline := existing.RsvpDeadline
+	if eventUpdate.RsvpDeadline != nil {
+		rsvpDeadline = eventUpdate.RsvpDeadline
+	}
+
+	if !date.After(time.Now()) {
+		return Event{}, ErrPastEventDate
+	}
+	if rsvpDeadline != nil && rsvpDeadline.After(date) {
+		return Event{}, ErrInvalidRsvpDeadline
+	}
+
 	return s.repo.UpdateEvent(ctx, eventUpdate, eventID, ownerID)
 }
 

@@ -80,6 +80,27 @@ func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, e
 	return event, nil
 }
 
+func (r *Repository) GetEvent(ctx context.Context, eventID, ownerID string) (Event, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT * FROM events WHERE id = $1 AND owner_id = $2`,
+		eventID, ownerID,
+	)
+	defer rows.Close()
+	if err != nil {
+		return Event{}, fmt.Errorf("getting event: %w", err)
+	}
+
+	event, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[Event])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Event{}, ErrEventNotFound
+		}
+		return Event{}, fmt.Errorf("getting event: %w", err)
+	}
+
+	return event, nil
+}
+
 func (r *Repository) GetEventsByOwner(ctx context.Context, ownerID string, sortField EventSortField, order SortOrder) ([]Event, error) {
 	column := "date"
 	if sortField == EventSortFieldCreatedAt {
