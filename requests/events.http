@@ -1,0 +1,30 @@
+@baseUrl = http://localhost:8080
+
+# Requires an active session — run the Login request in auth.http first.
+# REST Client shares its cookie jar across files in the same VS Code window.
+
+### Create event
+# @name createEvent
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "name": "Team Dinner",
+  "description": "Casual dinner with the team",
+  "date": "2026-09-01T18:00:00Z",
+  "location": "Downtown Bistro",
+  "rsvpDeadline": "2026-08-25T00:00:00Z",
+  "type": "dinner",
+  "defaultSpreadAllowed": 0
+}
+
+### Update event (partial — only fields you include are changed)
+PATCH {{baseUrl}}/events/{{createEvent.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "location": "Uptown Bistro"
+}
+
+### Delete event
+DELETE {{baseUrl}}/events/{{createEvent.response.body.$.id}}

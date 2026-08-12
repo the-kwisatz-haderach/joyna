@@ -1,0 +1,24 @@
+@baseUrl = http://localhost:8080
+
+### Register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Ada Lovelace",
+  "email": "ada@joyna.dev",
+  "password": "correct-horse-battery-staple"
+}
+
+### Login
+# Sets the session cookie used by requests below and in events.http
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "ada@joyna.dev",
+  "password": "correct-horse-battery-staple"
+}
+
+### Logout
+POST {{baseUrl}}/auth/logout
