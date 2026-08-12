@@ -13,8 +13,8 @@ var (
 
 type repository interface {
 	CreateEvent(ctx context.Context, event Event) (Event, error)
-	UpdateEvent(ctx context.Context, event Event) (Event, error)
-	DeleteEvent(ctx context.Context, eventId string) error
+	UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error)
+	DeleteEvent(ctx context.Context, eventId, ownerID string) error
 }
 
 type Service struct {
@@ -34,4 +34,12 @@ func (s *Service) CreateEvent(ctx context.Context, event Event) (Event, error) {
 	}
 	e, err := s.repo.CreateEvent(ctx, event)
 	return e, err
+}
+
+func (s *Service) DeleteEvent(ctx context.Context, eventID, ownerID string) error {
+	return s.repo.DeleteEvent(ctx, eventID, ownerID)
+}
+
+func (s *Service) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error) {
+	return s.repo.UpdateEvent(ctx, eventUpdate, eventID, ownerID)
 }

@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -25,6 +26,7 @@ func NewService(repo repository) *Service {
 func (s *Service) Register(ctx context.Context, name, email, password string) (User, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
+		slog.Error("failed to generate hash from password", err)
 		return User{}, err
 	}
 

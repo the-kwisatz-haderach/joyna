@@ -64,3 +64,50 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(created)
 }
+
+func (h *Handler) DeleteEvent(w http.ResponseWriter, r *http.Request) {
+	eventID := r.PathValue("id")
+	ownerID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	if err := h.service.DeleteEvent(r.Context(), eventID, ownerID); err != nil {
+		if errors.Is(err, ErrEventNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, "failed to delete event", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
+	eventID := r.PathValue("id")
+	ownerID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	var req EventUpdate
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	updated, err := h.service.UpdateEvent(r.Context(), req, eventID, ownerID)
+
+	if err != nil {
+		if errors.Is(err, ErrEventNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, "failed to update event", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(updated)
+}
