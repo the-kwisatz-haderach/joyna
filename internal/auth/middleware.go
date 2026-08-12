@@ -11,8 +11,8 @@ const (
 	userIDContextKey contextKey = iota
 )
 
-func (h *Handler) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		userID := h.sessionManager.GetString(r.Context(), sessionUserIDKey)
 		if userID == "" {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -20,8 +20,7 @@ func (h *Handler) Middleware(next http.Handler) http.Handler {
 		}
 		ctx := context.WithValue(r.Context(), userIDContextKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
-
-	})
+	}
 }
 
 func UserIDFromContext(ctx context.Context) (string, bool) {
