@@ -14,4 +14,6 @@ CREATE TABLE
 
 CREATE INDEX idx_events_owner_id ON events (owner_id);
 
-CREATE INDEX idx_events_date ON events (date)
+CREATE INDEX idx_events_date ON events (date);
+
+CREATE INDEX idx_events_created_at ON events (created_at);

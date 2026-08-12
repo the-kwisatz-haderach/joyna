@@ -9,4 +9,4 @@ CREATE TABLE
     PRIMARY KEY (event_id, invited_user_id)
   );
 
-CREATE INDEX idx_event_invites_invited_user_id ON event_invites (invited_user_id)
+CREATE INDEX idx_event_invites_invited_user_id ON event_invites (invited_user_id);

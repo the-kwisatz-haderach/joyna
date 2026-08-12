@@ -63,6 +63,7 @@ func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, e
 		RETURNING *`,
 		eventID, ownerID, eventUpdate.Name, eventUpdate.Description, eventUpdate.Date, eventUpdate.Location, eventUpdate.RsvpDeadline, eventUpdate.Type, eventUpdate.DefaultSpreadAllowed,
 	)
+	defer rows.Close()
 	if err != nil {
 		return Event{}, fmt.Errorf("updating event: %w", err)
 	}
@@ -79,11 +80,21 @@ func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, e
 	return event, nil
 }
 
-func (r *Repository) GetEventsByOwner(ctx context.Context, ownerID string) ([]Event, error) {
+func (r *Repository) GetEventsByOwner(ctx context.Context, ownerID string, sortField EventSortField, order SortOrder) ([]Event, error) {
+	column := "date"
+	if sortField == EventSortFieldCreatedAt {
+		column = "created_at"
+	}
+	direction := "ASC"
+	if order == SortOrderDesc {
+		direction = "DESC"
+	}
+
 	rows, err := r.pool.Query(ctx,
-		`SELECT * FROM events WHERE owner_id = $1`,
+		fmt.Sprintf(`SELECT * FROM events WHERE owner_id = $1 ORDER BY %s %s`, column, direction),
 		ownerID,
 	)
+	defer rows.Close()
 	if err != nil {
 		return []Event{}, fmt.Errorf("listing events query: %w", err)
 	}
