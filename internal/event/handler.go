@@ -3,6 +3,7 @@ package event
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -61,7 +62,6 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(created)
 }
 
@@ -108,6 +108,21 @@ func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(updated)
+}
+
+func (h *Handler) GetEvents(w http.ResponseWriter, r *http.Request) {
+	ownerID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	events, err := h.service.GetEvents(r.Context(), ownerID)
+	if err != nil {
+		slog.Error("failed to get events", "error", err)
+		http.Error(w, "failed to get events", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(events)
 }

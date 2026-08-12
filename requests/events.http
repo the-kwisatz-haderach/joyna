@@ -28,3 +28,6 @@ Content-Type: application/json
 
 ### Delete event
 DELETE {{baseUrl}}/events/{{createEvent.response.body.$.id}}
+
+### Get events (owned by logged in user)
+GET {{baseUrl}}/events

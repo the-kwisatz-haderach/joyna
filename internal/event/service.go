@@ -14,7 +14,8 @@ var (
 type repository interface {
 	CreateEvent(ctx context.Context, event Event) (Event, error)
 	UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error)
-	DeleteEvent(ctx context.Context, eventId, ownerID string) error
+	DeleteEvent(ctx context.Context, eventID, ownerID string) error
+	GetEventsByOwner(ctx context.Context, ownerID string) ([]Event, error)
 }
 
 type Service struct {
@@ -42,4 +43,8 @@ func (s *Service) DeleteEvent(ctx context.Context, eventID, ownerID string) erro
 
 func (s *Service) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error) {
 	return s.repo.UpdateEvent(ctx, eventUpdate, eventID, ownerID)
+}
+
+func (s *Service) GetEvents(ctx context.Context, ownerID string) ([]Event, error) {
+	return s.repo.GetEventsByOwner(ctx, ownerID)
 }

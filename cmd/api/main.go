@@ -52,6 +52,7 @@ func main() {
 	mux.HandleFunc("POST /auth/logout", authHandler.Logout)
 
 	// Event handlers
+	mux.HandleFunc("GET /events", authHandler.Middleware(eventHandler.GetEvents))
 	mux.HandleFunc("POST /events", authHandler.Middleware(eventHandler.CreateEvent))
 	mux.HandleFunc("DELETE /events/{id}", authHandler.Middleware(eventHandler.DeleteEvent))
 	mux.HandleFunc("PATCH /events/{id}", authHandler.Middleware(eventHandler.UpdateEvent))
