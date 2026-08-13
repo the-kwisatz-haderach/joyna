@@ -80,6 +80,9 @@ func (s *Service) GetEvents(ctx context.Context, ownerID string, sortField Event
 }
 
 func (s *Service) SendEventInvite(ctx context.Context, createEventInvitePayload CreateEventInvitePayload, invitedBy string) (EventInvite, error) {
+	if createEventInvitePayload.InvitedUserID == invitedBy {
+		return EventInvite{}, ErrInviteNotAllowed
+	}
 	event, err := s.repo.GetEvent(ctx, createEventInvitePayload.EventID)
 	if err != nil {
 		return EventInvite{}, err
@@ -105,6 +108,9 @@ func (s *Service) SendEventInvite(ctx context.Context, createEventInvitePayload 
 		return EventInvite{}, ErrInviteNotAllowed
 	}
 
+	if event.OwnerId != invitedBy {
+		createEventInvitePayload.SpreadAllowed = 0
+	}
 	createdInvite, err := s.repo.CreateEventInvite(ctx, createEventInvitePayload, invitedBy)
 	// TODO: Create notification(s)
 	return createdInvite, err
