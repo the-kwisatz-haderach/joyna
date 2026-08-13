@@ -20,8 +20,7 @@ type repository interface {
 	GetEventsByOwner(ctx context.Context, ownerID string, sortField EventSortField, order SortOrder) ([]Event, error)
 	GetEvent(ctx context.Context, eventID string) (Event, error)
 	CreateEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
-	GetEventInviteByInvitedUser(ctx context.Context, eventID, invitedUserID string) (EventInvite, error)
-	CountEventInvitesBySender(ctx context.Context, eventID, invitedBy string) (int, error)
+	ForwardEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 }
 
 type Service struct {
@@ -79,39 +78,23 @@ func (s *Service) GetEvents(ctx context.Context, ownerID string, sortField Event
 	return s.repo.GetEventsByOwner(ctx, ownerID, sortField, order)
 }
 
-func (s *Service) SendEventInvite(ctx context.Context, createEventInvitePayload CreateEventInvitePayload, invitedBy string) (EventInvite, error) {
-	if createEventInvitePayload.InvitedUserID == invitedBy {
+func (s *Service) SendEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error) {
+	if payload.InvitedUserID == invitedBy {
 		return EventInvite{}, ErrInviteNotAllowed
 	}
-	event, err := s.repo.GetEvent(ctx, createEventInvitePayload.EventID)
+	event, err := s.repo.GetEvent(ctx, payload.EventID)
 	if err != nil {
 		return EventInvite{}, err
 	}
-	isInviteValid := event.OwnerId == invitedBy
-	if !isInviteValid {
-		invite, err := s.repo.GetEventInviteByInvitedUser(ctx, createEventInvitePayload.EventID, invitedBy)
-		if errors.Is(err, ErrEventInviteNotFound) {
-			return EventInvite{}, ErrInviteNotAllowed
-		}
-		if err != nil {
-			return EventInvite{}, err
-		}
-		currentSpread, err := s.repo.CountEventInvitesBySender(ctx, createEventInvitePayload.EventID, invitedBy)
-		if err != nil {
-			return EventInvite{}, err
-		}
-		if invite.Status == InviteStateAccepted && currentSpread < invite.SpreadAllowed {
-			isInviteValid = true
-		}
-	}
-	if !isInviteValid {
-		return EventInvite{}, ErrInviteNotAllowed
+
+	if event.OwnerId == invitedBy {
+		createdInvite, err := s.repo.CreateEventInvite(ctx, payload, invitedBy)
+		// TODO: Create notification(s)
+		return createdInvite, err
 	}
 
-	if event.OwnerId != invitedBy {
-		createEventInvitePayload.SpreadAllowed = 0
-	}
-	createdInvite, err := s.repo.CreateEventInvite(ctx, createEventInvitePayload, invitedBy)
+	payload.SpreadAllowed = 0
+	createdInvite, err := s.repo.ForwardEventInvite(ctx, payload, invitedBy)
 	// TODO: Create notification(s)
 	return createdInvite, err
 }

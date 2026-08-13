@@ -20,14 +20,14 @@ func main() {
 	cfg, err := config.Load()
 
 	if err != nil {
-		logging.Fatal("failed to load config", err)
+		logging.Fatal("failed to load config", "error", err)
 	}
 	logging.New(cfg.AppEnv)
 
 	pool, err := db.New(ctx, cfg.DatabaseURL)
 
 	if err != nil {
-		logging.Fatal("failed to initialize database", err)
+		logging.Fatal("failed to initialize database", "error", err)
 	}
 
 	defer pool.Close()

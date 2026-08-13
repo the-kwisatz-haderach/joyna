@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -16,11 +15,9 @@ type Repository struct {
 }
 
 var (
-	ErrEventNotFound             = errors.New("event not found")
-	ErrMultipleEventsFound       = errors.New("expected single event for query, got multiple")
-	ErrAlreadyInvited            = errors.New("user has already been invited")
-	ErrEventInviteNotFound       = errors.New("event invite not found")
-	ErrMultipleEventInvitesFound = errors.New("expected single event invite for query, got multiple")
+	ErrEventNotFound       = errors.New("event not found")
+	ErrMultipleEventsFound = errors.New("expected single event for query, got multiple")
+	ErrAlreadyInvited      = errors.New("user has already been invited")
 )
 
 const pgUniqueViolation = "23505"
@@ -161,40 +158,61 @@ func (r *Repository) CreateEventInvite(ctx context.Context, payload CreateEventI
 	return created, nil
 }
 
-func (r *Repository) GetEventInviteByInvitedUser(ctx context.Context, eventID, invitedUserID string) (EventInvite, error) {
-	rows, err := r.pool.Query(ctx,
-		`SELECT * FROM event_invites WHERE event_id = $1 AND invited_user_id = $2`,
-		eventID, invitedUserID,
-	)
-	defer rows.Close()
+func (r *Repository) ForwardEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error) {
+	tx, err := r.pool.Begin(ctx)
 	if err != nil {
-		return EventInvite{}, fmt.Errorf("get event_invite: %w", err)
+		return EventInvite{}, fmt.Errorf("beginning tx: %w", err)
 	}
+	defer tx.Rollback(ctx)
 
-	invite, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[EventInvite])
+	rows, err := tx.Query(ctx,
+		`SELECT * FROM event_invites WHERE event_id = $1 AND invited_user_id = $2 FOR UPDATE`,
+		payload.EventID, invitedBy,
+	)
+	if err != nil {
+		return EventInvite{}, fmt.Errorf("locking sender invite: %w", err)
+	}
+	senderInvite, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[EventInvite])
+	rows.Close()
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return EventInvite{}, ErrEventInviteNotFound
+			return EventInvite{}, ErrInviteNotAllowed
 		}
-		if errors.Is(err, pgx.ErrTooManyRows) {
-			errMsg := fmt.Sprintf("expected single invite for user: %s to event: %s", invitedUserID, eventID)
-			slog.Error(errMsg, "error", err)
-			return EventInvite{}, ErrMultipleEventInvitesFound
-		}
-		return EventInvite{}, fmt.Errorf("get event_invite: %w", err)
+		return EventInvite{}, fmt.Errorf("locking sender invite: %w", err)
 	}
 
-	return invite, nil
-}
-
-func (r *Repository) CountEventInvitesBySender(ctx context.Context, eventID, invitedBy string) (int, error) {
-	var count int
-	err := r.pool.QueryRow(ctx,
+	var sentCount int
+	if err := tx.QueryRow(ctx,
 		`SELECT COUNT(*) FROM event_invites WHERE event_id = $1 AND invited_by = $2`,
-		eventID, invitedBy,
-	).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("counting event invites: %w", err)
+		payload.EventID, invitedBy,
+	).Scan(&sentCount); err != nil {
+		return EventInvite{}, fmt.Errorf("counting sent invites: %w", err)
 	}
-	return count, nil
+
+	if senderInvite.Status != InviteStateAccepted || sentCount >= senderInvite.SpreadAllowed {
+		return EventInvite{}, ErrInviteNotAllowed
+	}
+
+	insertRows, err := tx.Query(ctx,
+		`INSERT INTO event_invites (invited_by, event_id, invited_user_id, spread_allowed) VALUES ($1, $2, $3, $4) RETURNING *`,
+		invitedBy, payload.EventID, payload.InvitedUserID, payload.SpreadAllowed,
+	)
+	if err != nil {
+		return EventInvite{}, fmt.Errorf("insert event_invite: %w", err)
+	}
+	created, err := pgx.CollectExactlyOneRow(insertRows, pgx.RowToStructByName[EventInvite])
+	insertRows.Close()
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
+			return EventInvite{}, ErrAlreadyInvited
+		}
+		return EventInvite{}, fmt.Errorf("insert event_invite: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return EventInvite{}, fmt.Errorf("committing tx: %w", err)
+	}
+
+	return created, nil
 }
