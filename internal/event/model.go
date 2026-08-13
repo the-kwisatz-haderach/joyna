@@ -19,15 +19,28 @@ type Event struct {
 }
 
 type EventInvite struct {
-	EventID       string    `json:"eventId" db:"event_id"`
-	InvitedBy     string    `json:"invitedBy" db:"invited_by"`
-	InvitedUserID string    `json:"invitedUserId" db:"invited_user_id"`
-	Status        string    `json:"status" db:"status"`
-	SpreadAllowed int       `json:"spreadAllowed" db:"spread_allowed"`
-	CreatedAt     time.Time `json:"createdAt" db:"created_at"`
+	EventID       string            `json:"eventId" db:"event_id"`
+	InvitedBy     string            `json:"invitedBy" db:"invited_by"`
+	InvitedUserID string            `json:"invitedUserId" db:"invited_user_id"`
+	Status        EventInviteStatus `json:"status" db:"status"`
+	SpreadAllowed int               `json:"spreadAllowed" db:"spread_allowed"`
+	CreatedAt     time.Time         `json:"createdAt" db:"created_at"`
+}
+
+type CreateEventInvitePayload struct {
+	EventID       string `json:"eventId"`
+	InvitedUserID string `json:"invitedUserId"`
+	SpreadAllowed int    `json:"spreadAllowed"`
 }
 
 type EventType string
+type EventInviteStatus string
+
+const (
+	InviteStatePending  EventInviteStatus = "pending"
+	InviteStateAccepted EventInviteStatus = "accepted"
+	InviteStateDeclined EventInviteStatus = "declined"
+)
 
 type EventUpdate struct {
 	Name                 *string    `json:"name,omitempty"`

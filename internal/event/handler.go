@@ -99,6 +99,10 @@ func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	updated, err := h.service.UpdateEvent(r.Context(), req, eventID, ownerID)
 
 	if err != nil {
+		if errors.Is(err, ErrUnauthorizedEventUpdate) {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
 		if errors.Is(err, ErrEventNotFound) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
@@ -140,4 +144,38 @@ func (h *Handler) GetEvents(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(events)
+}
+
+func (h *Handler) CreateEventInvite(w http.ResponseWriter, r *http.Request) {
+	ownerID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	var payload CreateEventInvitePayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	created, err := h.service.SendEventInvite(r.Context(), payload, ownerID)
+	if err != nil {
+		if errors.Is(err, ErrInviteNotAllowed) {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		if errors.Is(err, ErrEventNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, ErrAlreadyInvited) {
+			http.Error(w, err.Error(), http.StatusConflict)
+			return
+		}
+		slog.Error("failed to create event invite", "error", err)
+		http.Error(w, "couldn't create invite", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(created)
 }

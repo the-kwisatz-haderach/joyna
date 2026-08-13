@@ -40,3 +40,69 @@ GET {{baseUrl}}/events?sort=date&order=asc
 
 ### Get events — invalid sort field, expect 400
 GET {{baseUrl}}/events?sort=bogus
+
+# --- Event invites ---
+# Run requests in this section top to bottom — some switch the active session
+# (REST Client's cookie jar is shared across the window, so logging in as the
+# invitee below changes who subsequent requests act as).
+
+### Register a second user to invite (run once; ignore 409 on repeat runs)
+# @name registerInvitee
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Invitee One",
+  "email": "invitee1@joyna.dev",
+  "password": "correct-horse-battery-staple"
+}
+
+### Create event invite (as the event owner — must still be logged in as the owner from auth.http)
+# @name createEventInvite
+POST {{baseUrl}}/events/invites
+Content-Type: application/json
+
+{
+  "eventId": "{{createEvent.response.body.$.id}}",
+  "invitedUserId": "{{registerInvitee.response.body.$.id}}",
+  "spreadAllowed": 2
+}
+
+### Create event invite — duplicate invite, expect 409
+POST {{baseUrl}}/events/invites
+Content-Type: application/json
+
+{
+  "eventId": "{{createEvent.response.body.$.id}}",
+  "invitedUserId": "{{registerInvitee.response.body.$.id}}",
+  "spreadAllowed": 2
+}
+
+### Create event invite — event does not exist, expect 404
+POST {{baseUrl}}/events/invites
+Content-Type: application/json
+
+{
+  "eventId": "00000000-0000-0000-0000-000000000000",
+  "invitedUserId": "{{registerInvitee.response.body.$.id}}",
+  "spreadAllowed": 2
+}
+
+### Log in as the invitee (switches the session for the requests below)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "invitee1@joyna.dev",
+  "password": "correct-horse-battery-staple"
+}
+
+### Invitee attempts to forward the invite while still "pending" (not accepted) — expect 403
+POST {{baseUrl}}/events/invites
+Content-Type: application/json
+
+{
+  "eventId": "{{createEvent.response.body.$.id}}",
+  "invitedUserId": "11111111-1111-1111-1111-111111111111",
+  "spreadAllowed": 1
+}
