@@ -1,0 +1,32 @@
+@baseUrl = http://localhost:8080
+
+# Requires an active session — run the Login request in auth.http first.
+# There is no create-group endpoint yet, so replace {{groupId}} with an
+# existing connection_groups.id (e.g. one inserted directly in the database).
+
+@groupId = 00000000-0000-0000-0000-000000000000
+
+### Update group (partial — only fields you include are changed)
+PATCH {{baseUrl}}/groups/{{groupId}}
+Content-Type: application/json
+
+{
+  "name": "Close Friends",
+  "isFavorite": true
+}
+
+### Update group — empty name, expect 400
+PATCH {{baseUrl}}/groups/{{groupId}}
+Content-Type: application/json
+
+{
+  "name": "   "
+}
+
+### Update group — not found or not owned by current user, expect 404
+PATCH {{baseUrl}}/groups/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+
+{
+  "name": "Ghost Group"
+}

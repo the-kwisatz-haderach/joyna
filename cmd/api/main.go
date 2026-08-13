@@ -10,6 +10,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/the-kwisatz-haderach/joyna/internal/auth"
 	"github.com/the-kwisatz-haderach/joyna/internal/event"
+	"github.com/the-kwisatz-haderach/joyna/internal/group"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/config"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/db"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/logging"
@@ -43,6 +44,10 @@ func main() {
 	eventService := event.NewService(eventRepo)
 	eventHandler := event.NewHandler(eventService)
 
+	groupRepo := group.NewRepository(pool)
+	groupService := group.NewService(groupRepo)
+	groupHandler := group.NewHandler(groupService)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -59,6 +64,9 @@ func main() {
 	mux.HandleFunc("POST /events", authHandler.Middleware(eventHandler.CreateEvent))
 	mux.HandleFunc("DELETE /events/{id}", authHandler.Middleware(eventHandler.DeleteEvent))
 	mux.HandleFunc("PATCH /events/{id}", authHandler.Middleware(eventHandler.UpdateEvent))
+
+	// Group handlers
+	mux.HandleFunc("PATCH /groups/{id}", authHandler.Middleware(groupHandler.UpdateGroup))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.AppPort), sessionManager.LoadAndSave(mux)))
 }
