@@ -1,0 +1,12 @@
+@baseUrl = http://localhost:8080
+
+# Requires an active session — run the Login request in auth.http first.
+# REST Client shares its cookie jar across files in the same VS Code window.
+# There is currently no create-group endpoint, so substitute an id of an
+# existing connection_groups row (e.g. seeded via migrations) below.
+
+### Delete group
+DELETE {{baseUrl}}/groups/00000000-0000-0000-0000-000000000000
+
+### Delete group — not owned by logged in user or nonexistent, expect 404
+DELETE {{baseUrl}}/groups/11111111-1111-1111-1111-111111111111
