@@ -1,0 +1,21 @@
+@baseUrl = http://localhost:8080
+
+# Requires an active session — run the Login request in auth.http first.
+# REST Client shares its cookie jar across files in the same VS Code window.
+
+### Create group
+POST {{baseUrl}}/groups
+Content-Type: application/json
+
+{
+  "name": "Close Friends",
+  "isFavorite": true
+}
+
+### Create group — missing name, expect 400
+POST {{baseUrl}}/groups
+Content-Type: application/json
+
+{
+  "name": ""
+}
