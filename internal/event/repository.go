@@ -17,14 +17,19 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
 }
 
-func (r *Repository) CreateEvent(ctx context.Context, event Event) (Event, error) {
-	row := r.pool.QueryRow(ctx,
+func (r *Repository) CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error) {
+	rows, err := r.pool.Query(ctx,
 		`INSERT INTO events (owner_id, name, description, date, location, rsvp_deadline, type, default_spread_allowed)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at, default_spread_allowed`,
-		event.OwnerId, event.Name, event.Description, event.Date, event.Location, event.RsvpDeadline, event.Type, event.DefaultSpreadAllowed,
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+		ownerID, payload.Name, payload.Description, payload.Date, payload.Location, payload.RsvpDeadline, payload.Type, payload.DefaultSpreadAllowed,
 	)
+	defer rows.Close()
+	if err != nil {
+		return Event{}, fmt.Errorf("inserting event: %w", err)
+	}
 
-	if err := row.Scan(&event.ID, &event.CreatedAt, &event.DefaultSpreadAllowed); err != nil {
+	event, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[Event])
+	if err != nil {
 		sentinelErr := GetSentinelError(err, fmt.Errorf("inserting event: %w", err))
 		return Event{}, sentinelErr
 	}

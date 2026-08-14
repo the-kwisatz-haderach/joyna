@@ -41,8 +41,14 @@ type CreateEventPayload struct {
 	DefaultSpreadAllowed int        `json:"defaultSpreadAllowed"`
 }
 
+func (p *CreateEventPayload) Sanitize() {
+	p.Name = strings.TrimSpace(p.Name)
+	p.Description = strings.TrimSpace(p.Description)
+	p.Location = strings.TrimSpace(p.Location)
+}
+
 func (p CreateEventPayload) Validate() error {
-	if strings.TrimSpace(p.Name) == "" {
+	if p.Name == "" {
 		return errors.New("name must not be empty")
 	}
 	if p.DefaultSpreadAllowed < 0 {

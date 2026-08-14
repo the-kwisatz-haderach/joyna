@@ -29,23 +29,13 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
+	payload.Sanitize()
 	if err := payload.Validate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	eventInput := Event{
-		OwnerId:              ownerID,
-		Name:                 payload.Name,
-		Description:          payload.Description,
-		Date:                 payload.Date,
-		Location:             payload.Location,
-		RsvpDeadline:         payload.RsvpDeadline,
-		Type:                 payload.Type,
-		DefaultSpreadAllowed: payload.DefaultSpreadAllowed,
-	}
-
-	created, err := h.service.CreateEvent(r.Context(), eventInput)
+	created, err := h.service.CreateEvent(r.Context(), payload, ownerID)
 	if err != nil {
 		if errors.Is(err, ErrEventOwnerNotFound) || errors.Is(err, ErrPastEventDate) || errors.Is(err, ErrInvalidRsvpDeadline) || errors.Is(err, ErrInvalidEventType) {
 			http.Error(w, err.Error(), http.StatusBadRequest)

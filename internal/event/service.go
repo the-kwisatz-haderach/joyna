@@ -14,7 +14,7 @@ var (
 )
 
 type repository interface {
-	CreateEvent(ctx context.Context, event Event) (Event, error)
+	CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error)
 	UpdateEvent(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error)
 	DeleteEvent(ctx context.Context, eventID, ownerID string) error
 	GetEventsByOwner(ctx context.Context, ownerID string, sortField EventSortField, order SortOrder) ([]Event, error)
@@ -31,15 +31,14 @@ func NewService(repo repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) CreateEvent(ctx context.Context, event Event) (Event, error) {
-	if !event.Date.After(time.Now()) {
+func (s *Service) CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error) {
+	if !payload.Date.After(time.Now()) {
 		return Event{}, ErrPastEventDate
 	}
-	if event.RsvpDeadline != nil && event.RsvpDeadline.After(event.Date) {
+	if payload.RsvpDeadline != nil && payload.RsvpDeadline.After(payload.Date) {
 		return Event{}, ErrInvalidRsvpDeadline
 	}
-	e, err := s.repo.CreateEvent(ctx, event)
-	return e, err
+	return s.repo.CreateEvent(ctx, payload, ownerID)
 }
 
 func (s *Service) DeleteEvent(ctx context.Context, eventID, ownerID string) error {
