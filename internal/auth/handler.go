@@ -20,20 +20,19 @@ func NewHandler(service *Service, sessionManager *scs.SessionManager) *Handler {
 	return &Handler{service: service, sessionManager: sessionManager}
 }
 
-type registerRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
-	var req registerRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var payload RegisterUserPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
+	payload.Sanitize()
+	if err := payload.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-	user, err := h.service.Register(r.Context(), req.Name, req.Email, req.Password)
+	user, err := h.service.Register(r.Context(), payload.Name, payload.Email, payload.Password)
 	if err != nil {
 		if errors.Is(err, ErrUserAlreadyExists) {
 			http.Error(w, "user already exists with this email", http.StatusConflict)
@@ -55,13 +54,8 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-type loginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
-	var req loginRequest
+	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		slog.Error("failed to decode login request", "error", err)
 		http.Error(w, "invalid request body", http.StatusBadRequest)
