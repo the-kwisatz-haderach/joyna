@@ -68,6 +68,7 @@ func main() {
 
 	// Group handlers
 	mux.HandleFunc("POST /groups", authHandler.Middleware(groupHandler.CreateGroup))
+	mux.HandleFunc("PATCH /groups/{id}", authHandler.Middleware(groupHandler.UpdateGroup))
 	mux.HandleFunc("DELETE /groups/{id}", authHandler.Middleware(groupHandler.DeleteGroup))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.AppPort), sessionManager.LoadAndSave(mux)))

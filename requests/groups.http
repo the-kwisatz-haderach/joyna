@@ -21,6 +21,31 @@ Content-Type: application/json
   "name": ""
 }
 
+### Update group (partial — only fields you include are changed)
+PATCH {{baseUrl}}/groups/{{createGroup.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "name": "Closer Friends",
+  "isFavorite": false
+}
+
+### Update group — empty name, expect 400
+PATCH {{baseUrl}}/groups/{{createGroup.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "name": ""
+}
+
+### Update group — invalid id, expect 400
+PATCH {{baseUrl}}/groups/not-a-uuid
+Content-Type: application/json
+
+{
+  "name": "Whatever"
+}
+
 ### Delete group
 DELETE {{baseUrl}}/groups/{{createGroup.response.body.$.id}}
 
