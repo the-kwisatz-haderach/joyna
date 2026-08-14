@@ -52,7 +52,7 @@ func (r *Repository) DeleteEvent(ctx context.Context, eventID, ownerID string) e
 	return nil
 }
 
-func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error) {
+func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error) {
 	var event Event
 	rows, err := r.pool.Query(ctx,
 		`UPDATE events SET 

@@ -42,7 +42,7 @@ const (
 	InviteStateDeclined EventInviteStatus = "declined"
 )
 
-type EventUpdate struct {
+type UpdateEventPayload struct {
 	Name                 *string    `json:"name,omitempty"`
 	Description          *string    `json:"description,omitempty"`
 	Date                 *time.Time `json:"date,omitempty"`
