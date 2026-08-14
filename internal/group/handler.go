@@ -2,7 +2,6 @@ package group
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/the-kwisatz-haderach/joyna/internal/auth"
@@ -16,35 +15,25 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-type createGroupRequest struct {
-	Name       string `json:"name"`
-	IsFavorite bool   `json:"isFavorite"`
-}
-
 func (h *Handler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	ownerID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	var req createGroupRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var payload CreateGroupPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	groupInput := Group{
-		OwnerID:    ownerID,
-		Name:       req.Name,
-		IsFavorite: req.IsFavorite,
+	payload.Sanitize()
+	if err := payload.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	created, err := h.service.CreateGroup(r.Context(), groupInput)
+	created, err := h.service.CreateGroup(r.Context(), payload, ownerID)
 	if err != nil {
-		if errors.Is(err, ErrEmptyGroupName) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
 		http.Error(w, "failed to create group", http.StatusInternalServerError)
 		return
 	}
