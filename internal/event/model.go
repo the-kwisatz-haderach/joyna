@@ -1,8 +1,11 @@
 package event
 
 import (
+	"errors"
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Event struct {
@@ -33,6 +36,19 @@ type CreateEventInvitePayload struct {
 	SpreadAllowed int    `json:"spreadAllowed"`
 }
 
+func (p CreateEventInvitePayload) Validate() error {
+	if err := uuid.Validate(p.EventID); err != nil {
+		return errors.New("eventId isn't valid")
+	}
+	if err := uuid.Validate(p.InvitedUserID); err != nil {
+		return errors.New("invitedUserID isn't valid")
+	}
+	if p.SpreadAllowed < 0 {
+		return errors.New("spreadAllowed can't be negative")
+	}
+	return nil
+}
+
 type EventType string
 type EventInviteStatus string
 
@@ -50,6 +66,13 @@ type UpdateEventPayload struct {
 	RsvpDeadline         *time.Time `json:"rsvpDeadline,omitempty"`
 	Type                 *EventType `json:"type,omitempty"`
 	DefaultSpreadAllowed *int       `json:"defaultSpreadAllowed,omitempty"`
+}
+
+func (p UpdateEventPayload) Validate() error {
+	if p.DefaultSpreadAllowed != nil && *p.DefaultSpreadAllowed < 0 {
+		return errors.New("defaultSpreadAllowed can't be negative")
+	}
+	return nil
 }
 
 type EventSortField string

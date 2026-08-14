@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/the-kwisatz-haderach/joyna/internal/auth"
 )
 
@@ -67,6 +68,10 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) DeleteEvent(w http.ResponseWriter, r *http.Request) {
 	eventID := r.PathValue("id")
+	if err := uuid.Validate(eventID); err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
 	ownerID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -85,18 +90,26 @@ func (h *Handler) DeleteEvent(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	eventID := r.PathValue("id")
+	if err := uuid.Validate(eventID); err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
 	ownerID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	var req UpdateEventPayload
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var payload UpdateEventPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
+	if err := payload.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-	updated, err := h.service.UpdateEvent(r.Context(), req, eventID, ownerID)
+	updated, err := h.service.UpdateEvent(r.Context(), payload, eventID, ownerID)
 
 	if err != nil {
 		if errors.Is(err, ErrUnauthorizedEventUpdate) {
@@ -155,6 +168,10 @@ func (h *Handler) CreateEventInvite(w http.ResponseWriter, r *http.Request) {
 	var payload CreateEventInvitePayload
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if err := payload.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	created, err := h.service.SendEventInvite(r.Context(), payload, ownerID)
