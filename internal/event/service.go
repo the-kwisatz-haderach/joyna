@@ -7,8 +7,10 @@ import (
 )
 
 var (
-	ErrPastEventDate       = errors.New("event date must be in the future")
-	ErrInvalidRsvpDeadline = errors.New("rsvp deadline must be on or before the event date")
+	ErrPastEventDate           = errors.New("event date must be in the future")
+	ErrInvalidRsvpDeadline     = errors.New("rsvp deadline must be on or before the event date")
+	ErrInviteNotAllowed        = errors.New("user not allowed to invite (additional) users to event")
+	ErrUnauthorizedEventUpdate = errors.New("user must be owner of event to update it")
 )
 
 type repository interface {
@@ -16,7 +18,9 @@ type repository interface {
 	UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error)
 	DeleteEvent(ctx context.Context, eventID, ownerID string) error
 	GetEventsByOwner(ctx context.Context, ownerID string, sortField EventSortField, order SortOrder) ([]Event, error)
-	GetEvent(ctx context.Context, eventID, ownerID string) (Event, error)
+	GetEvent(ctx context.Context, eventID string) (Event, error)
+	CreateEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
+	ForwardEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 }
 
 type Service struct {
@@ -43,9 +47,12 @@ func (s *Service) DeleteEvent(ctx context.Context, eventID, ownerID string) erro
 }
 
 func (s *Service) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error) {
-	existing, err := s.repo.GetEvent(ctx, eventID, ownerID)
+	existing, err := s.repo.GetEvent(ctx, eventID)
 	if err != nil {
 		return Event{}, err
+	}
+	if existing.OwnerId != ownerID {
+		return Event{}, ErrUnauthorizedEventUpdate
 	}
 
 	date := existing.Date
@@ -69,4 +76,25 @@ func (s *Service) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, even
 
 func (s *Service) GetEvents(ctx context.Context, ownerID string, sortField EventSortField, order SortOrder) ([]Event, error) {
 	return s.repo.GetEventsByOwner(ctx, ownerID, sortField, order)
+}
+
+func (s *Service) SendEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error) {
+	if payload.InvitedUserID == invitedBy {
+		return EventInvite{}, ErrInviteNotAllowed
+	}
+	event, err := s.repo.GetEvent(ctx, payload.EventID)
+	if err != nil {
+		return EventInvite{}, err
+	}
+
+	if event.OwnerId == invitedBy {
+		createdInvite, err := s.repo.CreateEventInvite(ctx, payload, invitedBy)
+		// TODO: Create notification(s)
+		return createdInvite, err
+	}
+
+	payload.SpreadAllowed = 0
+	createdInvite, err := s.repo.ForwardEventInvite(ctx, payload, invitedBy)
+	// TODO: Create notification(s)
+	return createdInvite, err
 }
