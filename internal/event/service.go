@@ -11,7 +11,6 @@ var (
 	ErrInvalidRsvpDeadline     = errors.New("rsvp deadline must be on or before the event date")
 	ErrInviteNotAllowed        = errors.New("user not allowed to invite (additional) users to event")
 	ErrUnauthorizedEventUpdate = errors.New("user must be owner of event to update it")
-	ErrEmptyEventName          = errors.New("event name must not be empty")
 )
 
 type repository interface {

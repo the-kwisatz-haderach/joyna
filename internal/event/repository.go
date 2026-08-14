@@ -71,7 +71,8 @@ func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate UpdateEventPay
 		if errors.Is(err, pgx.ErrTooManyRows) {
 			return Event{}, ErrMultipleEventsFound
 		}
-		return Event{}, fmt.Errorf("updating event: %w", err)
+		err := GetSentinelError(err, fmt.Errorf("updating event: %w", err))
+		return Event{}, err
 	}
 	return event, nil
 }

@@ -62,7 +62,7 @@ func (p CreateEventInvitePayload) Validate() error {
 		return errors.New("eventId isn't valid")
 	}
 	if err := uuid.Validate(p.InvitedUserID); err != nil {
-		return errors.New("invitedUserID isn't valid")
+		return errors.New("invitedUserId isn't valid")
 	}
 	if p.SpreadAllowed < 0 {
 		return errors.New("spreadAllowed can't be negative")

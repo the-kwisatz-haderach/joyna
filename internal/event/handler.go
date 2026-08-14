@@ -47,10 +47,11 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 
 	created, err := h.service.CreateEvent(r.Context(), eventInput)
 	if err != nil {
-		if errors.Is(err, ErrPastEventDate) || errors.Is(err, ErrInvalidRsvpDeadline) || errors.Is(err, ErrInvalidEventType) {
+		if errors.Is(err, ErrEventOwnerNotFound) || errors.Is(err, ErrPastEventDate) || errors.Is(err, ErrInvalidRsvpDeadline) || errors.Is(err, ErrInvalidEventType) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		slog.Error("failed to create event", "error", err)
 		http.Error(w, "failed to create event", http.StatusInternalServerError)
 		return
 	}
@@ -75,6 +76,7 @@ func (h *Handler) DeleteEvent(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
+		slog.Error("failed to delete event", "error", err)
 		http.Error(w, "failed to delete event", http.StatusInternalServerError)
 		return
 	}
@@ -113,7 +115,7 @@ func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		if errors.Is(err, ErrPastEventDate) || errors.Is(err, ErrInvalidRsvpDeadline) {
+		if errors.Is(err, ErrPastEventDate) || errors.Is(err, ErrInvalidRsvpDeadline) || errors.Is(err, ErrEventOwnerNotFound) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
