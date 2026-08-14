@@ -28,3 +28,22 @@ func (p CreateGroupPayload) Validate() error {
 func (p *CreateGroupPayload) Sanitize() {
 	p.Name = strings.TrimSpace(p.Name)
 }
+
+type UpdateGroupPayload struct {
+	Name       *string `json:"name,omitempty"`
+	IsFavorite *bool   `json:"isFavorite,omitempty"`
+}
+
+func (p UpdateGroupPayload) Validate() error {
+	if p.Name != nil && strings.TrimSpace(*p.Name) == "" {
+		return errors.New("group name must not be empty")
+	}
+	return nil
+}
+
+func (p *UpdateGroupPayload) Sanitize() {
+	if p.Name != nil {
+		trimmed := strings.TrimSpace(*p.Name)
+		p.Name = &trimmed
+	}
+}

@@ -2,6 +2,7 @@ package group
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -31,6 +32,30 @@ func (r *Repository) CreateGroup(ctx context.Context, payload CreateGroupPayload
 		return Group{}, fmt.Errorf("inserting connection group: %w", err)
 	}
 
+	return group, nil
+}
+
+func (r *Repository) UpdateGroup(ctx context.Context, groupUpdate UpdateGroupPayload, groupID, ownerID string) (Group, error) {
+	rows, err := r.pool.Query(ctx,
+		`UPDATE connection_groups SET
+			name = COALESCE($3, name),
+			is_favorite = COALESCE($4, is_favorite)
+		WHERE id = $1 AND owner_id = $2
+		RETURNING *`,
+		groupID, ownerID, groupUpdate.Name, groupUpdate.IsFavorite,
+	)
+	defer rows.Close()
+	if err != nil {
+		return Group{}, fmt.Errorf("updating connection group: %w", err)
+	}
+
+	group, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[Group])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Group{}, ErrGroupNotFound
+		}
+		return Group{}, GetSentinelError(err, fmt.Errorf("updating connection group: %w", err))
+	}
 	return group, nil
 }
 
