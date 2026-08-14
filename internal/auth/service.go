@@ -44,7 +44,7 @@ func (s *Service) Authenticate(ctx context.Context, email, password string) (Use
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)); err != nil {
-		slog.Debug("password comparison failed", err)
+		slog.Debug("password comparison failed", "error", err)
 		return User{}, ErrInvalidCredentials
 	}
 

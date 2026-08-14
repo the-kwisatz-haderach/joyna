@@ -38,8 +38,6 @@ top-level `slog.Info`/`slog.Error` without importing the `logging` package).
   stashes the user ID on the request context; every other package reads it via `auth.UserIDFromContext(ctx)` and
   never touches `scs`/`sessionManager` directly. Wire a protected route as:
   `mux.Handle("POST /events", authHandler.Middleware(eventHandler.CreateEvent))`.
-- Ownership checks happen in the SQL `WHERE` clause (e.g. `WHERE id = $1 AND owner_id = $2`), not just in
-  application code.
 
 ## Data conventions
 

@@ -1,13 +1,11 @@
 @baseUrl = http://localhost:8080
 
 # Requires an active session — run the Login request in auth.http first.
-# There is no create-group endpoint yet, so replace {{groupId}} with an
-# existing connection_groups.id (e.g. one inserted directly in the database).
+# REST Client shares its cookie jar across files in the same VS Code window.
 
-@groupId = 00000000-0000-0000-0000-000000000000
-
-### Update group (partial — only fields you include are changed)
-PATCH {{baseUrl}}/groups/{{groupId}}
+### Create group
+# @name createGroup
+POST {{baseUrl}}/groups
 Content-Type: application/json
 
 {
@@ -15,18 +13,60 @@ Content-Type: application/json
   "isFavorite": true
 }
 
+### Create group — missing name, expect 400
+POST {{baseUrl}}/groups
+Content-Type: application/json
+
+{
+  "name": ""
+}
+
+### Update group (partial — only fields you include are changed)
+PATCH {{baseUrl}}/groups/{{createGroup.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "name": "Closest Friends",
+  "isFavorite": false
+}
+
 ### Update group — empty name, expect 400
-PATCH {{baseUrl}}/groups/{{groupId}}
+PATCH {{baseUrl}}/groups/{{createGroup.response.body.$.id}}
 Content-Type: application/json
 
 {
   "name": "   "
 }
 
-### Update group — not found or not owned by current user, expect 404
+### Update group — invalid id, expect 400
+PATCH {{baseUrl}}/groups/not-a-uuid
+Content-Type: application/json
+
+{
+  "name": "Ghost Group"
+}
+
+### Update group — does not exist, expect 404
 PATCH {{baseUrl}}/groups/00000000-0000-0000-0000-000000000000
 Content-Type: application/json
 
 {
   "name": "Ghost Group"
+}
+
+### Create a second group to test duplicate-name handling
+# @name createSecondGroup
+POST {{baseUrl}}/groups
+Content-Type: application/json
+
+{
+  "name": "Work"
+}
+
+### Update group — name already in use by another of your groups, expect 409
+PATCH {{baseUrl}}/groups/{{createSecondGroup.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "name": "Closest Friends"
 }
