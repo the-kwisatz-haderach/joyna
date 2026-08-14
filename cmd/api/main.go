@@ -21,14 +21,14 @@ func main() {
 	cfg, err := config.Load()
 
 	if err != nil {
-		logging.Fatal("failed to load config", err)
+		logging.Fatal("failed to load config", "error", err)
 	}
 	logging.New(cfg.AppEnv)
 
 	pool, err := db.New(ctx, cfg.DatabaseURL)
 
 	if err != nil {
-		logging.Fatal("failed to initialize database", err)
+		logging.Fatal("failed to initialize database", "error", err)
 	}
 
 	defer pool.Close()
@@ -64,8 +64,10 @@ func main() {
 	mux.HandleFunc("POST /events", authHandler.Middleware(eventHandler.CreateEvent))
 	mux.HandleFunc("DELETE /events/{id}", authHandler.Middleware(eventHandler.DeleteEvent))
 	mux.HandleFunc("PATCH /events/{id}", authHandler.Middleware(eventHandler.UpdateEvent))
+	mux.HandleFunc("POST /events/invites", authHandler.Middleware(eventHandler.CreateEventInvite))
 
 	// Group handlers
+	mux.HandleFunc("POST /groups", authHandler.Middleware(groupHandler.CreateGroup))
 	mux.HandleFunc("DELETE /groups/{id}", authHandler.Middleware(groupHandler.DeleteGroup))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.AppPort), sessionManager.LoadAndSave(mux)))
