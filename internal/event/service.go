@@ -15,7 +15,7 @@ var (
 
 type repository interface {
 	CreateEvent(ctx context.Context, event Event) (Event, error)
-	UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error)
+	UpdateEvent(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error)
 	DeleteEvent(ctx context.Context, eventID, ownerID string) error
 	GetEventsByOwner(ctx context.Context, ownerID string, sortField EventSortField, order SortOrder) ([]Event, error)
 	GetEvent(ctx context.Context, eventID string) (Event, error)
@@ -46,7 +46,7 @@ func (s *Service) DeleteEvent(ctx context.Context, eventID, ownerID string) erro
 	return s.repo.DeleteEvent(ctx, eventID, ownerID)
 }
 
-func (s *Service) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error) {
+func (s *Service) UpdateEvent(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error) {
 	existing, err := s.repo.GetEvent(ctx, eventID)
 	if err != nil {
 		return Event{}, err

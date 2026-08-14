@@ -6,21 +6,12 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Repository struct {
 	pool *pgxpool.Pool
 }
-
-var (
-	ErrEventNotFound       = errors.New("event not found")
-	ErrMultipleEventsFound = errors.New("expected single event for query, got multiple")
-	ErrAlreadyInvited      = errors.New("user has already been invited")
-)
-
-const pgUniqueViolation = "23505"
 
 func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
@@ -34,7 +25,8 @@ func (r *Repository) CreateEvent(ctx context.Context, event Event) (Event, error
 	)
 
 	if err := row.Scan(&event.ID, &event.CreatedAt, &event.DefaultSpreadAllowed); err != nil {
-		return Event{}, fmt.Errorf("inserting event: %w", err)
+		sentinelErr := GetSentinelError(err, fmt.Errorf("inserting event: %w", err))
+		return Event{}, sentinelErr
 	}
 
 	return event, nil
@@ -52,7 +44,7 @@ func (r *Repository) DeleteEvent(ctx context.Context, eventID, ownerID string) e
 	return nil
 }
 
-func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, eventID, ownerID string) (Event, error) {
+func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error) {
 	var event Event
 	rows, err := r.pool.Query(ctx,
 		`UPDATE events SET 
@@ -79,7 +71,8 @@ func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate EventUpdate, e
 		if errors.Is(err, pgx.ErrTooManyRows) {
 			return Event{}, ErrMultipleEventsFound
 		}
-		return Event{}, fmt.Errorf("updating event: %w", err)
+		err := GetSentinelError(err, fmt.Errorf("updating event: %w", err))
+		return Event{}, err
 	}
 	return event, nil
 }
@@ -148,11 +141,8 @@ func (r *Repository) CreateEventInvite(ctx context.Context, payload CreateEventI
 
 	created, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[EventInvite])
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
-			return EventInvite{}, ErrAlreadyInvited
-		}
-		return EventInvite{}, fmt.Errorf("insert event_invite: %w", err)
+		sentinelErr := GetSentinelError(err, fmt.Errorf("inserting event_invite: %w", err))
+		return EventInvite{}, sentinelErr
 	}
 
 	return created, nil
@@ -203,11 +193,8 @@ func (r *Repository) ForwardEventInvite(ctx context.Context, payload CreateEvent
 	created, err := pgx.CollectExactlyOneRow(insertRows, pgx.RowToStructByName[EventInvite])
 	insertRows.Close()
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
-			return EventInvite{}, ErrAlreadyInvited
-		}
-		return EventInvite{}, fmt.Errorf("insert event_invite: %w", err)
+		err := GetSentinelError(err, fmt.Errorf("insert event_invite: %w", err))
+		return EventInvite{}, err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
