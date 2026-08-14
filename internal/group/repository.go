@@ -33,3 +33,15 @@ func (r *Repository) CreateGroup(ctx context.Context, payload CreateGroupPayload
 
 	return group, nil
 }
+
+func (r *Repository) DeleteGroup(ctx context.Context, groupID, ownerID string) error {
+	cmd, err := r.pool.Exec(ctx,
+		`DELETE FROM connection_groups WHERE id = $1 AND owner_id = $2`, groupID, ownerID,
+	)
+	if err != nil {
+		return fmt.Errorf("deleting connection group: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return ErrGroupNotFound
+	}
+	return nil
+}
