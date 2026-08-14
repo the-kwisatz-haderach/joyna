@@ -4,6 +4,7 @@
 # REST Client shares its cookie jar across files in the same VS Code window.
 
 ### Create group
+# @name createGroup
 POST {{baseUrl}}/groups
 Content-Type: application/json
 
@@ -19,3 +20,9 @@ Content-Type: application/json
 {
   "name": ""
 }
+
+### Delete group
+DELETE {{baseUrl}}/groups/{{createGroup.response.body.$.id}}
+
+### Delete group — already deleted / unknown id, expect 404
+DELETE {{baseUrl}}/groups/{{createGroup.response.body.$.id}}
