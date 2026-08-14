@@ -3,6 +3,7 @@ package event
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,6 +29,26 @@ type EventInvite struct {
 	Status        EventInviteStatus `json:"status" db:"status"`
 	SpreadAllowed int               `json:"spreadAllowed" db:"spread_allowed"`
 	CreatedAt     time.Time         `json:"createdAt" db:"created_at"`
+}
+
+type CreateEventPayload struct {
+	Name                 string     `json:"name"`
+	Description          string     `json:"description"`
+	Date                 time.Time  `json:"date"`
+	Location             string     `json:"location"`
+	RsvpDeadline         *time.Time `json:"rsvpDeadline,omitempty"`
+	Type                 EventType  `json:"type"`
+	DefaultSpreadAllowed int        `json:"defaultSpreadAllowed"`
+}
+
+func (p CreateEventPayload) Validate() error {
+	if strings.TrimSpace(p.Name) == "" {
+		return errors.New("name must not be empty")
+	}
+	if p.DefaultSpreadAllowed < 0 {
+		return errors.New("defaultSpreadAllowed can't be negative")
+	}
+	return nil
 }
 
 type CreateEventInvitePayload struct {

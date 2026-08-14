@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/the-kwisatz-haderach/joyna/internal/auth"
@@ -19,42 +18,36 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-type createEventRequest struct {
-	Name                 string     `json:"name"`
-	Description          string     `json:"description"`
-	Date                 time.Time  `json:"date"`
-	Location             string     `json:"location"`
-	RsvpDeadline         *time.Time `json:"rsvpDeadline,omitempty"`
-	Type                 EventType  `json:"type"`
-	DefaultSpreadAllowed int        `json:"defaultSpreadAllowed"`
-}
-
 func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	ownerID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	var req createEventRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var payload CreateEventPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if err := payload.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	eventInput := Event{
 		OwnerId:              ownerID,
-		Name:                 req.Name,
-		Description:          req.Description,
-		Date:                 req.Date,
-		Location:             req.Location,
-		RsvpDeadline:         req.RsvpDeadline,
-		Type:                 req.Type,
-		DefaultSpreadAllowed: req.DefaultSpreadAllowed,
+		Name:                 payload.Name,
+		Description:          payload.Description,
+		Date:                 payload.Date,
+		Location:             payload.Location,
+		RsvpDeadline:         payload.RsvpDeadline,
+		Type:                 payload.Type,
+		DefaultSpreadAllowed: payload.DefaultSpreadAllowed,
 	}
 
 	created, err := h.service.CreateEvent(r.Context(), eventInput)
 	if err != nil {
-		if errors.Is(err, ErrPastEventDate) || errors.Is(err, ErrInvalidRsvpDeadline) {
+		if errors.Is(err, ErrPastEventDate) || errors.Is(err, ErrInvalidRsvpDeadline) || errors.Is(err, ErrInvalidEventType) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
