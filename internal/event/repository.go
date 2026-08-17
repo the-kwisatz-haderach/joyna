@@ -103,7 +103,7 @@ func (r *Repository) GetEvent(ctx context.Context, eventID string) (Event, error
 	return event, nil
 }
 
-func (r *Repository) GetEventsByOwner(ctx context.Context, ownerID string, sortField EventSortField, order SortOrder) ([]Event, error) {
+func (r *Repository) GetEventsByOwner(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]Event, error) {
 	column := "date"
 	if sortField == EventSortFieldCreatedAt {
 		column = "created_at"
@@ -113,9 +113,18 @@ func (r *Repository) GetEventsByOwner(ctx context.Context, ownerID string, sortF
 		direction = "DESC"
 	}
 
+	const invitedClause = `EXISTS (SELECT 1 FROM event_invites WHERE event_id = events.id AND invited_user_id = $1)`
+	where := "owner_id = $1"
+	switch scope {
+	case EventListScopeInvited:
+		where = invitedClause
+	case EventListScopeAll:
+		where = "owner_id = $1 OR " + invitedClause
+	}
+
 	rows, err := r.pool.Query(ctx,
-		fmt.Sprintf(`SELECT * FROM events WHERE owner_id = $1 ORDER BY %s %s`, column, direction),
-		ownerID,
+		fmt.Sprintf(`SELECT * FROM events WHERE %s ORDER BY %s %s`, where, column, direction),
+		userID,
 	)
 	defer rows.Close()
 	if err != nil {

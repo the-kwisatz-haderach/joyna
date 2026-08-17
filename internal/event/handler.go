@@ -133,8 +133,13 @@ func (h *Handler) GetEvents(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	scope, err := ParseEventListScope(r.URL.Query().Get("scope"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-	events, err := h.service.GetEvents(r.Context(), ownerID, sortField, order)
+	events, err := h.service.GetEvents(r.Context(), ownerID, sortField, order, scope)
 	if err != nil {
 		slog.Error("failed to get events", "error", err)
 		http.Error(w, "failed to get events", http.StatusInternalServerError)
