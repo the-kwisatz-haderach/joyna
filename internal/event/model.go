@@ -137,3 +137,22 @@ func ParseSortOrder(s string) (SortOrder, error) {
 		return "", fmt.Errorf("invalid sort order: %q", s)
 	}
 }
+
+type EventListScope string
+
+const (
+	EventListScopeOwned   EventListScope = "owned"
+	EventListScopeInvited EventListScope = "invited"
+	EventListScopeAll     EventListScope = "all"
+)
+
+func ParseEventListScope(s string) (EventListScope, error) {
+	switch EventListScope(s) {
+	case "":
+		return EventListScopeOwned, nil
+	case EventListScopeOwned, EventListScopeInvited, EventListScopeAll:
+		return EventListScope(s), nil
+	default:
+		return "", fmt.Errorf("invalid scope: %q", s)
+	}
+}
