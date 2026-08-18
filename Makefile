@@ -3,6 +3,10 @@ ENV ?= development
 -include .env.$(ENV)
 export
 
+#  gcloud auth configure-docker <region>-docker.pkg.dev
+TAG=$(git rev-parse --short HEAD)
+REPO=$(GCP_CLOUD_REGION)-docker.pkg.dev/$(GCP_CLOUD_PROJECT_ID)/joyna
+
 # Creates new db migration following correct sequence.
 .PHONY: migrate-create
 migrate-create:
@@ -25,3 +29,11 @@ integration-tests:
 .PHONY: build-api
 build-api:
 	go build ./cmd/api/main.go
+
+.PHONY: push-api-image
+push-api-image:
+	docker build -f Dockerfile -t $(REPO)/api:$(TAG) . && docker push $(REPO)/api:$(TAG)
+
+.PHONY: push-migrations-image
+push-migrations-image:
+	docker build -f Dockerfile.migrate -t $(REPO)/migrate:$(TAG) . && docker push $(REPO)/migrate:$(TAG)
