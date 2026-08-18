@@ -41,6 +41,12 @@ type CreateEventPayload struct {
 	DefaultSpreadAllowed int        `json:"defaultSpreadAllowed"`
 }
 
+var (
+	ErrNegativeSpread       = errors.New("spread can't be negative")
+	ErrInvalidEventId       = errors.New("eventId isn't valid")
+	ErrInvalidInvitedUserId = errors.New("invitedUserId isn't valid")
+)
+
 func (p *CreateEventPayload) Sanitize() {
 	p.Name = strings.TrimSpace(p.Name)
 	p.Description = strings.TrimSpace(p.Description)
@@ -52,7 +58,7 @@ func (p CreateEventPayload) Validate() error {
 		return errors.New("name must not be empty")
 	}
 	if p.DefaultSpreadAllowed < 0 {
-		return errors.New("defaultSpreadAllowed can't be negative")
+		return ErrNegativeSpread
 	}
 	return nil
 }
@@ -65,13 +71,13 @@ type CreateEventInvitePayload struct {
 
 func (p CreateEventInvitePayload) Validate() error {
 	if err := uuid.Validate(p.EventID); err != nil {
-		return errors.New("eventId isn't valid")
+		return ErrInvalidEventId
 	}
 	if err := uuid.Validate(p.InvitedUserID); err != nil {
-		return errors.New("invitedUserId isn't valid")
+		return ErrInvalidInvitedUserId
 	}
 	if p.SpreadAllowed < 0 {
-		return errors.New("spreadAllowed can't be negative")
+		return ErrNegativeSpread
 	}
 	return nil
 }
@@ -97,7 +103,7 @@ type UpdateEventPayload struct {
 
 func (p UpdateEventPayload) Validate() error {
 	if p.DefaultSpreadAllowed != nil && *p.DefaultSpreadAllowed < 0 {
-		return errors.New("defaultSpreadAllowed can't be negative")
+		return ErrNegativeSpread
 	}
 	return nil
 }
