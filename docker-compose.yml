@@ -7,12 +7,12 @@ services:
     ports:
       - "${API_PORT:-8080}:8080"
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
+      DB_HOST: ${POSTGRES_HOST:-db}
+      DB_PORT: ${POSTGRES_PORT:-5432}
       DB_USER: ${POSTGRES_USER:-joyna}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-joyna}
       DB_NAME: ${POSTGRES_DB:-joyna}
-      DATABASE_URL: postgres://${POSTGRES_USER:-joyna}:${POSTGRES_PASSWORD:-joyna}@db:5432/${POSTGRES_DB:-joyna}?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-joyna}:${POSTGRES_PASSWORD:-joyna}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-joyna}?sslmode=disable
     depends_on:
       db:
         condition: service_healthy
@@ -45,7 +45,7 @@ services:
       - ./migrations:/migrations
     command:
       - "-path=/migrations"
-      - "-database=postgres://${POSTGRES_USER:-joyna}:${POSTGRES_PASSWORD:-joyna}@db:5432/${POSTGRES_DB:-joyna}?sslmode=disable"
+      - "-database=postgres://${POSTGRES_USER:-joyna}:${POSTGRES_PASSWORD:-joyna}@${POSTGRES_HOST:-db}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-joyna}?sslmode=disable"
       - "up"
 
   pgadmin:

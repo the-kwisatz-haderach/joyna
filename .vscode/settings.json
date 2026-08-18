@@ -1,3 +1,7 @@
 {
-  "Prettier-SQL.denseOperators": false
+  "Prettier-SQL.denseOperators": false,
+  "go.buildFlags": ["-tags=integration"],
+  "gopls": {
+    "buildFlags": ["-tags=integration"]
+  }
 }
