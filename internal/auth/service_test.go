@@ -26,12 +26,12 @@ func TestRegister(t *testing.T) {
 		Name:  "hello",
 		Email: "world",
 	}
-	var fakeRepository = &fakeRepository{
+	var repo = &fakeRepository{
 		createUserFunc: func(ctx context.Context, name, email, passwordHash string) (User, error) {
 			return createdUser, nil
 		},
 	}
-	service := NewService(fakeRepository)
+	service := NewService(repo)
 	user, err := service.Register(context.Background(), "name", "email", "pass")
 	require.NoError(t, err)
 	require.Equal(t, createdUser, user)
@@ -46,12 +46,12 @@ func TestAuthenticate_Valid(t *testing.T) {
 		Name:  "hello",
 		Email: "world",
 	}
-	var fakeRepository = &fakeRepository{
+	var repo = &fakeRepository{
 		getUserByEmailFunc: func(ctx context.Context, email string) (User, string, error) {
 			return storedUser, string(correctHash), nil
 		},
 	}
-	service := NewService(fakeRepository)
+	service := NewService(repo)
 	user, err := service.Authenticate(context.Background(), "email", password)
 	require.NoError(t, err)
 	require.Equal(t, storedUser, user)
@@ -66,12 +66,12 @@ func TestAuthenticate_InvalidPassword(t *testing.T) {
 		Name:  "hello",
 		Email: "world",
 	}
-	var fakeRepository = &fakeRepository{
+	var repo = &fakeRepository{
 		getUserByEmailFunc: func(ctx context.Context, email string) (User, string, error) {
 			return storedUser, string(correctHash), nil
 		},
 	}
-	service := NewService(fakeRepository)
+	service := NewService(repo)
 	user, err := service.Authenticate(context.Background(), "email", "invalid_pass")
 	require.ErrorIs(t, err, ErrInvalidCredentials)
 	require.Equal(t, User{}, user)
@@ -82,12 +82,12 @@ func TestAuthenticate_UserNotFound(t *testing.T) {
 	correctHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	var fakeRepository = &fakeRepository{
+	var repo = &fakeRepository{
 		getUserByEmailFunc: func(ctx context.Context, email string) (User, string, error) {
 			return User{}, string(correctHash), ErrUserNotFound
 		},
 	}
-	service := NewService(fakeRepository)
+	service := NewService(repo)
 	_, err = service.Authenticate(context.Background(), "email", password)
 	require.ErrorIs(t, err, ErrInvalidCredentials)
 }
