@@ -1,6 +1,6 @@
 ENV ?= development
 -include .env
--include .env.$(env)
+-include .env.$(ENV)
 export
 
 # Creates new db migration following correct sequence.

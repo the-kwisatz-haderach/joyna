@@ -21,8 +21,8 @@ func TestPostgresConnection(t *testing.T) {
 
 	t.Run("test migrations setup", func(t *testing.T) {
 		pool, err := dbtest.NewPoolWithMigrations(ctx, pgContainer)
-		defer pool.Close()
 		require.NoError(t, err)
+		defer pool.Close()
 
 		_, err = pool.Exec(ctx, "INSERT INTO users(name, email) VALUES ($1, $2)", "John Doe", "john.doe@test.com")
 		require.NoError(t, err)

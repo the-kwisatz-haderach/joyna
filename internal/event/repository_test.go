@@ -22,8 +22,8 @@ func TestEventRepository(t *testing.T) {
 	require.NoError(t, err)
 
 	pool, err := dbtest.NewPoolWithMigrations(ctx, pgContainer)
-	defer pool.Close()
 	require.NoError(t, err)
+	defer pool.Close()
 
 	repo := NewRepository(pool)
 	user := authtest.CreateUser(t, pool)

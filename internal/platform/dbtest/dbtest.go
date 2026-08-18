@@ -40,35 +40,34 @@ func InitTestContainer(ctx context.Context) (*postgres.PostgresContainer, error)
 	}
 
 	return pgContainer, err
-
 }
 
 func NewPoolWithMigrations(ctx context.Context, pgContainer *postgres.PostgresContainer) (*pgxpool.Pool, error) {
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {
-		return &pgxpool.Pool{}, err
+		return nil, err
 	}
 
 	pool, err := pgxpool.New(ctx, connStr)
 
 	if err != nil {
-		return &pgxpool.Pool{}, err
+		return nil, err
 	}
 
 	files, err := filepath.Glob(filepath.Join(utils.ProjectRoot(), "migrations", "*.up.sql"))
 	if err != nil {
-		return &pgxpool.Pool{}, err
+		return nil, err
 	}
 	sort.Strings(files)
 
 	for _, file := range files {
 		sql, err := os.ReadFile(file)
 		if err != nil {
-			return &pgxpool.Pool{}, err
+			return nil, err
 		}
 		_, err = pool.Exec(ctx, string(sql))
 		if err != nil {
-			return &pgxpool.Pool{}, err
+			return nil, err
 		}
 	}
 
