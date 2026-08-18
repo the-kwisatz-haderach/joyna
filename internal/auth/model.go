@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+var (
+	ErrEmptyName     = errors.New("name can't be empty")
+	ErrEmptyEmail    = errors.New("email can't be empty")
+	ErrEmptyPassword = errors.New("password can't be empty")
+)
+
 type User struct {
 	Id                string    `json:"id" db:"id"`
 	Name              string    `json:"name" db:"name"`
@@ -33,13 +39,13 @@ func (p *RegisterUserPayload) Sanitize() {
 
 func (p RegisterUserPayload) Validate() error {
 	if p.Name == "" {
-		return errors.New("name can't be empty")
+		return ErrEmptyName
 	}
 	if p.Email == "" {
-		return errors.New("email can't be empty")
+		return ErrEmptyEmail
 	}
 	if p.Password == "" {
-		return errors.New("password can't be empty")
+		return ErrEmptyPassword
 	}
 	return nil
 }
