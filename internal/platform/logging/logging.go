@@ -21,6 +21,6 @@ func New(appEnv string) *slog.Logger {
 }
 
 func Fatal(msg string, args ...any) {
-	slog.Error(msg, args)
+	slog.Error(msg, args...)
 	os.Exit(1)
 }
