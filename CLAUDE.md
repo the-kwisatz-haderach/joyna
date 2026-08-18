@@ -52,6 +52,33 @@ top-level `slog.Info`/`slog.Error` without importing the `logging` package).
 - Constraint violations are detected via `errors.As(err, &pgErr)` against `*pgconn.PgError` and its `.Code`
   (SQLSTATE, e.g. `"23505"` unique_violation), translated into a sentinel in the repository layer.
 
+## Testing
+
+- **Unit tests** live in `internal/<domain>/*_test.go`, package `<domain>` (not `<domain>_test`) so they can use
+  unexported identifiers directly. No mocking library — `service_test.go` hand-rolls a `fakeRepository` struct
+  with one function field per method of the unexported `repository` interface; each test sets only the fields it
+  needs. This works because `NewService` takes the interface, not the concrete `*Repository`.
+- **Integration tests** live in `internal/<domain>/repository_test.go` (same co-location rule) and hit a real,
+  ephemeral Postgres via `testcontainers-go`. Gated behind `//go:build integration` (plus the legacy
+  `// +build integration` line and a blank line before `package`) so `go test ./...` skips them by default;
+  `make integration-tests` (`go test ./... -tags=integration`) includes them. Bootstrapping is shared via
+  `internal/platform/dbtest` (`InitTestContainer`, `NewPoolWithMigrations` — runs every `migrations/*.up.sql` in
+  order against the container). Call `testcontainers.CleanupContainer(t, pgContainer)` immediately after creating
+  the container and _before_ checking its error, not a manual `defer` — that ordering registers cleanup even on
+  partial failure, and a `defer` inside a helper function (rather than the test itself) only fires at the end of
+  that helper, not the end of the test.
+- **Cross-package test fixtures** (e.g. `event`'s tests needing a real user row for the `owner_id` FK) live in a
+  `<domain>test` sibling package, e.g. `internal/auth/authtest`, exported and importable from other packages'
+  tests — unlike a plain `_test.go` file, whose contents aren't importable outside their own package. Fixture
+  helpers go through the real repository method (e.g. `authtest.CreateUser` calls `auth.Repository.CreateUser`)
+  rather than raw SQL, so they can't silently drift from the real insert logic as the schema evolves.
+
+## Makefile
+
+- `make build-api` — `go build` the API binary.
+- `make migrate-create name=...` / `make migrate-up` / `make migrate-down` — golang-migrate against `/migrations`.
+- `make integration-tests` — see Testing above. Plain `go test ./...` (no Makefile target yet) runs unit tests only.
+
 ## Local dev
 
 - `docker compose up -d` runs `api`, `db`, `migrate` (one-shot, gated on `db`'s healthcheck), and `pgadmin`.
