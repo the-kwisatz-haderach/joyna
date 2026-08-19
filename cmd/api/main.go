@@ -21,7 +21,8 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	dbCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	cfg, err := config.Load()
 
 	if err != nil {
@@ -29,7 +30,7 @@ func main() {
 	}
 	logging.New(cfg.AppEnv)
 
-	pool, err := db.New(ctx, cfg.DatabaseURL)
+	pool, err := db.New(dbCtx, cfg.DatabaseURL)
 
 	if err != nil {
 		logging.Fatal("failed to initialize database", "error", err)
@@ -95,7 +96,7 @@ func main() {
 		}
 	}()
 
-	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	<-ctx.Done()
 
