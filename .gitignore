@@ -43,3 +43,6 @@ terraform/crash.log
 terraform/crash.*.log
 terraform/override.tf
 terraform/override.tf.json
+
+# k8s
+k8s/*secret.yml
