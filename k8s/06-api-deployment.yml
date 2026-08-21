@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: api
-          image: europe-north2-docker.pkg.dev/joyna-505918/joyna/api:<tag>
+          image: europe-north2-docker.pkg.dev/joyna-505918/joyna/api:e220a8d
           livenessProbe:
             httpGet:
               path: /health
@@ -34,7 +34,7 @@ spec:
           resources:
             requests:
               cpu: 250m
-              memory: 256Mi
+              memory: 128Mi
           ports:
             - containerPort: 8080
           env:

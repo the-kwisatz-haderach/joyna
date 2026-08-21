@@ -10,3 +10,9 @@ resource "google_project_iam_member" "gke_artifact_reader" {
   role    = "roles/artifactregistry.reader"
   member  = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
 }
+
+resource "google_project_iam_member" "gke_container_defaultNodeServiceAccount" {
+  project = var.project_id
+  role    = "roles/container.defaultNodeServiceAccount"
+  member  = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+}
