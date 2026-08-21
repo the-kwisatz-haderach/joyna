@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  namespace: joyna
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: europe-north2-docker.pkg.dev/joyna-505918/joyna/migrate:e220a8d
+          args:
+            - -path=/migrations
+            - -database=$(DATABASE_URL)
+            - up
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: joyna-secrets
+                  key: DATABASE_URL

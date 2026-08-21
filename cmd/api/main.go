@@ -2,9 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
@@ -17,7 +21,8 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	dbCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	cfg, err := config.Load()
 
 	if err != nil {
@@ -25,7 +30,7 @@ func main() {
 	}
 	logging.New(cfg.AppEnv)
 
-	pool, err := db.New(ctx, cfg.DatabaseURL)
+	pool, err := db.New(dbCtx, cfg.DatabaseURL)
 
 	if err != nil {
 		logging.Fatal("failed to initialize database", "error", err)
@@ -50,7 +55,15 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	// Lifecycle handlers
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	mux.HandleFunc("GET /ready", func(w http.ResponseWriter, r *http.Request) {
+		if err := pool.Ping(r.Context()); err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -71,5 +84,25 @@ func main() {
 	mux.HandleFunc("PATCH /groups/{id}", authHandler.Middleware(groupHandler.UpdateGroup))
 	mux.HandleFunc("DELETE /groups/{id}", authHandler.Middleware(groupHandler.DeleteGroup))
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", cfg.AppPort), sessionManager.LoadAndSave(mux)))
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.AppPort),
+		Handler: sessionManager.LoadAndSave(mux),
+	}
+
+	go func() {
+		slog.Info("starting server", "port", cfg.AppPort)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logging.Fatal("server failed", "error", err)
+		}
+	}()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	<-ctx.Done()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		slog.Error("graceful shutdown failed", "error", err)
+	}
 }
