@@ -6,8 +6,11 @@ export
 DATABASE_URL ?= postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable
 export DATABASE_URL
 
-TAG=$(git rev-parse --short HEAD)
+TAG=$(shell git rev-parse --short HEAD)
+export TAG
+
 REPO=$(GCP_CLOUD_REGION)-docker.pkg.dev/$(GCP_CLOUD_PROJECT_ID)/joyna
+export REPO
 
 # Creates new db migration following correct sequence.
 .PHONY: migrate-create
