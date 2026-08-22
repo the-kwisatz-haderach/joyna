@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This app is part of a project where users can create, view, update and share events to their network. Events can be forwarded by the invited users to their networks. Users can view upcoming and past events as well as connect with attendees from past events. Users can also group members of their network.
 
-This project is a Go web server which handles the different actions taken by users in a separate frontend app.
+This project is a Go web server which handles the different actions taken by users in a separate frontend app,
+which lives in this same repo under `frontend/` (a monorepo, not a submodule — own toolchain, own `package.json`,
+doesn't touch `go.mod`). See "Frontend" below for its stack and conventions.
 The database used is PostgreSQL, which is updated through migrations found in /migrations.
 
 Example domains which can be used as templates for future development: `internal/auth` (registration/login/session), `internal/event` (create/update/delete).
@@ -78,6 +80,31 @@ top-level `slog.Info`/`slog.Error` without importing the `logging` package).
 - `make build-api` — `go build` the API binary.
 - `make migrate-create name=...` / `make migrate-up` / `make migrate-down` — golang-migrate against `/migrations`.
 - `make integration-tests` — see Testing above. Plain `go test ./...` (no Makefile target yet) runs unit tests only.
+
+## Frontend
+
+`frontend/` is a Vite + React 19 + TypeScript app, scaffolded via `npm create vite@latest -- --template react-ts`.
+It's a separate toolchain from the Go side — no shared build step, no path from `internal/`/`cmd/` into it.
+
+- **Component library: shadcn/ui** (`components.json`: style `base-mira`, base color `mist`, icon library
+  `hugeicons`). Components are not an installed dependency you import from `node_modules` — the shadcn CLI copies
+  component source directly into the repo (`npx shadcn@latest add <component>`, landing in `components/ui/`), so
+  they're yours to read/edit directly like any other source file. Built on Tailwind CSS v4 (`@tailwindcss/vite`
+  plugin — no separate `tailwind.config.*`, Tailwind v4 is configured via CSS) and Radix-style primitives via
+  `@base-ui/react`.
+- **Theming is CSS custom properties, not a JS theme object** — all theme tokens (`--text`, `--bg`, `--accent`,
+  `--border`, ...) live in `:root` in `src/index.css`. Retheming means editing values there, not passing a
+  `theme` prop through a provider.
+- **Path alias `@/*`** resolves to the `frontend/` root (`tsconfig.json` + `components.json` aliases agree):
+  `@/components`, `@/components/ui`, `@/lib` (→ `lib/utils.ts`), `@/hooks` (not yet used). Note `components/`
+  and `lib/` sit at the `frontend/` root, not under `src/` — that's shadcn's default layout for this config,
+  keep new shadcn-generated files following the same placement.
+- **Scripts** (`frontend/package.json`): `dev`, `build` (`tsc -b && vite build`), `typecheck` (`tsc -b` alone —
+  safe to run standalone since `tsconfig.app.json` sets `noEmit: true`), `lint` (`oxlint` — not ESLint; Vite's
+  current scaffold default), `preview`.
+- **CI**: `.github/workflows/fe-check.yml` runs typecheck → lint → build, gated behind a `dorny/paths-filter`
+  check so it only actually runs when a push/PR touches `frontend/**` (unlike `check.yml`, this isn't yet wired
+  as a required status check in branch protection).
 
 ## Local dev
 
