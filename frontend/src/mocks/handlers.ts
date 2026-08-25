@@ -2,16 +2,19 @@ import { http, HttpResponse } from "msw"
 
 import {
   MOCK_PASSWORD,
+  mockEventInvites,
   mockEvents,
   mockGroups,
   mockUsers,
   type MockEvent,
+  type MockEventInvite,
   type MockGroup,
 } from "./data"
 
 // Mutable in-memory copies so writes made during a session don't leak
 // between page reloads or affect the fixtures other handlers read from.
 let events = [...mockEvents]
+let eventInvites = [...mockEventInvites]
 let groups = [...mockGroups]
 const currentUser = mockUsers[0]
 
@@ -53,7 +56,35 @@ export const handlers = [
 
   http.post("/api/auth/logout", () => new HttpResponse(null, { status: 204 })),
 
-  http.get("/api/events", () => HttpResponse.json(events)),
+  http.get("/api/events", ({ request }) => {
+    const url = new URL(request.url)
+    const scope = url.searchParams.get("scope") ?? "owned"
+    const sortField =
+      url.searchParams.get("sort") === "createdAt" ? "createdAt" : "date"
+    const order = url.searchParams.get("order") === "asc" ? "asc" : "desc"
+
+    let scoped: MockEvent[]
+    if (scope === "invited") {
+      const invitedEventIds = new Set(
+        eventInvites
+          .filter((invite) => invite.invitedUserId === currentUser.id)
+          .map((invite) => invite.eventId),
+      )
+      scoped = events.filter((event) => invitedEventIds.has(event.id))
+    } else if (scope === "all") {
+      scoped = events
+    } else {
+      scoped = events.filter((event) => event.ownerId === currentUser.id)
+    }
+
+    const sorted = [...scoped].sort((a, b) => {
+      const diff =
+        new Date(a[sortField]).getTime() - new Date(b[sortField]).getTime()
+      return order === "asc" ? diff : -diff
+    })
+
+    return HttpResponse.json(sorted)
+  }),
 
   http.post("/api/events", async ({ request }) => {
     const body = (await request.json()) as Partial<MockEvent>
@@ -106,14 +137,16 @@ export const handlers = [
     if (!body.eventId || !events.some((event) => event.id === body.eventId)) {
       return new HttpResponse("event not found", { status: 404 })
     }
-    return HttpResponse.json({
+    const created: MockEventInvite = {
       eventId: body.eventId,
       invitedBy: currentUser.id,
-      invitedUserId: body.invitedUserId,
+      invitedUserId: body.invitedUserId ?? "",
       status: "pending",
       spreadAllowed: body.spreadAllowed ?? 0,
       createdAt: new Date().toISOString(),
-    })
+    }
+    eventInvites = [...eventInvites, created]
+    return HttpResponse.json(created)
   }),
 
   http.post("/api/groups", async ({ request }) => {

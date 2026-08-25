@@ -27,6 +27,15 @@ export type MockGroup = {
   isFavorite: boolean
 }
 
+export type MockEventInvite = {
+  eventId: string
+  invitedBy: string
+  invitedUserId: string
+  status: "pending" | "accepted" | "declined"
+  spreadAllowed: number
+  createdAt: string
+}
+
 // Password accepted for every mock user when logging in via /auth/login.
 export const MOCK_PASSWORD = "password123"
 
@@ -68,6 +77,28 @@ export const mockEvents: MockEvent[] = [
     location: "Ada's place",
     type: "gathering",
     defaultSpreadAllowed: 1,
+  },
+  {
+    id: "c1a2b3c4-1111-4a1a-8a1a-000000000003",
+    ownerId: mockUsers[1].id,
+    name: "Turing Award Dinner",
+    description: "Celebrating a milestone in computing.",
+    createdAt: "2026-07-20T12:00:00Z",
+    date: "2026-09-12T19:00:00Z",
+    location: "The Guild Hall, Cambridge",
+    type: "dinner",
+    defaultSpreadAllowed: 0,
+  },
+]
+
+export const mockEventInvites: MockEventInvite[] = [
+  {
+    eventId: mockEvents[2].id,
+    invitedBy: mockUsers[1].id,
+    invitedUserId: mockUsers[0].id,
+    status: "pending",
+    spreadAllowed: 0,
+    createdAt: "2026-07-21T09:00:00Z",
   },
 ]
 
