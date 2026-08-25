@@ -35,8 +35,8 @@ type EventInvite struct {
 // to it, since the detail page renders owner/invitee actions differently.
 type EventView struct {
 	Event
-	IsOwner             bool               `json:"isOwner"`
-	ViewerInviteStatus  *EventInviteStatus `json:"viewerInviteStatus,omitempty"`
+	IsOwner            bool               `json:"isOwner"`
+	ViewerInviteStatus *EventInviteStatus `json:"viewerInviteStatus,omitempty"`
 }
 
 // Attendee is a user attending an event, either as its owner or via an

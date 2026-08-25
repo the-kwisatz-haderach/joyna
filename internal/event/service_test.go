@@ -16,7 +16,7 @@ type fakeRepository struct {
 	getEventsByOwnerFunc      func(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]Event, error)
 	getEventFunc              func(ctx context.Context, eventID string) (Event, error)
 	getEventInviteFunc        func(ctx context.Context, eventID, userID string) (EventInvite, error)
-	respondToEventInviteFunc  func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error)
+	respondToEventInviteFunc func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error)
 	listEventAttendeesFunc    func(ctx context.Context, eventID string) ([]Attendee, error)
 	createEventInviteFunc     func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 	forwardEventInviteFunc    func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
