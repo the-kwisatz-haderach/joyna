@@ -2,10 +2,12 @@ import { http, HttpResponse } from "msw"
 
 import {
   MOCK_PASSWORD,
+  mockConnections,
   mockEventInvites,
   mockEvents,
   mockGroups,
   mockUsers,
+  type MockConnection,
   type MockEvent,
   type MockEventInvite,
   type MockGroup,
@@ -16,7 +18,86 @@ import {
 let events = [...mockEvents]
 let eventInvites = [...mockEventInvites]
 let groups = [...mockGroups]
+let connections = [...mockConnections]
 const currentUser = mockUsers[0]
+
+function serializeConnection(connection: MockConnection) {
+  const contact = mockUsers.find((user) => user.id === connection.contactId)
+  const group = connection.groupId
+    ? groups.find((candidate) => candidate.id === connection.groupId)
+    : undefined
+  return {
+    contactId: connection.contactId,
+    contactName: contact?.name ?? "",
+    contactEmail: contact?.email ?? "",
+    createdAt: connection.createdAt,
+    isFavorite: connection.isFavorite,
+    groupId: group?.id,
+    groupName: group?.name,
+    groupIsFavorite: group?.isFavorite,
+  }
+}
+
+// Attendees of an event: its owner, plus anyone invited whose invite hasn't
+// been declined — mirrors the backend's proxy for "attended" (there's no
+// check-in/RSVP-confirmation concept yet).
+function eventAttendees(eventId: string): Set<string> {
+  const attendees = new Set<string>()
+  const event = events.find((candidate) => candidate.id === eventId)
+  if (event) {
+    attendees.add(event.ownerId)
+  }
+  for (const invite of eventInvites) {
+    if (invite.eventId === eventId && invite.status !== "declined") {
+      attendees.add(invite.invitedUserId)
+    }
+  }
+  return attendees
+}
+
+function listPotentialConnections(userId: string) {
+  const myEventIds = new Set(
+    events
+      .filter((event) => event.ownerId === userId)
+      .map((event) => event.id),
+  )
+  for (const invite of eventInvites) {
+    if (invite.invitedUserId === userId && invite.status !== "declined") {
+      myEventIds.add(invite.eventId)
+    }
+  }
+
+  const connectedContactIds = new Set(
+    connections
+      .filter((connection) => connection.userId === userId)
+      .map((connection) => connection.contactId),
+  )
+
+  const sharedEventCountByUserId = new Map<string, number>()
+  for (const eventId of myEventIds) {
+    for (const attendeeId of eventAttendees(eventId)) {
+      if (attendeeId === userId || connectedContactIds.has(attendeeId)) {
+        continue
+      }
+      sharedEventCountByUserId.set(
+        attendeeId,
+        (sharedEventCountByUserId.get(attendeeId) ?? 0) + 1,
+      )
+    }
+  }
+
+  return [...sharedEventCountByUserId.entries()]
+    .map(([candidateId, sharedEventCount]) => {
+      const user = mockUsers.find((candidate) => candidate.id === candidateId)
+      return {
+        userId: candidateId,
+        name: user?.name ?? "",
+        email: user?.email ?? "",
+        sharedEventCount,
+      }
+    })
+    .sort((a, b) => b.sharedEventCount - a.sharedEventCount)
+}
 
 export const handlers = [
   http.post("/api/auth/register", async ({ request }) => {
@@ -183,5 +264,73 @@ export const handlers = [
     }
     groups = groups.filter((group) => group.id !== params.id)
     return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.get("/api/network", () => {
+    const ownConnections = connections
+      .filter((connection) => connection.userId === currentUser.id)
+      .map(serializeConnection)
+    return HttpResponse.json(ownConnections)
+  }),
+
+  http.get("/api/network/potential", () => {
+    return HttpResponse.json(listPotentialConnections(currentUser.id))
+  }),
+
+  http.post("/api/network", async ({ request }) => {
+    const body = (await request.json()) as {
+      contactId?: string
+      groupId?: string
+    }
+    if (!body.contactId || !mockUsers.some((user) => user.id === body.contactId)) {
+      return new HttpResponse("contact not found", { status: 404 })
+    }
+    if (body.contactId === currentUser.id) {
+      return new HttpResponse("can't add yourself to your network", {
+        status: 400,
+      })
+    }
+    if (
+      connections.some(
+        (connection) =>
+          connection.userId === currentUser.id &&
+          connection.contactId === body.contactId,
+      )
+    ) {
+      return new HttpResponse("connection already exists", { status: 409 })
+    }
+    const created: MockConnection = {
+      userId: currentUser.id,
+      contactId: body.contactId,
+      createdAt: new Date().toISOString(),
+      isFavorite: false,
+      groupId: body.groupId,
+    }
+    connections = [...connections, created]
+    return HttpResponse.json(serializeConnection(created))
+  }),
+
+  http.patch("/api/network/:contactId", async ({ request, params }) => {
+    const index = connections.findIndex(
+      (connection) =>
+        connection.userId === currentUser.id &&
+        connection.contactId === params.contactId,
+    )
+    if (index === -1) {
+      return new HttpResponse("connection not found", { status: 404 })
+    }
+    const body = (await request.json()) as {
+      groupId?: string
+      isFavorite?: boolean
+    }
+    const updated = { ...connections[index] }
+    if (body.groupId !== undefined) {
+      updated.groupId = body.groupId === "" ? undefined : body.groupId
+    }
+    if (body.isFavorite !== undefined) {
+      updated.isFavorite = body.isFavorite
+    }
+    connections[index] = updated
+    return HttpResponse.json(serializeConnection(updated))
   }),
 ]

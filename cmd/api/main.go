@@ -15,6 +15,7 @@ import (
 	"github.com/the-kwisatz-haderach/joyna/internal/auth"
 	"github.com/the-kwisatz-haderach/joyna/internal/event"
 	"github.com/the-kwisatz-haderach/joyna/internal/group"
+	"github.com/the-kwisatz-haderach/joyna/internal/network"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/config"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/db"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/logging"
@@ -53,6 +54,10 @@ func main() {
 	groupService := group.NewService(groupRepo)
 	groupHandler := group.NewHandler(groupService)
 
+	networkRepo := network.NewRepository(pool)
+	networkService := network.NewService(networkRepo)
+	networkHandler := network.NewHandler(networkService)
+
 	mux := http.NewServeMux()
 
 	// Lifecycle handlers
@@ -83,6 +88,12 @@ func main() {
 	mux.HandleFunc("POST /groups", authHandler.Middleware(groupHandler.CreateGroup))
 	mux.HandleFunc("PATCH /groups/{id}", authHandler.Middleware(groupHandler.UpdateGroup))
 	mux.HandleFunc("DELETE /groups/{id}", authHandler.Middleware(groupHandler.DeleteGroup))
+
+	// Network handlers
+	mux.HandleFunc("GET /network", authHandler.Middleware(networkHandler.GetConnections))
+	mux.HandleFunc("GET /network/potential", authHandler.Middleware(networkHandler.GetPotentialConnections))
+	mux.HandleFunc("POST /network", authHandler.Middleware(networkHandler.CreateConnection))
+	mux.HandleFunc("PATCH /network/{contactId}", authHandler.Middleware(networkHandler.UpdateConnection))
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.AppPort),

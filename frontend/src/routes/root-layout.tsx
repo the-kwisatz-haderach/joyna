@@ -28,6 +28,12 @@ function RootLayout() {
               <Link to="/events" className="text-foreground hover:text-primary">
                 Events
               </Link>
+              <Link
+                to="/network"
+                className="text-foreground hover:text-primary"
+              >
+                Network
+              </Link>
               <button
                 type="button"
                 onClick={handleLogout}

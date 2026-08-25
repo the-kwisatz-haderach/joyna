@@ -1,0 +1,61 @@
+@baseUrl = http://localhost:8080
+
+# Requires an active session — run the Login request in auth.http first.
+# REST Client shares its cookie jar across files in the same VS Code window.
+
+### List current network
+GET {{baseUrl}}/network
+
+### List potential network (users who attended shared events, not yet connected)
+GET {{baseUrl}}/network/potential
+
+### Add a contact to your network
+# @name createConnection
+POST {{baseUrl}}/network
+Content-Type: application/json
+
+{
+  "contactId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Add a contact to your network, straight into a group
+POST {{baseUrl}}/network
+Content-Type: application/json
+
+{
+  "contactId": "00000000-0000-0000-0000-000000000000",
+  "groupId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Add a contact — invalid contactId, expect 400
+POST {{baseUrl}}/network
+Content-Type: application/json
+
+{
+  "contactId": "not-a-uuid"
+}
+
+### Update a connection — mark as favorite and move into a group
+PATCH {{baseUrl}}/network/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+
+{
+  "isFavorite": true,
+  "groupId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Update a connection — clear its group (back to the default "Acquaintances" bucket)
+PATCH {{baseUrl}}/network/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+
+{
+  "groupId": ""
+}
+
+### Update a connection — invalid id, expect 400
+PATCH {{baseUrl}}/network/not-a-uuid
+Content-Type: application/json
+
+{
+  "isFavorite": true
+}
