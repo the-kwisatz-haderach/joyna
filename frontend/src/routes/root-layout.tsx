@@ -1,14 +1,14 @@
-import { Link, Outlet } from "react-router"
+import { Link, Outlet } from 'react-router'
 
-import { useAuth } from "../auth-context"
+import { useAuth } from '../auth-context'
 
 function RootLayout() {
   const { user, logout } = useAuth()
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", {
-      method: "POST",
-      credentials: "include",
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
     })
     logout()
   }
@@ -22,8 +22,8 @@ function RootLayout() {
         <nav className="flex items-center gap-4 text-sm">
           {user ? (
             <>
-              <Link to="/" className="text-foreground hover:text-primary">
-                Home
+              <Link to="/events" className="text-foreground hover:text-primary">
+                Events
               </Link>
               <button
                 type="button"
