@@ -6,7 +6,10 @@ function RootLayout() {
   const { user, logout } = useAuth()
 
   async function handleLogout() {
-    await fetch("/auth/logout", { method: "POST", credentials: "include" })
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "include",
+    })
     logout()
   }
 

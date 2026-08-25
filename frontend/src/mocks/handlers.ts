@@ -16,7 +16,7 @@ let groups = [...mockGroups]
 const currentUser = mockUsers[0]
 
 export const handlers = [
-  http.post("/auth/register", async ({ request }) => {
+  http.post("/api/auth/register", async ({ request }) => {
     const body = (await request.json()) as {
       name?: string
       email?: string
@@ -39,7 +39,7 @@ export const handlers = [
     })
   }),
 
-  http.post("/auth/login", async ({ request }) => {
+  http.post("/api/auth/login", async ({ request }) => {
     const body = (await request.json()) as {
       email?: string
       password?: string
@@ -51,11 +51,11 @@ export const handlers = [
     return HttpResponse.json(user)
   }),
 
-  http.post("/auth/logout", () => new HttpResponse(null, { status: 204 })),
+  http.post("/api/auth/logout", () => new HttpResponse(null, { status: 204 })),
 
-  http.get("/events", () => HttpResponse.json(events)),
+  http.get("/api/events", () => HttpResponse.json(events)),
 
-  http.post("/events", async ({ request }) => {
+  http.post("/api/events", async ({ request }) => {
     const body = (await request.json()) as Partial<MockEvent>
     if (!body.name?.trim()) {
       return new HttpResponse("name must not be empty", { status: 400 })
@@ -79,7 +79,7 @@ export const handlers = [
     return HttpResponse.json(created)
   }),
 
-  http.patch("/events/:id", async ({ request, params }) => {
+  http.patch("/api/events/:id", async ({ request, params }) => {
     const index = events.findIndex((event) => event.id === params.id)
     if (index === -1) {
       return new HttpResponse("event not found", { status: 404 })
@@ -89,7 +89,7 @@ export const handlers = [
     return HttpResponse.json(events[index])
   }),
 
-  http.delete("/events/:id", ({ params }) => {
+  http.delete("/api/events/:id", ({ params }) => {
     if (!events.some((event) => event.id === params.id)) {
       return new HttpResponse("event not found", { status: 404 })
     }
@@ -97,7 +97,7 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 })
   }),
 
-  http.post("/events/invites", async ({ request }) => {
+  http.post("/api/events/invites", async ({ request }) => {
     const body = (await request.json()) as {
       eventId?: string
       invitedUserId?: string
@@ -116,7 +116,7 @@ export const handlers = [
     })
   }),
 
-  http.post("/groups", async ({ request }) => {
+  http.post("/api/groups", async ({ request }) => {
     const body = (await request.json()) as Partial<MockGroup>
     if (!body.name?.trim()) {
       return new HttpResponse("group name must not be empty", {
@@ -134,7 +134,7 @@ export const handlers = [
     return HttpResponse.json(created)
   }),
 
-  http.patch("/groups/:id", async ({ request, params }) => {
+  http.patch("/api/groups/:id", async ({ request, params }) => {
     const index = groups.findIndex((group) => group.id === params.id)
     if (index === -1) {
       return new HttpResponse("group not found", { status: 404 })
@@ -144,7 +144,7 @@ export const handlers = [
     return HttpResponse.json(groups[index])
   }),
 
-  http.delete("/groups/:id", ({ params }) => {
+  http.delete("/api/groups/:id", ({ params }) => {
     if (!groups.some((group) => group.id === params.id)) {
       return new HttpResponse("group not found", { status: 404 })
     }
