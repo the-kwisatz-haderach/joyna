@@ -21,13 +21,18 @@ function RootLayout() {
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           {user ? (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="text-foreground hover:text-primary"
-            >
-              Log out
-            </button>
+            <>
+              <Link to="/" className="text-foreground hover:text-primary">
+                Home
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="text-foreground hover:text-primary"
+              >
+                Log out
+              </button>
+            </>
           ) : (
             <>
               <Link to="/login" className="text-foreground hover:text-primary">
