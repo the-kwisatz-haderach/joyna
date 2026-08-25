@@ -16,12 +16,12 @@ function renderEvents() {
 }
 
 describe("Events", () => {
-  it("renders a dummy create event button", async () => {
+  it("links the create event button to the create event screen", async () => {
     renderEvents()
 
     expect(
-      await screen.findByRole("button", { name: /create event/i }),
-    ).toBeInTheDocument()
+      await screen.findByRole("link", { name: /create event/i }),
+    ).toHaveAttribute("href", "/events/new")
   })
 
   it("splits events into upcoming and archive sections, each linking to a detail page", async () => {
