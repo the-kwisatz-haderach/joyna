@@ -36,6 +36,14 @@ export type MockEventInvite = {
   createdAt: string
 }
 
+export type MockConnection = {
+  userId: string
+  contactId: string
+  createdAt: string
+  isFavorite: boolean
+  groupId?: string
+}
+
 // Password accepted for every mock user when logging in via /auth/login.
 export const MOCK_PASSWORD = 'password123'
 
@@ -51,6 +59,18 @@ export const mockUsers: MockUser[] = [
     name: 'Alan Turing',
     email: 'alan@joyna.dev',
     joinedAt: '2026-02-14T09:00:00Z',
+  },
+  {
+    id: "b6e2b6d0-8f1a-4e3a-9c2d-333333333333",
+    name: "Margaret Hamilton",
+    email: "margaret@joyna.dev",
+    joinedAt: "2026-03-01T09:00:00Z",
+  },
+  {
+    id: "b6e2b6d0-8f1a-4e3a-9c2d-444444444444",
+    name: "Hedy Lamarr",
+    email: "hedy@joyna.dev",
+    joinedAt: "2026-03-18T09:00:00Z",
   },
 ]
 
@@ -111,6 +131,22 @@ export const mockEventInvites: MockEventInvite[] = [
     spreadAllowed: 0,
     createdAt: '2026-07-21T09:00:00Z',
   },
+  {
+    eventId: mockEvents[0].id,
+    invitedBy: mockUsers[0].id,
+    invitedUserId: mockUsers[2].id,
+    status: "accepted",
+    spreadAllowed: 1,
+    createdAt: "2026-06-02T09:00:00Z",
+  },
+  {
+    eventId: mockEvents[2].id,
+    invitedBy: mockUsers[1].id,
+    invitedUserId: mockUsers[3].id,
+    status: "pending",
+    spreadAllowed: 0,
+    createdAt: "2026-07-22T09:00:00Z",
+  },
 ]
 
 export const mockGroups: MockGroup[] = [
@@ -127,5 +163,17 @@ export const mockGroups: MockGroup[] = [
     name: 'Book Club',
     createdAt: '2026-03-05T09:00:00Z',
     isFavorite: false,
+  },
+]
+
+// Ada's (mockUsers[0]) current network. Connections without a groupId fall
+// back to the default "Acquaintances" bucket in the UI.
+export const mockConnections: MockConnection[] = [
+  {
+    userId: mockUsers[0].id,
+    contactId: mockUsers[1].id,
+    createdAt: "2026-02-20T09:00:00Z",
+    isFavorite: true,
+    groupId: mockGroups[0].id,
   },
 ]

@@ -8,6 +8,7 @@ import Events from './routes/events'
 import EventDetail from './routes/event-detail'
 import RequireAuth from './routes/require-auth'
 import RequireGuest from './routes/require-guest'
+import Network from './routes/network'
 
 export const router = createBrowserRouter([
   {
@@ -28,6 +29,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <EventDetail />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'network',
+        element: (
+          <RequireAuth>
+            <Network />
           </RequireAuth>
         ),
       },
