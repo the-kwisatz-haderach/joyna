@@ -80,8 +80,11 @@ func main() {
 	// Event handlers
 	mux.HandleFunc("GET /events", authHandler.Middleware(eventHandler.GetEvents))
 	mux.HandleFunc("POST /events", authHandler.Middleware(eventHandler.CreateEvent))
+	mux.HandleFunc("GET /events/{id}", authHandler.Middleware(eventHandler.GetEvent))
 	mux.HandleFunc("DELETE /events/{id}", authHandler.Middleware(eventHandler.DeleteEvent))
 	mux.HandleFunc("PATCH /events/{id}", authHandler.Middleware(eventHandler.UpdateEvent))
+	mux.HandleFunc("GET /events/{id}/attendees", authHandler.Middleware(eventHandler.GetEventAttendees))
+	mux.HandleFunc("PATCH /events/{id}/invite", authHandler.Middleware(eventHandler.RespondToEventInvite))
 	mux.HandleFunc("POST /events/invites", authHandler.Middleware(eventHandler.CreateEventInvite))
 
 	// Group handlers

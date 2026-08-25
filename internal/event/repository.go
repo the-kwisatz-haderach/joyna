@@ -142,6 +142,78 @@ func (r *Repository) GetEventsByOwner(ctx context.Context, userID string, sortFi
 	return events, nil
 }
 
+func (r *Repository) GetEventInvite(ctx context.Context, eventID, userID string) (EventInvite, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT * FROM event_invites WHERE event_id = $1 AND invited_user_id = $2`,
+		eventID, userID,
+	)
+	defer rows.Close()
+	if err != nil {
+		return EventInvite{}, fmt.Errorf("getting event invite: %w", err)
+	}
+
+	invite, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[EventInvite])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return EventInvite{}, ErrInviteNotFound
+		}
+		return EventInvite{}, fmt.Errorf("getting event invite: %w", err)
+	}
+
+	return invite, nil
+}
+
+func (r *Repository) RespondToEventInvite(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error) {
+	rows, err := r.pool.Query(ctx,
+		`UPDATE event_invites SET status = $3 WHERE event_id = $1 AND invited_user_id = $2 RETURNING *`,
+		eventID, userID, status,
+	)
+	defer rows.Close()
+	if err != nil {
+		return EventInvite{}, fmt.Errorf("responding to event invite: %w", err)
+	}
+
+	invite, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[EventInvite])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return EventInvite{}, ErrInviteNotFound
+		}
+		return EventInvite{}, fmt.Errorf("responding to event invite: %w", err)
+	}
+
+	return invite, nil
+}
+
+func (r *Repository) ListEventAttendees(ctx context.Context, eventID string) ([]Attendee, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT u.id AS user_id, u.name, u.email, TRUE AS is_owner
+		FROM events e
+		JOIN users u ON u.id = e.owner_id
+		WHERE e.id = $1
+		UNION
+		SELECT u.id AS user_id, u.name, u.email, FALSE AS is_owner
+		FROM event_invites ei
+		JOIN users u ON u.id = ei.invited_user_id
+		WHERE ei.event_id = $1 AND ei.status <> 'declined'
+		ORDER BY is_owner DESC, name ASC`,
+		eventID,
+	)
+	defer rows.Close()
+	if err != nil {
+		return nil, fmt.Errorf("listing event attendees: %w", err)
+	}
+
+	attendees, err := pgx.CollectRows(rows, pgx.RowToStructByName[Attendee])
+	if err != nil {
+		return nil, fmt.Errorf("listing event attendees: %w", err)
+	}
+	if attendees == nil {
+		attendees = []Attendee{}
+	}
+
+	return attendees, nil
+}
+
 func (r *Repository) CreateEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error) {
 	rows, err := r.pool.Query(ctx,
 		`INSERT INTO event_invites (invited_by, event_id, invited_user_id, spread_allowed) VALUES ($1, $2, $3, $4) RETURNING *`,

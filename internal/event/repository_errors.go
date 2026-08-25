@@ -13,6 +13,7 @@ var (
 	ErrAlreadyInvited      = errors.New("user has already been invited")
 	ErrInvalidEventType    = errors.New("invalid event type supplied")
 	ErrInvitedUserNotFound = errors.New("invited user not found")
+	ErrInviteNotFound      = errors.New("invite not found")
 )
 
 const pgUniqueViolation = "23505"

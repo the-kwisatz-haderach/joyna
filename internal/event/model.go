@@ -31,6 +31,34 @@ type EventInvite struct {
 	CreatedAt     time.Time         `json:"createdAt" db:"created_at"`
 }
 
+// EventView is an Event enriched with the requesting viewer's relationship
+// to it, since the detail page renders owner/invitee actions differently.
+type EventView struct {
+	Event
+	IsOwner             bool               `json:"isOwner"`
+	ViewerInviteStatus  *EventInviteStatus `json:"viewerInviteStatus,omitempty"`
+}
+
+// Attendee is a user attending an event, either as its owner or via an
+// invite that hasn't been declined.
+type Attendee struct {
+	UserID  string `json:"userId" db:"user_id"`
+	Name    string `json:"name" db:"name"`
+	Email   string `json:"email" db:"email"`
+	IsOwner bool   `json:"isOwner" db:"is_owner"`
+}
+
+type RespondToEventInvitePayload struct {
+	Status EventInviteStatus `json:"status"`
+}
+
+func (p RespondToEventInvitePayload) Validate() error {
+	if p.Status != InviteStateAccepted && p.Status != InviteStateDeclined {
+		return ErrInvalidInviteStatus
+	}
+	return nil
+}
+
 type CreateEventPayload struct {
 	Name                 string     `json:"name"`
 	Description          string     `json:"description"`
@@ -45,6 +73,7 @@ var (
 	ErrNegativeSpread       = errors.New("spread can't be negative")
 	ErrInvalidEventId       = errors.New("eventId isn't valid")
 	ErrInvalidInvitedUserId = errors.New("invitedUserId isn't valid")
+	ErrInvalidInviteStatus  = errors.New("status must be 'accepted' or 'declined'")
 )
 
 func (p *CreateEventPayload) Sanitize() {
