@@ -4,6 +4,7 @@ import RootLayout from "./routes/root-layout"
 import Landing from "./routes/landing"
 import Login from "./routes/login"
 import Register from "./routes/register"
+import RequireGuest from "./routes/require-guest"
 
 export const router = createBrowserRouter([
   {
@@ -11,8 +12,22 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <Landing /> },
-      { path: "login", element: <Login /> },
-      { path: "register", element: <Register /> },
+      {
+        path: "login",
+        element: (
+          <RequireGuest>
+            <Login />
+          </RequireGuest>
+        ),
+      },
+      {
+        path: "register",
+        element: (
+          <RequireGuest>
+            <Register />
+          </RequireGuest>
+        ),
+      },
     ],
   },
 ])

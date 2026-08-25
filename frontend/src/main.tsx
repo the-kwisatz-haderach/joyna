@@ -4,6 +4,7 @@ import { RouterProvider } from 'react-router'
 
 import './index.css'
 import { router } from './router'
+import { AuthProvider } from './auth-context'
 
 async function enableMocking() {
   if (import.meta.env.VITE_API_MOCKING !== 'enabled') {
@@ -16,7 +17,9 @@ async function enableMocking() {
 enableMocking().then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </StrictMode>,
   )
 })
