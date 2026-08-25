@@ -112,10 +112,18 @@ It's a separate toolchain from the Go side — no shared build step, no path fro
   `handlers.ts` — use `node.ts` for tests, `browser.ts` is what `main.tsx` imports. The
   `postinstall` script (`msw init public --save`) regenerates `public/mockServiceWorker.js` after every
   `npm install`; that generated file is gitignored, don't hand-edit or commit it.
+- **Testing: Vitest + React Testing Library**, configured via the `test` key in `vite.config.ts` (needs the
+  `/// <reference types="vitest/config" />` triple-slash directive at the top of that file, since it's not part
+  of plain Vite's config type). `environment: 'jsdom'`, `globals: false` — tests explicitly import
+  `describe`/`it`/`expect`/etc. from `vitest` rather than relying on injected globals, matching the project's
+  general preference for explicit over implicit. `src/test/setup.ts` wires MSW's `node.ts` server
+  (`listen`/`resetHandlers`/`close` around the suite) and `@testing-library/jest-dom/vitest` matchers. Co-locate
+  tests next to source (e.g. `src/routes/landing.test.tsx` beside `landing.tsx`), not a separate `__tests__/` tree.
 - **Scripts** (`frontend/package.json`): `dev`, `dev:mock` (dev server + MSW), `build` (`tsc -b && vite build`),
   `typecheck` (`tsc -b` alone — safe to run standalone since `tsconfig.app.json` sets `noEmit: true`), `lint`
-  (`oxlint` — not ESLint; Vite's current scaffold default), `preview`.
-- **CI**: `.github/workflows/fe-check.yml` runs typecheck → lint → build, gated behind a `dorny/paths-filter`
+  (`oxlint` — not ESLint; Vite's current scaffold default), `test` (`vitest run`, one-shot for CI), `test:watch`,
+  `test:coverage`, `preview`.
+- **CI**: `.github/workflows/fe-check.yml` runs typecheck → lint → test → build, gated behind a `dorny/paths-filter`
   check so it only actually runs when a push/PR touches `frontend/**` (unlike `check.yml`, this isn't yet wired
   as a required status check in branch protection).
 
