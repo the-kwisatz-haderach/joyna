@@ -44,4 +44,52 @@ func TestEventRepository(t *testing.T) {
 		require.IsType(t, &time.Time{}, event.RsvpDeadline)
 		require.Equal(t, payload.Type, event.Type)
 	})
+
+	t.Run("GetEventInvite and RespondToEventInvite", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		invitee := authtest.CreateUser(t, pool)
+		createdEvent, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(24 * time.Hour)}, owner.Id)
+		require.NoError(t, err)
+
+		_, err = repo.GetEventInvite(ctx, createdEvent.ID, invitee.Id)
+		require.ErrorIs(t, err, ErrInviteNotFound)
+
+		invite, err := repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: createdEvent.ID, InvitedUserID: invitee.Id}, owner.Id)
+		require.NoError(t, err)
+		require.Equal(t, InviteStatePending, invite.Status)
+
+		fetched, err := repo.GetEventInvite(ctx, createdEvent.ID, invitee.Id)
+		require.NoError(t, err)
+		require.Equal(t, invite, fetched)
+
+		updated, err := repo.RespondToEventInvite(ctx, createdEvent.ID, invitee.Id, InviteStateAccepted)
+		require.NoError(t, err)
+		require.Equal(t, InviteStateAccepted, updated.Status)
+
+		_, err = repo.RespondToEventInvite(ctx, createdEvent.ID, uuid.NewString(), InviteStateAccepted)
+		require.ErrorIs(t, err, ErrInviteNotFound)
+	})
+
+	t.Run("ListEventAttendees", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		accepted := authtest.CreateUser(t, pool)
+		declined := authtest.CreateUser(t, pool)
+		createdEvent, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(24 * time.Hour)}, owner.Id)
+		require.NoError(t, err)
+
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: createdEvent.ID, InvitedUserID: accepted.Id}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: createdEvent.ID, InvitedUserID: declined.Id}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.RespondToEventInvite(ctx, createdEvent.ID, declined.Id, InviteStateDeclined)
+		require.NoError(t, err)
+
+		attendees, err := repo.ListEventAttendees(ctx, createdEvent.ID)
+		require.NoError(t, err)
+		require.Len(t, attendees, 2)
+		ids := []string{attendees[0].UserID, attendees[1].UserID}
+		require.Contains(t, ids, owner.Id)
+		require.Contains(t, ids, accepted.Id)
+		require.NotContains(t, ids, declined.Id)
+	})
 }

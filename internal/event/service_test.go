@@ -10,13 +10,16 @@ import (
 )
 
 type fakeRepository struct {
-	createEventFunc        func(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error)
-	updateEventFunc        func(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error)
-	deleteEventFunc        func(ctx context.Context, eventID, ownerID string) error
-	getEventsByOwnerFunc   func(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]Event, error)
-	getEventFunc           func(ctx context.Context, eventID string) (Event, error)
-	createEventInviteFunc  func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
-	forwardEventInviteFunc func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
+	createEventFunc           func(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error)
+	updateEventFunc           func(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error)
+	deleteEventFunc           func(ctx context.Context, eventID, ownerID string) error
+	getEventsByOwnerFunc      func(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]Event, error)
+	getEventFunc              func(ctx context.Context, eventID string) (Event, error)
+	getEventInviteFunc        func(ctx context.Context, eventID, userID string) (EventInvite, error)
+	respondToEventInviteFunc func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error)
+	listEventAttendeesFunc    func(ctx context.Context, eventID string) ([]Attendee, error)
+	createEventInviteFunc     func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
+	forwardEventInviteFunc    func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 }
 
 func (f *fakeRepository) CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error) {
@@ -37,6 +40,18 @@ func (f *fakeRepository) GetEventsByOwner(ctx context.Context, userID string, so
 
 func (f *fakeRepository) GetEvent(ctx context.Context, eventID string) (Event, error) {
 	return f.getEventFunc(ctx, eventID)
+}
+
+func (f *fakeRepository) GetEventInvite(ctx context.Context, eventID, userID string) (EventInvite, error) {
+	return f.getEventInviteFunc(ctx, eventID, userID)
+}
+
+func (f *fakeRepository) RespondToEventInvite(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error) {
+	return f.respondToEventInviteFunc(ctx, eventID, userID, status)
+}
+
+func (f *fakeRepository) ListEventAttendees(ctx context.Context, eventID string) ([]Attendee, error) {
+	return f.listEventAttendeesFunc(ctx, eventID)
 }
 
 func (f *fakeRepository) CreateEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error) {
@@ -258,4 +273,125 @@ func TestSendEventInvite_ForwardError(t *testing.T) {
 	payload := CreateEventInvitePayload{EventID: "event-id", InvitedUserID: "invited-id"}
 	_, err := service.SendEventInvite(context.Background(), payload, "forwarding-user-id")
 	require.ErrorIs(t, err, repoErr)
+}
+
+func TestGetEventDetail_Owner(t *testing.T) {
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+	}
+	service := NewService(repo)
+	detail, err := service.GetEventDetail(context.Background(), "event-id", "owner-id")
+	require.NoError(t, err)
+	require.True(t, detail.IsOwner)
+	require.Nil(t, detail.ViewerInviteStatus)
+}
+
+func TestGetEventDetail_Invitee(t *testing.T) {
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+		getEventInviteFunc: func(ctx context.Context, eventID, userID string) (EventInvite, error) {
+			require.Equal(t, "invitee-id", userID)
+			return EventInvite{EventID: eventID, InvitedUserID: userID, Status: InviteStatePending}, nil
+		},
+	}
+	service := NewService(repo)
+	detail, err := service.GetEventDetail(context.Background(), "event-id", "invitee-id")
+	require.NoError(t, err)
+	require.False(t, detail.IsOwner)
+	require.NotNil(t, detail.ViewerInviteStatus)
+	require.Equal(t, InviteStatePending, *detail.ViewerInviteStatus)
+}
+
+func TestGetEventDetail_NotInvited(t *testing.T) {
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+		getEventInviteFunc: func(ctx context.Context, eventID, userID string) (EventInvite, error) {
+			return EventInvite{}, ErrInviteNotFound
+		},
+	}
+	service := NewService(repo)
+	_, err := service.GetEventDetail(context.Background(), "event-id", "stranger-id")
+	require.ErrorIs(t, err, ErrEventNotFound)
+}
+
+func TestGetEventDetail_EventNotFound(t *testing.T) {
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{}, ErrEventNotFound
+		},
+	}
+	service := NewService(repo)
+	_, err := service.GetEventDetail(context.Background(), "event-id", "owner-id")
+	require.ErrorIs(t, err, ErrEventNotFound)
+}
+
+func TestGetEventAttendees(t *testing.T) {
+	attendees := []Attendee{{UserID: "owner-id", IsOwner: true}}
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+		listEventAttendeesFunc: func(ctx context.Context, eventID string) ([]Attendee, error) {
+			require.Equal(t, "event-id", eventID)
+			return attendees, nil
+		},
+	}
+	service := NewService(repo)
+	result, err := service.GetEventAttendees(context.Background(), "event-id", "owner-id")
+	require.NoError(t, err)
+	require.Equal(t, attendees, result)
+}
+
+func TestGetEventAttendees_NotInvited(t *testing.T) {
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+		getEventInviteFunc: func(ctx context.Context, eventID, userID string) (EventInvite, error) {
+			return EventInvite{}, ErrInviteNotFound
+		},
+	}
+	service := NewService(repo)
+	_, err := service.GetEventAttendees(context.Background(), "event-id", "stranger-id")
+	require.ErrorIs(t, err, ErrEventNotFound)
+}
+
+func TestRespondToEventInvite(t *testing.T) {
+	updated := EventInvite{EventID: "event-id", InvitedUserID: "user-id", Status: InviteStateAccepted}
+	repo := &fakeRepository{
+		respondToEventInviteFunc: func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error) {
+			require.Equal(t, "event-id", eventID)
+			require.Equal(t, "user-id", userID)
+			require.Equal(t, InviteStateAccepted, status)
+			return updated, nil
+		},
+	}
+	service := NewService(repo)
+	invite, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateAccepted)
+	require.NoError(t, err)
+	require.Equal(t, updated, invite)
+}
+
+func TestRespondToEventInvite_InvalidStatus(t *testing.T) {
+	repo := &fakeRepository{}
+	service := NewService(repo)
+	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStatePending)
+	require.ErrorIs(t, err, ErrInvalidInviteStatus)
+}
+
+func TestRespondToEventInvite_NotFound(t *testing.T) {
+	repo := &fakeRepository{
+		respondToEventInviteFunc: func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error) {
+			return EventInvite{}, ErrInviteNotFound
+		},
+	}
+	service := NewService(repo)
+	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateDeclined)
+	require.ErrorIs(t, err, ErrInviteNotFound)
 }

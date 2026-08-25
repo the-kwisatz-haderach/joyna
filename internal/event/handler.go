@@ -149,6 +149,100 @@ func (h *Handler) GetEvents(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(events)
 }
 
+func (h *Handler) GetEvent(w http.ResponseWriter, r *http.Request) {
+	eventID := r.PathValue("id")
+	if err := uuid.Validate(eventID); err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	viewerID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	detail, err := h.service.GetEventDetail(r.Context(), eventID, viewerID)
+	if err != nil {
+		if errors.Is(err, ErrEventNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		slog.Error("failed to get event", "error", err)
+		http.Error(w, "failed to get event", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(detail)
+}
+
+func (h *Handler) GetEventAttendees(w http.ResponseWriter, r *http.Request) {
+	eventID := r.PathValue("id")
+	if err := uuid.Validate(eventID); err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	viewerID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	attendees, err := h.service.GetEventAttendees(r.Context(), eventID, viewerID)
+	if err != nil {
+		if errors.Is(err, ErrEventNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		slog.Error("failed to get event attendees", "error", err)
+		http.Error(w, "failed to get event attendees", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(attendees)
+}
+
+func (h *Handler) RespondToEventInvite(w http.ResponseWriter, r *http.Request) {
+	eventID := r.PathValue("id")
+	if err := uuid.Validate(eventID); err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	userID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	var payload RespondToEventInvitePayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if err := payload.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	updated, err := h.service.RespondToEventInvite(r.Context(), eventID, userID, payload.Status)
+	if err != nil {
+		if errors.Is(err, ErrInvalidInviteStatus) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if errors.Is(err, ErrInviteNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		slog.Error("failed to respond to event invite", "error", err)
+		http.Error(w, "failed to respond to event invite", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updated)
+}
+
 func (h *Handler) CreateEventInvite(w http.ResponseWriter, r *http.Request) {
 	ownerID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {

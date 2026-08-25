@@ -41,6 +41,15 @@ GET {{baseUrl}}/events?sort=date&order=asc
 ### Get events — invalid sort field, expect 400
 GET {{baseUrl}}/events?sort=bogus
 
+### Get single event (as owner or an invitee)
+GET {{baseUrl}}/events/{{createEvent.response.body.$.id}}
+
+### Get single event — no relationship to it, expect 404
+GET {{baseUrl}}/events/00000000-0000-0000-0000-000000000000
+
+### Get event attendees
+GET {{baseUrl}}/events/{{createEvent.response.body.$.id}}/attendees
+
 # --- Event invites ---
 # Run requests in this section top to bottom — some switch the active session
 # (REST Client's cookie jar is shared across the window, so logging in as the
@@ -105,4 +114,23 @@ Content-Type: application/json
   "eventId": "{{createEvent.response.body.$.id}}",
   "invitedUserId": "11111111-1111-1111-1111-111111111111",
   "spreadAllowed": 1
+}
+
+### Invitee accepts the invite
+PATCH {{baseUrl}}/events/{{createEvent.response.body.$.id}}/invite
+Content-Type: application/json
+
+{
+  "status": "accepted"
+}
+
+### Invitee views the event now that they're invited
+GET {{baseUrl}}/events/{{createEvent.response.body.$.id}}
+
+### Respond to invite — invalid status, expect 400
+PATCH {{baseUrl}}/events/{{createEvent.response.body.$.id}}/invite
+Content-Type: application/json
+
+{
+  "status": "maybe"
 }

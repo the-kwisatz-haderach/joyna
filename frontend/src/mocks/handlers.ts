@@ -201,6 +201,72 @@ export const handlers = [
     return HttpResponse.json(events[index])
   }),
 
+  http.get("/api/events/:id", ({ params }) => {
+    const event = events.find((candidate) => candidate.id === params.id)
+    if (!event) {
+      return new HttpResponse("event not found", { status: 404 })
+    }
+    const isOwner = event.ownerId === currentUser.id
+    const invite = eventInvites.find(
+      (candidate) =>
+        candidate.eventId === event.id &&
+        candidate.invitedUserId === currentUser.id,
+    )
+    if (!isOwner && !invite) {
+      return new HttpResponse("event not found", { status: 404 })
+    }
+    return HttpResponse.json({
+      ...event,
+      isOwner,
+      viewerInviteStatus: isOwner ? undefined : invite?.status,
+    })
+  }),
+
+  http.get("/api/events/:id/attendees", ({ params }) => {
+    const event = events.find((candidate) => candidate.id === params.id)
+    if (!event) {
+      return new HttpResponse("event not found", { status: 404 })
+    }
+    const isOwner = event.ownerId === currentUser.id
+    const isInvited = eventInvites.some(
+      (invite) =>
+        invite.eventId === event.id &&
+        invite.invitedUserId === currentUser.id,
+    )
+    if (!isOwner && !isInvited) {
+      return new HttpResponse("event not found", { status: 404 })
+    }
+    const attendees = [...eventAttendees(event.id)].map((userId) => {
+      const user = mockUsers.find((candidate) => candidate.id === userId)
+      return {
+        userId,
+        name: user?.name ?? "",
+        email: user?.email ?? "",
+        isOwner: userId === event.ownerId,
+      }
+    })
+    return HttpResponse.json(attendees)
+  }),
+
+  http.patch("/api/events/:id/invite", async ({ request, params }) => {
+    const index = eventInvites.findIndex(
+      (invite) =>
+        invite.eventId === params.id &&
+        invite.invitedUserId === currentUser.id,
+    )
+    if (index === -1) {
+      return new HttpResponse("invite not found", { status: 404 })
+    }
+    const body = (await request.json()) as { status?: "accepted" | "declined" }
+    if (body.status !== "accepted" && body.status !== "declined") {
+      return new HttpResponse("status must be 'accepted' or 'declined'", {
+        status: 400,
+      })
+    }
+    eventInvites[index] = { ...eventInvites[index], status: body.status }
+    return HttpResponse.json(eventInvites[index])
+  }),
+
   http.delete("/api/events/:id", ({ params }) => {
     if (!events.some((event) => event.id === params.id)) {
       return new HttpResponse("event not found", { status: 404 })
