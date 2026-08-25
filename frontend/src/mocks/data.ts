@@ -79,6 +79,17 @@ export const mockEvents: MockEvent[] = [
     defaultSpreadAllowed: 1,
   },
   {
+    id: 'c1a2b3c4-1111-4a1a-8a1a-000000000004',
+    ownerId: mockUsers[1].id,
+    name: 'Turing Award Dinner',
+    description: 'Celebrating a milestone in computing.',
+    createdAt: '2026-07-20T12:00:00Z',
+    date: '2026-09-12T19:00:00Z',
+    location: 'The Guild Hall, Cambridge',
+    type: 'dinner',
+    defaultSpreadAllowed: 0,
+  },
+  {
     id: 'c1a2b3c4-1111-4a1a-8a1a-000000000003',
     ownerId: mockUsers[0].id,
     name: 'Welcome Mixer',
@@ -88,6 +99,17 @@ export const mockEvents: MockEvent[] = [
     location: 'Community Hall, Stockholm',
     type: 'mixer',
     defaultSpreadAllowed: 1,
+  },
+]
+
+export const mockEventInvites: MockEventInvite[] = [
+  {
+    eventId: mockEvents[2].id,
+    invitedBy: mockUsers[1].id,
+    invitedUserId: mockUsers[0].id,
+    status: 'pending',
+    spreadAllowed: 0,
+    createdAt: '2026-07-21T09:00:00Z',
   },
 ]
 

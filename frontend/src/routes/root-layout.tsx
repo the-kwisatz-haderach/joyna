@@ -22,6 +22,9 @@ function RootLayout() {
         <nav className="flex items-center gap-4 text-sm">
           {user ? (
             <>
+              <Link to="/" className="text-foreground hover:text-primary">
+                Home
+              </Link>
               <Link to="/events" className="text-foreground hover:text-primary">
                 Events
               </Link>
