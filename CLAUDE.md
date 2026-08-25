@@ -99,9 +99,22 @@ It's a separate toolchain from the Go side — no shared build step, no path fro
   `@/components`, `@/components/ui`, `@/lib` (→ `lib/utils.ts`), `@/hooks` (not yet used). Note `components/`
   and `lib/` sit at the `frontend/` root, not under `src/` — that's shadcn's default layout for this config,
   keep new shadcn-generated files following the same placement.
-- **Scripts** (`frontend/package.json`): `dev`, `build` (`tsc -b && vite build`), `typecheck` (`tsc -b` alone —
-  safe to run standalone since `tsconfig.app.json` sets `noEmit: true`), `lint` (`oxlint` — not ESLint; Vite's
-  current scaffold default), `preview`.
+- **Routing: `react-router`** (`createBrowserRouter`/`RouterProvider`, wired in `src/main.tsx`). Route config lives
+  in `src/router.tsx`; page components live in `src/routes/` (e.g. `landing.tsx`, `login.tsx`, `register.tsx`),
+  nested under a shared `root-layout.tsx` (nav + `Outlet`). Prefer relative imports within `src/` (matching
+  `main.tsx`'s existing style) and reserve the `@/*` alias for cross-cutting shared modules like
+  `@/components/ui/*`.
+- **API mocking: MSW** (`msw`, `src/mocks/`). `handlers.ts` mirrors the Go API's auth/event/group endpoints against
+  in-memory fixture data from `data.ts` (mutable module-level copies, reset on reload — not persisted). Gated
+  behind `VITE_API_MOCKING=enabled` (checked in `main.tsx` before the app renders, and declared in
+  `vite-env.d.ts`); `npm run dev:mock` runs the dev server with mocking on, plain `npm run dev` talks to the real
+  backend. `browser.ts`/`node.ts` are separate `setupWorker`/`setupServer` entry points sharing the same
+  `handlers.ts` — use `node.ts` for tests, `browser.ts` is what `main.tsx` imports. The
+  `postinstall` script (`msw init public --save`) regenerates `public/mockServiceWorker.js` after every
+  `npm install`; that generated file is gitignored, don't hand-edit or commit it.
+- **Scripts** (`frontend/package.json`): `dev`, `dev:mock` (dev server + MSW), `build` (`tsc -b && vite build`),
+  `typecheck` (`tsc -b` alone — safe to run standalone since `tsconfig.app.json` sets `noEmit: true`), `lint`
+  (`oxlint` — not ESLint; Vite's current scaffold default), `preview`.
 - **CI**: `.github/workflows/fe-check.yml` runs typecheck → lint → build, gated behind a `dorny/paths-filter`
   check so it only actually runs when a push/PR touches `frontend/**` (unlike `check.yml`, this isn't yet wired
   as a required status check in branch protection).
