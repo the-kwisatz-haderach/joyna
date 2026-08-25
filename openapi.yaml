@@ -1,0 +1,716 @@
+openapi: 3.0.3
+info:
+  title: Joyna API
+  description: >
+    API for creating, viewing, updating and sharing events within a user's network.
+    Events can be forwarded by invited users to their own networks, and users can
+    organize members of their network into groups.
+  version: "1.0.0"
+servers:
+  - url: /
+tags:
+  - name: Auth
+    description: Registration, login and session management
+  - name: Events
+    description: Event creation, management and invitations
+  - name: Groups
+    description: Grouping members of a user's network
+  - name: Health
+    description: Service liveness/readiness
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness check
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: Service is alive
+
+  /ready:
+    get:
+      tags: [Health]
+      summary: Readiness check
+      description: Verifies the service can reach the database.
+      operationId: getReady
+      security: []
+      responses:
+        "200":
+          description: Service is ready
+        "503":
+          description: Service is not ready (e.g. database unreachable)
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterUserPayload"
+      responses:
+        "200":
+          description: User registered and session established
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Session cookie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid request body or validation error
+          content:
+            text/plain:
+              schema:
+                type: string
+        "409":
+          description: A user already exists with this email
+          content:
+            text/plain:
+              schema:
+                type: string
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in with email and password
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful, session established
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Session cookie
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid request body
+          content:
+            text/plain:
+              schema:
+                type: string
+        "401":
+          description: Invalid credentials
+          content:
+            text/plain:
+              schema:
+                type: string
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out and destroy the current session
+      operationId: logoutUser
+      security: []
+      responses:
+        "204":
+          description: Logged out successfully
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /events:
+    get:
+      tags: [Events]
+      summary: List events for the authenticated user
+      operationId: getEvents
+      parameters:
+        - name: sort
+          in: query
+          schema:
+            $ref: "#/components/schemas/EventSortField"
+        - name: order
+          in: query
+          schema:
+            $ref: "#/components/schemas/SortOrder"
+        - name: scope
+          in: query
+          schema:
+            $ref: "#/components/schemas/EventListScope"
+      responses:
+        "200":
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+        "400":
+          description: Invalid query parameter
+          content:
+            text/plain:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+    post:
+      tags: [Events]
+      summary: Create a new event
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEventPayload"
+      responses:
+        "200":
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "400":
+          description: >
+            Invalid request body, or validation error (empty name, negative spread,
+            past event date, owner not found, invalid rsvp deadline, invalid event type)
+          content:
+            text/plain:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /events/{id}:
+    patch:
+      tags: [Events]
+      summary: Update an existing event
+      description: Only the event owner may update the event. Omitted fields are left unchanged.
+      operationId: updateEvent
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEventPayload"
+      responses:
+        "200":
+          description: Event updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "400":
+          description: >
+            Invalid request body/id, or validation error (negative spread, past event
+            date, invalid rsvp deadline, owner not found)
+          content:
+            text/plain:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: User is not the owner of the event
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: Event not found
+          content:
+            text/plain:
+              schema:
+                type: string
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+    delete:
+      tags: [Events]
+      summary: Delete an event
+      operationId: deleteEvent
+      parameters:
+        - $ref: "#/components/parameters/EventId"
+      responses:
+        "204":
+          description: Event deleted
+        "400":
+          description: Invalid id
+          content:
+            text/plain:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Event not found
+          content:
+            text/plain:
+              schema:
+                type: string
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /events/invites:
+    post:
+      tags: [Events]
+      summary: Invite (or forward an invite to) a user for an event
+      description: >
+        If the requester is the event owner, a direct invite is created. Otherwise,
+        the requester must already be invited themselves; the invite is then
+        forwarded to the new user with no further spread allowed.
+      operationId: createEventInvite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEventInvitePayload"
+      responses:
+        "200":
+          description: Invite created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventInvite"
+        "400":
+          description: Invalid request body, invalid eventId/invitedUserId, or negative spread
+          content:
+            text/plain:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: User is not allowed to invite (additional) users to this event
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: Event not found
+          content:
+            text/plain:
+              schema:
+                type: string
+        "409":
+          description: User has already been invited
+          content:
+            text/plain:
+              schema:
+                type: string
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /groups:
+    post:
+      tags: [Groups]
+      summary: Create a new group
+      operationId: createGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGroupPayload"
+      responses:
+        "200":
+          description: Group created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "400":
+          description: Invalid request body, or empty group name
+          content:
+            text/plain:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /groups/{id}:
+    patch:
+      tags: [Groups]
+      summary: Update an existing group
+      description: Only the group owner may update the group. Omitted fields are left unchanged.
+      operationId: updateGroup
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGroupPayload"
+      responses:
+        "200":
+          description: Group updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "400":
+          description: Invalid request body/id, or empty group name
+          content:
+            text/plain:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Group not found
+          content:
+            text/plain:
+              schema:
+                type: string
+        "409":
+          description: A group with this name already exists
+          content:
+            text/plain:
+              schema:
+                type: string
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+    delete:
+      tags: [Groups]
+      summary: Delete a group
+      operationId: deleteGroup
+      parameters:
+        - $ref: "#/components/parameters/GroupId"
+      responses:
+        "204":
+          description: Group deleted
+        "400":
+          description: Invalid id
+          content:
+            text/plain:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Group not found
+          content:
+            text/plain:
+              schema:
+                type: string
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  parameters:
+    EventId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    GroupId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid session
+      content:
+        text/plain:
+          schema:
+            type: string
+
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session
+      description: >
+        Session-based authentication managed by alexedwards/scs. The cookie is set
+        by /auth/register or /auth/login and must be sent on subsequent requests to
+        protected routes.
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        joinedAt:
+          type: string
+          format: date-time
+        profilePictureKey:
+          type: string
+          nullable: true
+      required: [id, name, email, joinedAt]
+
+    RegisterUserPayload:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+      required: [name, email, password]
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+      required: [email, password]
+
+    EventType:
+      type: string
+      enum: [birthday, party, dinner, gathering, concert, other]
+
+    EventInviteStatus:
+      type: string
+      enum: [pending, accepted, declined]
+
+    EventSortField:
+      type: string
+      enum: [date, createdAt]
+      default: date
+
+    SortOrder:
+      type: string
+      enum: [asc, desc]
+      default: desc
+
+    EventListScope:
+      type: string
+      enum: [owned, invited, all]
+      default: owned
+
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ownerId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        date:
+          type: string
+          format: date-time
+        location:
+          type: string
+        rsvpDeadline:
+          type: string
+          format: date-time
+          nullable: true
+        type:
+          $ref: "#/components/schemas/EventType"
+        defaultSpreadAllowed:
+          type: integer
+      required:
+        [id, ownerId, name, description, createdAt, date, location, type, defaultSpreadAllowed]
+
+    CreateEventPayload:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        date:
+          type: string
+          format: date-time
+        location:
+          type: string
+        rsvpDeadline:
+          type: string
+          format: date-time
+          nullable: true
+        type:
+          $ref: "#/components/schemas/EventType"
+        defaultSpreadAllowed:
+          type: integer
+          minimum: 0
+      required: [name, description, date, location, type, defaultSpreadAllowed]
+
+    UpdateEventPayload:
+      type: object
+      description: All fields are optional; omitted fields are left unchanged.
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        date:
+          type: string
+          format: date-time
+        location:
+          type: string
+        rsvpDeadline:
+          type: string
+          format: date-time
+          nullable: true
+        type:
+          $ref: "#/components/schemas/EventType"
+        defaultSpreadAllowed:
+          type: integer
+          minimum: 0
+
+    EventInvite:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        invitedBy:
+          type: string
+          format: uuid
+        invitedUserId:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/EventInviteStatus"
+        spreadAllowed:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [eventId, invitedBy, invitedUserId, status, spreadAllowed, createdAt]
+
+    CreateEventInvitePayload:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        invitedUserId:
+          type: string
+          format: uuid
+        spreadAllowed:
+          type: integer
+          minimum: 0
+      required: [eventId, invitedUserId, spreadAllowed]
+
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ownerId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        isFavorite:
+          type: boolean
+      required: [id, ownerId, name, createdAt, isFavorite]
+
+    CreateGroupPayload:
+      type: object
+      properties:
+        name:
+          type: string
+      required: [name]
+
+    UpdateGroupPayload:
+      type: object
+      description: All fields are optional; omitted fields are left unchanged.
+      properties:
+        name:
+          type: string
+        isFavorite:
+          type: boolean
+
+security:
+  - sessionCookie: []
