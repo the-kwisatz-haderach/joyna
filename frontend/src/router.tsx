@@ -1,7 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 
 import RootLayout from './routes/root-layout'
-import RootIndex from './routes/root-index'
+import Home from './routes/home'
 import Login from './routes/login'
 import Register from './routes/register'
 import Events from './routes/events'
@@ -15,7 +15,14 @@ export const router = createBrowserRouter([
     path: '/',
     element: <RootLayout />,
     children: [
-      { index: true, element: <RootIndex /> },
+      {
+        index: true,
+        element: (
+          <RequireAuth>
+            <Home />
+          </RequireAuth>
+        ),
+      },
       {
         path: 'events',
         element: (
