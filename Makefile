@@ -48,3 +48,8 @@ push-api-image:
 push-migrations-image:
 	docker build -f Dockerfile.migrate -t $(REPO)/migrate:$(TAG) . && docker push $(REPO)/migrate:$(TAG)
 	@echo "Image pushed: $(REPO)/migrate:$(TAG)"
+
+.PHONY: push-frontend-image
+push-frontend-image:
+	docker build -f frontend/Dockerfile -t $(REPO)/frontend:$(TAG) frontend && docker push $(REPO)/frontend:$(TAG)
+	@echo "Image pushed: $(REPO)/frontend:$(TAG)"
