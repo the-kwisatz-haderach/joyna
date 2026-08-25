@@ -48,8 +48,14 @@ function Login() {
   }
 
   return (
-    <section className="flex min-h-[calc(100dvh-65px)] items-center justify-center bg-gradient-to-br from-background via-accent/40 to-primary/10 px-6 py-16">
-      <div className="flex w-full max-w-sm flex-col gap-4 rounded-lg border border-border bg-background/80 p-8 shadow-sm backdrop-blur-sm">
+    <section
+      style={{ viewTransitionName: "auth-background" }}
+      className="flex min-h-[calc(100dvh-65px)] items-center justify-center bg-gradient-to-br from-background via-accent/40 to-primary/10 px-6 py-16"
+    >
+      <div
+        style={{ viewTransitionName: "auth-card" }}
+        className="flex w-full max-w-sm flex-col gap-4 rounded-lg border border-border bg-background/80 p-8 shadow-sm backdrop-blur-sm"
+      >
         <h1 className="text-2xl font-semibold text-foreground">Log in</h1>
         <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
           <label className="flex flex-col gap-1 text-sm">
@@ -81,7 +87,11 @@ function Login() {
         </form>
         <p className="text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
-          <Link to="/register" className="text-primary hover:underline">
+          <Link
+            to="/register"
+            viewTransition
+            className="text-primary hover:underline"
+          >
             Sign up
           </Link>
         </p>
