@@ -51,12 +51,15 @@ function Register() {
   return (
     <section
       style={{ viewTransitionName: "auth-background" }}
-      className="flex min-h-[calc(100dvh-65px)] items-center justify-center bg-gradient-to-br from-background via-chart-2/20 to-secondary/60 px-6 py-16"
+      className="ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] flex min-h-dvh w-screen items-center justify-center bg-gradient-to-br from-background via-chart-2/20 to-secondary/60 px-6 py-16"
     >
       <div
         style={{ viewTransitionName: "auth-card" }}
         className="flex w-full max-w-sm flex-col gap-4 rounded-lg border border-border bg-background/80 p-8 shadow-sm backdrop-blur-sm"
       >
+        <Link to="/" className="text-lg font-semibold text-foreground">
+          joyna
+        </Link>
         <h1 className="text-2xl font-semibold text-foreground">Sign up</h1>
         <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
           <label className="flex flex-col gap-1 text-sm">
