@@ -1,8 +1,8 @@
 @import 'tailwindcss';
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "@fontsource-variable/raleway";
-@import "@fontsource-variable/outfit";
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/raleway';
+@import '@fontsource-variable/outfit';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -10,7 +10,7 @@
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
-  --border: oklch(0.925 0.005 214.3);
+  --border: oklch(0.925 0.005 214.3 / 60%);
   --code-bg: #f4f3ec;
   --accent: oklch(0.963 0.002 197.1);
   --accent-bg: rgba(170, 59, 255, 0.1);
@@ -95,7 +95,7 @@
 
   --sidebar-border: oklch(0.925 0.005 214.3);
 
-  --sidebar-ring: oklch(0.723 0.014 214.4)
+  --sidebar-ring: oklch(0.723 0.014 214.4);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -103,7 +103,7 @@
     --text: #9ca3af;
     --text-h: #f3f4f6;
     --bg: #16171d;
-    --border: #2e303a;
+    --border: rgba(255, 255, 255, 0.08);
     --code-bg: #1f2028;
     --accent: #c084fc;
     --accent-bg: rgba(192, 132, 252, 0.15);
@@ -123,7 +123,6 @@
   max-width: 100%;
   margin: 0 auto;
   text-align: center;
-  border-inline: 1px solid var(--border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -194,7 +193,7 @@ code {
   --accent: oklch(0.275 0.011 216.9);
   --accent-foreground: oklch(0.987 0.002 197.1);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(1 0 0 / 8%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.56 0.021 213.5);
   --chart-1: oklch(0.855 0.138 181.071);
@@ -257,8 +256,12 @@ code {
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;}
+    @apply border-border outline-ring/50;
+  }
   body {
-    @apply bg-background text-foreground;}
+    @apply bg-background text-foreground;
+  }
   html {
-    @apply font-sans;}}
+    @apply font-sans;
+  }
+}

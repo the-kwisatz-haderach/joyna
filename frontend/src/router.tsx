@@ -10,24 +10,22 @@ export const router = createBrowserRouter([
   {
     path: "/",
     element: <RootLayout />,
-    children: [
-      { index: true, element: <Landing /> },
-      {
-        path: "login",
-        element: (
-          <RequireGuest>
-            <Login />
-          </RequireGuest>
-        ),
-      },
-      {
-        path: "register",
-        element: (
-          <RequireGuest>
-            <Register />
-          </RequireGuest>
-        ),
-      },
-    ],
+    children: [{ index: true, element: <Landing /> }],
+  },
+  {
+    path: "login",
+    element: (
+      <RequireGuest>
+        <Login />
+      </RequireGuest>
+    ),
+  },
+  {
+    path: "register",
+    element: (
+      <RequireGuest>
+        <Register />
+      </RequireGuest>
+    ),
   },
 ])
