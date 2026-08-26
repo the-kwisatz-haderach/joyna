@@ -12,6 +12,14 @@ export TAG
 REPO=$(GCP_CLOUD_REGION)-docker.pkg.dev/$(GCP_CLOUD_PROJECT_ID)/joyna
 export REPO
 
+CHART_DIR := joyna-app
+RELEASE := joyna
+NAMESPACE := joyna
+HELM_VALUES := -f $(CHART_DIR)/values.secret.yaml \
+	--set api.image.tag=$(TAG) \
+	--set migrate.image.tag=$(TAG) \
+	--set frontend.image.tag=$(TAG)
+
 # Creates new db migration following correct sequence.
 .PHONY: migrate-create
 migrate-create:
@@ -53,3 +61,26 @@ push-migrations-image:
 push-frontend-image:
 	docker build -f frontend/Dockerfile -t $(REPO)/frontend:$(TAG) frontend && docker push $(REPO)/frontend:$(TAG)
 	@echo "Image pushed: $(REPO)/frontend:$(TAG)"
+
+.PHONY: helm-lint
+helm-lint:
+	helm lint $(CHART_DIR) $(HELM_VALUES)
+
+.PHONY: helm-template
+helm-template:
+	helm template $(RELEASE) $(CHART_DIR) $(HELM_VALUES)
+
+.PHONY: helm-diff
+helm-diff:
+	helm template $(RELEASE) $(CHART_DIR) $(HELM_VALUES) | kubectl diff -n $(NAMESPACE) -f -
+
+.PHONY: helm-upgrade
+helm-upgrade:
+	helm upgrade --install $(RELEASE) $(CHART_DIR) \
+		--namespace $(NAMESPACE) --create-namespace \
+		$(HELM_VALUES) \
+		--wait --timeout 5m
+
+.PHONY: helm-undeploy
+helm-undeploy:
+	helm uninstall $(RELEASE) --namespace $(NAMESPACE)
