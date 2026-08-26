@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/alexedwards/scs/pgxstore"
 	"github.com/alexedwards/scs/v2"
 	"github.com/the-kwisatz-haderach/joyna/internal/auth"
 	"github.com/the-kwisatz-haderach/joyna/internal/event"
@@ -40,6 +41,8 @@ func main() {
 	defer pool.Close()
 
 	sessionManager := scs.New()
+	sessionManager.Store = pgxstore.New(pool)
+
 	sessionManager.Lifetime = 24 * time.Hour
 
 	authRepo := auth.NewRepository(pool)
