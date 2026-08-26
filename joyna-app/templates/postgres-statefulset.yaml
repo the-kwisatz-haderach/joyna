@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: '{{.Release.Name}}-postgres'
+  namespace: {{.Values.namespace}}
+  labels: {{- include "joyna.selectorLabels" . | nindent 4}}
+spec:
+  serviceName: {{include "joyna.postgresServiceName" .}}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: postgres
+          image: '{{.Values.postgres.image.repository}}:{{.Values.postgres.image.tag}}'
+          ports:
+            - containerPort: {{.Values.postgres.port}}
+              name: pg
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: '{{.Release.Name}}-secrets'
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{.Release.Name}}-configmap'
+                  key: POSTGRES_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{.Release.Name}}-configmap'
+                  key: POSTGRES_DB
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: standard-rwo
+        resources:
+          requests:
+            storage: 10Gi

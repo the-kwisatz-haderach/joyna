@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: '{{.Release.Name}}-api'
+  namespace: {{.Values.namespace}}
+  labels:
+    {{- include "joyna.selectorLabels" . | nindent 4}}
+    app: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: '{{.Values.api.image.repository}}:{{required "api.image.tag is required" .Values.api.image.tag}}'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{.Values.api.port}}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: {{.Values.api.port}}
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 128Mi
+          ports:
+            - containerPort: {{.Values.api.port}}
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: '{{.Release.Name}}-secrets'
+                  key: DATABASE_URL
+            - name: APP_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{.Release.Name}}-configmap'
+                  key: APP_ENV
+            - name: APP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{.Release.Name}}-configmap'
+                  key: APP_PORT

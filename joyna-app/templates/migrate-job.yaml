@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: '{{.Release.Name}}-migrate'
+  namespace: {{.Values.namespace}}
+  labels: {{- include "joyna.selectorLabels" . | nindent 4}}
+  annotations:
+    'helm.sh/hook': pre-install,pre-upgrade
+    'helm.sh/hook-delete-policy': before-hook-creation
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: '{{.Values.migrate.image.repository}}:{{required "migrate.image.tag is required" .Values.migrate.image.tag}}'
+          args:
+            - -path=/migrations
+            - -database=$(DATABASE_URL)
+            - up
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: '{{.Release.Name}}-secrets'
+                  key: DATABASE_URL

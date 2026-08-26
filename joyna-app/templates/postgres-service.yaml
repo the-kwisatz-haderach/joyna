@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{include "joyna.postgresServiceName" .}}
+  namespace: {{.Values.namespace}}
+  labels: {{- include "joyna.selectorLabels" . | nindent 4}}
+spec:
+  clusterIP: 'None'
+  selector:
+    app: postgres
+  ports:
+    - port: {{.Values.postgres.port}}
+      name: pg

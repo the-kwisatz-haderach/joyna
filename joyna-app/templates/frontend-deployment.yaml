@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: '{{.Release.Name}}-frontend'
+  namespace: {{.Values.namespace}}
+  labels:
+    app: frontend
+    {{- include "joyna.selectorLabels" . | nindent 4}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: '{{.Values.frontend.image.repository}}:{{required "frontend.image.tag is required" .Values.frontend.image.tag}}'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{.Values.frontend.port}}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{.Values.frontend.port}}
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 128Mi
+          ports:
+            - containerPort: {{.Values.frontend.port}}
