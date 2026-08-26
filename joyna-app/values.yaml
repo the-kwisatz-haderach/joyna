@@ -8,7 +8,6 @@ postgres:
   user: joyna
   database: joyna
   password: REPLACE_ME
-  databaseUrl: REPLACE_ME
   port: 5432
   image:
     repository: postgres
