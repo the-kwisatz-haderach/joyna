@@ -3,5 +3,6 @@
   "go.buildFlags": ["-tags=integration"],
   "gopls": {
     "buildFlags": ["-tags=integration"]
-  }
+  },
+  "prettier.bracketSpacing": false
 }
