@@ -77,9 +77,15 @@ top-level `slog.Info`/`slog.Error` without importing the `logging` package).
 
 ## Makefile
 
-- `make build-api` — `go build` the API binary.
+- `make build-api` / `make run-api` — `go build` / `go run` the API binary.
 - `make migrate-create name=...` / `make migrate-up` / `make migrate-down` — golang-migrate against `/migrations`.
 - `make integration-tests` — see Testing above. Plain `go test ./...` (no Makefile target yet) runs unit tests only.
+- `make push-api-image` / `make push-migrations-image` / `make push-frontend-image` — build and push each Docker
+  image to Artifact Registry, tagged `$(TAG)` (short git SHA, computed once at the top of the file) under `$(REPO)`
+  (`$(GCP_CLOUD_REGION)-docker.pkg.dev/$(GCP_CLOUD_PROJECT_ID)/joyna`). Each echoes the pushed ref, mainly useful if
+  deploying by hand — `make helm-upgrade` passes `$(TAG)` automatically, no copy-pasting needed.
+- `make helm-lint` / `make helm-template` / `make helm-diff` / `make helm-upgrade` / `make helm-undeploy` — see
+  "Deployment" below.
 
 ## Frontend
 
@@ -132,3 +138,11 @@ It's a separate toolchain from the Go side — no shared build step, no path fro
 - `docker compose up -d` runs `api`, `db`, `migrate` (one-shot, gated on `db`'s healthcheck), and `pgadmin`.
 - Config comes from `.env` (gitignored); keep `.env.example` in sync when adding new variables.
 - `requests/*.http` holds example API calls for manual testing (VS Code REST Client extension) — prefer extending these over ad hoc curl commands when adding new endpoints.
+
+## Deployment
+
+`joyna-app/` is a Helm chart targeting GKE Autopilot.
+
+- `make helm-lint` → `make helm-template` → `make helm-diff` (renders and diffs against the live cluster via
+  `kubectl diff`) → `make helm-upgrade` mirrors the dry-run-before-apply habit used everywhere else in this repo's
+  deployment tooling. `make helm-undeploy` runs `helm uninstall`.
