@@ -10,16 +10,16 @@ import (
 )
 
 type fakeRepository struct {
-	createEventFunc           func(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error)
-	updateEventFunc           func(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error)
-	deleteEventFunc           func(ctx context.Context, eventID, ownerID string) error
-	getEventsByOwnerFunc      func(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]Event, error)
-	getEventFunc              func(ctx context.Context, eventID string) (Event, error)
-	getEventInviteFunc        func(ctx context.Context, eventID, userID string) (EventInvite, error)
+	createEventFunc          func(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error)
+	updateEventFunc          func(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error)
+	deleteEventFunc          func(ctx context.Context, eventID, ownerID string) error
+	getEventsByOwnerFunc     func(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]Event, error)
+	getEventFunc             func(ctx context.Context, eventID string) (Event, error)
+	getEventInviteFunc       func(ctx context.Context, eventID, userID string) (EventInvite, error)
 	respondToEventInviteFunc func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error)
-	listEventAttendeesFunc    func(ctx context.Context, eventID string) ([]Attendee, error)
-	createEventInviteFunc     func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
-	forwardEventInviteFunc    func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
+	listEventAttendeesFunc   func(ctx context.Context, eventID string) ([]Attendee, error)
+	createEventInviteFunc    func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
+	forwardEventInviteFunc   func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 }
 
 func (f *fakeRepository) CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error) {
