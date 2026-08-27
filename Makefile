@@ -61,15 +61,15 @@ push-frontend-image:
 
 .PHONY: helm-lint
 helm-lint:
-	helm lint $(CHART_DIR) $(HELM_VALUES)
+	helm lint $(CHART_DIR) --namespace $(NAMESPACE) $(HELM_VALUES)
 
 .PHONY: helm-template
 helm-template:
-	helm template $(RELEASE) $(CHART_DIR) $(HELM_VALUES)
+	helm template $(RELEASE) $(CHART_DIR) --namespace $(NAMESPACE) $(HELM_VALUES)
 
 .PHONY: helm-diff
 helm-diff:
-	helm template $(RELEASE) $(CHART_DIR) $(HELM_VALUES) | kubectl diff -n $(NAMESPACE) -f -
+	helm template $(RELEASE) $(CHART_DIR) --namespace $(NAMESPACE) $(HELM_VALUES) | kubectl diff -n $(NAMESPACE) -f -
 
 .PHONY: helm-upgrade
 helm-upgrade:
