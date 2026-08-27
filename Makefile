@@ -69,7 +69,7 @@ helm-template:
 
 .PHONY: helm-diff
 helm-diff:
-	helm template $(RELEASE) $(CHART_DIR) --namespace $(NAMESPACE) $(HELM_VALUES) | kubectl diff -n $(NAMESPACE) -f -
+	helm template $(RELEASE) $(CHART_DIR) --namespace $(NAMESPACE) $(HELM_VALUES) --no-hooks | kubectl diff -n $(NAMESPACE) -f -
 
 .PHONY: helm-upgrade
 helm-upgrade:
