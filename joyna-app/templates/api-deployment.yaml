@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: '{{.Release.Name}}-api'
-  namespace: {{.Values.namespace}}
+  namespace: {{.Release.Namespace}}
   labels:
     {{- include "joyna.selectorLabels" . | nindent 4}}
     app: api

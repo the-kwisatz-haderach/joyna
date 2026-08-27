@@ -2,7 +2,7 @@ apiVersion: networking.gke.io/v1
 kind: HealthCheckPolicy
 metadata:
   name: '{{.Release.Name}}-api-healthcheck'
-  namespace: {{.Values.namespace}}
+  namespace: {{.Release.Namespace}}
   labels: {{- include "joyna.selectorLabels" . | nindent 4}}
 spec:
   targetRef:

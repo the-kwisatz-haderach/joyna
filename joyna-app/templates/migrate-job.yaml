@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: '{{.Release.Name}}-migrate'
-  namespace: {{.Values.namespace}}
+  namespace: {{.Release.Namespace}}
   labels: {{- include "joyna.selectorLabels" . | nindent 4}}
   annotations:
     'helm.sh/hook': post-install,post-upgrade

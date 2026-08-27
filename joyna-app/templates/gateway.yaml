@@ -2,7 +2,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: '{{.Release.Name}}-gw'
-  namespace: {{.Values.namespace}}
+  namespace: {{.Release.Namespace}}
   labels: {{- include "joyna.selectorLabels" . | nindent 4}}
 spec:
   gatewayClassName: gke-l7-regional-external-managed
