@@ -48,15 +48,21 @@ jobs:
           TAG="$(git rev-parse --short HEAD)"
           docker build -f Dockerfile -t "${{ env.repo }}/${{ env.imageName }}:${TAG}" .
           docker push "${{ env.repo }}/${{ env.imageName }}:${TAG}"
-      - name: Set up Kubectl
-        uses: azure/setup-kubectl@v4
-        with:
-          version: 'v1.23.0'
       - name: Setup helm
         uses: azure/setup-helm@v5
+      - name: Setup secrets
+        run: |
+          cat <<EOF > joyna-app/values.secret.yaml
+          postgres:
+            password: ${{ secrets.POSTGRES_PASSWORD }}
+          EOF
       - name: Helm lint
         run: |
           make helm-lint
-      - name: Helm template
+      - uses: azure/setup-kubectl@v4
+      - name: Helm diff
         run: |
-          make helm-template
+          make helm-diff
+      # - name: Helm upgrade
+      #   run: |
+      #     make helm-upgrade
