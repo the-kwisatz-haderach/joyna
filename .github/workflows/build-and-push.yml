@@ -45,3 +45,15 @@ jobs:
           TAG="$(git rev-parse --short HEAD)"
           docker build -f Dockerfile -t "${{ env.repo }}/${{ env.imageName }}:${TAG}" .
           docker push "${{ env.repo }}/${{ env.imageName }}:${TAG}"
+      - name: Set up Kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.23.0'
+      - name: Setup helm
+        uses: azure/setup-helm@v5
+      - name: Helm lint
+        run: |
+          make helm-lint
+      - name: Helm template
+        run: |
+          make helm-template
