@@ -1,0 +1,47 @@
+name: Build & Push API to Artifact Registry
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  projectId: 'joyna-505918'
+  workloadIdentityProvider: 'projects/748186706129/locations/global/workloadIdentityPools/github-actions-pool/providers/gh-actions-provider'
+  repo: 'europe-north2-docker.pkg.dev/joyna-505918/joyna'
+  imageName: 'api'
+  repoLocation: 'europe-north2'
+  serviceAccount: 'github-actions-deployer@joyna-505918.iam.gserviceaccount.com'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - uses: actions/checkout@v7
+      - name: Authenticate to Google Cloud
+        uses: 'google-github-actions/auth@v3'
+        id: auth
+        with:
+          token_format: 'access_token'
+          project_id: ${{ env.projectId }}
+          workload_identity_provider: ${{ env.workloadIdentityProvider }}
+          service_account: ${{ env.serviceAccount }}
+      - name: Login to GAR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.repoLocation }}-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+      - name: Build and Push Container
+        run: |-
+          TAG="$(git rev-parse --short HEAD)"
+          docker build -f Dockerfile -t "${{ env.repo }}/${{ env.imageName }}:${TAG}" .
+          docker push "${{ env.repo }}/${{ env.imageName }}:${TAG}"
