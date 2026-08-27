@@ -16,6 +16,10 @@ spec:
       containers:
         - name: migrate
           image: '{{.Values.migrate.image.repository}}:{{required "migrate.image.tag is required" .Values.migrate.image.tag}}'
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
           args:
             - -path=/migrations
             - -database=$(DATABASE_URL)
