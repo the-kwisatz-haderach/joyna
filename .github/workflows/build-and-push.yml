@@ -1,20 +1,20 @@
 name: Build & Push API to Artifact Registry
 
 on:
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  projectId: 'joyna-505918'
-  workloadIdentityProvider: 'projects/748186706129/locations/global/workloadIdentityPools/github-actions-pool/providers/gh-actions-provider'
-  repo: 'europe-north2-docker.pkg.dev/joyna-505918/joyna'
-  imageName: 'api'
-  gcpRegion: 'europe-north2'
-  serviceAccount: 'github-actions-deployer@joyna-505918.iam.gserviceaccount.com'
-  cluster: 'joyna-dev'
+  workflow_call:
+    inputs:
+      gh_env:
+        required: true
+        type: string
+      imageName:
+        required: true
+        type: string
+      dockerfile:
+        required: true
+        type: string
+      context:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -23,7 +23,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     environment:
-      name: dev
+      name: ${{ inputs.gh_env }}
       deployment: false
     permissions:
       contents: 'read'
@@ -36,43 +36,20 @@ jobs:
         id: auth
         with:
           token_format: 'access_token'
-          project_id: ${{ env.projectId }}
-          workload_identity_provider: ${{ env.workloadIdentityProvider }}
-          service_account: ${{ env.serviceAccount }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_GH_SERVICE_ACCOUNT }}
 
-      - name: Get GKE credentials
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: ${{ env.cluster }}
-          location: ${{ env.gcpRegion }}
-          project_id: ${{ env.projectId }}
-
-      - name: Login to GAR
+      - name: Login to Google Artifact Repository
         uses: docker/login-action@v4
         with:
-          registry: ${{ env.gcpRegion }}-docker.pkg.dev
+          registry: ${{ vars.GCP_ARTIFACTS_REGION }}-docker.pkg.dev
           username: oauth2accesstoken
           password: ${{ steps.auth.outputs.access_token }}
 
       - name: Build and Push Container
         run: |-
+          REPO=${{ vars.GCP_ARTIFACTS_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/joyna
           TAG="$(git rev-parse --short HEAD)"
-          docker build -f Dockerfile -t "${{ env.repo }}/${{ env.imageName }}:${TAG}" .
-          docker push "${{ env.repo }}/${{ env.imageName }}:${TAG}"
-
-      - name: Setup helm
-        uses: azure/setup-helm@v5
-      - name: Setup secrets
-        run: |
-          cat <<EOF > joyna-app/values.secret.yaml
-          postgres:
-            password: ${{ secrets.POSTGRES_PASSWORD }}
-          EOF
-
-      - name: Helm lint
-        run: |
-          make helm-lint
-
-      - name: Helm upgrade
-        run: |
-          make helm-upgrade
+          docker build -f "${{ inputs.dockerfile }}" -t "${REPO}/${{ inputs.imageName }}:${TAG}" "${{ inputs.context }}"
+          docker push "${REPO}/${{ inputs.imageName }}:${TAG}"

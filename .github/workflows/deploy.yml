@@ -1,0 +1,82 @@
+name: Deploy New Version
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-api:
+    uses: $/.github/workflows/build-and-push.yml
+    with:
+      gh_env: 'dev'
+      imageName: 'api'
+      dockerfile: 'Dockerfile'
+      context: '.'
+  build-frontend:
+    uses: $/.github/workflows/build-and-push.yml
+    with:
+      gh_env: 'dev'
+      imageName: 'frontend'
+      dockerfile: 'Dockerfile'
+      context: './frontend'
+  build-migrate:
+    uses: $/.github/workflows/build-and-push.yml
+    with:
+      gh_env: 'dev'
+      imageName: 'migrate'
+      dockerfile: 'Dockerfile.migrate'
+      context: '.'
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build-api, build-frontend, build-migrate]
+    environment:
+      name: dev
+      deployment: false
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Authenticate to Google Cloud
+        uses: 'google-github-actions/auth@v3'
+        id: auth
+        with:
+          token_format: 'access_token'
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_GH_SERVICE_ACCOUNT }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ vars.GCP_GKE_CLUSTER }}
+          location: ${{ vars.GCP_GKE_REGION }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Setup helm
+        uses: azure/setup-helm@v5
+      - name: Setup secrets
+        run: |
+          cat <<EOF > joyna-app/values.secret.yaml
+          postgres:
+            password: ${{ secrets.POSTGRES_PASSWORD }}
+          EOF
+
+      - name: Helm lint
+        run: |
+          make helm-lint
+
+      - name: Helm diff
+        run: |
+          make helm-diff || test $? -eq 1
+
+      - name: Helm upgrade
+        run: |
+          make helm-upgrade
