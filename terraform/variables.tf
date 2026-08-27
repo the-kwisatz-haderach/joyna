@@ -26,3 +26,15 @@ variable "artifact_repo_name" {
   type        = string
   default     = "joyna"
 }
+
+variable "github_repository" {
+  description = "GitHub repository (owner/name) allowed to authenticate via Workload Identity Federation."
+  type        = string
+  default     = "the-kwisatz-haderach/joyna"
+}
+
+variable "github_repository_owner_id" {
+  description = "Numeric GitHub owner ID for github_repository (more stable than the owner login, which can be renamed)."
+  type        = string
+  default     = "31816977"
+}

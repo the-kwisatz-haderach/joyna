@@ -1,24 +1,25 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: frontend-route
-  namespace: joyna
+  name: '{{.Release.Name}}-frontend-route'
+  namespace: {{.Release.Namespace}}
+  labels: {{- include "joyna.selectorLabels" . | nindent 4}}
 spec:
   parentRefs:
-    - name: dev-gw
+    - name: '{{.Release.Name}}-gw'
   rules:
     - backendRefs:
-        - name: frontend
-          port: 8080
+        - name: {{include "joyna.frontendServiceName" .}}
+          port: {{.Values.frontend.port}}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: api-route
-  namespace: joyna
+  name: '{{.Release.Name}}-api-route'
+  namespace: {{.Release.Namespace}}
 spec:
   parentRefs:
-    - name: dev-gw
+    - name: '{{.Release.Name}}-gw'
   rules:
     - matches:
         - path:
@@ -31,5 +32,5 @@ spec:
               type: ReplacePrefixMatch
               replacePrefixMatch: /
       backendRefs:
-        - name: api
-          port: 8080
+        - name: {{include "joyna.apiServiceName" .}}
+          port: {{.Values.api.port}}

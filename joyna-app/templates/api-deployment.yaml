@@ -1,9 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api
-  namespace: joyna
+  name: '{{.Release.Name}}-api'
+  namespace: {{.Release.Namespace}}
   labels:
+    {{- include "joyna.selectorLabels" . | nindent 4}}
     app: api
 spec:
   replicas: 1
@@ -17,11 +18,11 @@ spec:
     spec:
       containers:
         - name: api
-          image: europe-north2-docker.pkg.dev/joyna-505918/joyna/api:e220a8d
+          image: '{{.Values.api.image.repository}}:{{required "api.image.tag is required" .Values.api.image.tag}}'
           livenessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: {{.Values.api.port}}
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 2
@@ -29,27 +30,27 @@ spec:
           readinessProbe:
             httpGet:
               path: /ready
-              port: 8080
+              port: {{.Values.api.port}}
             periodSeconds: 5
           resources:
             requests:
               cpu: 250m
               memory: 128Mi
           ports:
-            - containerPort: 8080
+            - containerPort: {{.Values.api.port}}
           env:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: joyna-secrets
+                  name: '{{.Release.Name}}-secrets'
                   key: DATABASE_URL
             - name: APP_ENV
               valueFrom:
                 configMapKeyRef:
-                  name: joyna-config
+                  name: '{{.Release.Name}}-configmap'
                   key: APP_ENV
             - name: APP_PORT
               valueFrom:
                 configMapKeyRef:
-                  name: joyna-config
+                  name: '{{.Release.Name}}-configmap'
                   key: APP_PORT

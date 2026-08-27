@@ -12,3 +12,13 @@ output "kubectl_connect_command" {
   description = "Command to fetch cluster credentials and configure kubectl."
   value       = "gcloud container clusters get-credentials ${google_container_cluster.primary.name} --region ${var.region} --project ${var.project_id}"
 }
+
+output "github_actions_workload_identity_provider" {
+  description = "Full resource name for google-github-actions/auth's workload_identity_provider input."
+  value       = "projects/${data.google_project.current.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.github.workload_identity_pool_id}/providers/${google_iam_workload_identity_pool_provider.github.workload_identity_pool_provider_id}"
+}
+
+output "github_actions_service_account_email" {
+  description = "Service account email for google-github-actions/auth's service_account input."
+  value       = google_service_account.github_actions.email
+}

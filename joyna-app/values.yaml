@@ -1,0 +1,30 @@
+# Default values for helm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+postgres:
+  user: joyna
+  database: joyna
+  password: REPLACE_ME
+  port: 5432
+  image:
+    repository: postgres
+    tag: 16-alpine
+
+api:
+  port: 8080
+  env: development
+  image:
+    repository: 'europe-north2-docker.pkg.dev/joyna-505918/joyna/api'
+    tag: ''
+
+migrate:
+  image:
+    repository: 'europe-north2-docker.pkg.dev/joyna-505918/joyna/migrate'
+    tag: ''
+
+frontend:
+  port: 8080
+  image:
+    repository: 'europe-north2-docker.pkg.dev/joyna-505918/joyna/frontend'
+    tag: ''
