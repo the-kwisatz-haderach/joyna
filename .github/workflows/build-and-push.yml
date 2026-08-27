@@ -59,6 +59,7 @@ jobs:
           TAG="$(git rev-parse --short HEAD)"
           docker build -f Dockerfile -t "${{ env.repo }}/${{ env.imageName }}:${TAG}" .
           docker push "${{ env.repo }}/${{ env.imageName }}:${TAG}"
+
       - name: Setup helm
         uses: azure/setup-helm@v5
       - name: Setup secrets
@@ -67,9 +68,11 @@ jobs:
           postgres:
             password: ${{ secrets.POSTGRES_PASSWORD }}
           EOF
+
       - name: Helm lint
         run: |
           make helm-lint
+
       - uses: azure/setup-kubectl@v4
       - name: Helm diff
         run: |
