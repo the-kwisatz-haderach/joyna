@@ -4,6 +4,7 @@ locals {
     "artifactregistry.googleapis.com",
     "compute.googleapis.com",
     "iam.googleapis.com",
+    "sts.googleapis.com",
     "cloudresourcemanager.googleapis.com",
   ]
 }
