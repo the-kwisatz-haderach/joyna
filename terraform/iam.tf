@@ -94,6 +94,12 @@ resource "google_service_account_iam_member" "github_actions_token_creator" {
   member             = "principalSet://iam.googleapis.com/projects/${data.google_project.current.number}/locations/global/workloadIdentityPools/${google_iam_workload_identity_pool.github.workload_identity_pool_id}/attribute.repository/${var.github_repository}"
 }
 
+resource "google_project_iam_member" "github_actions_container_developer" {
+  project = var.project_id
+  role    = "roles/container.developer"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 resource "google_project_iam_member" "github_actions_artifact_writer" {
   project = var.project_id
   role    = "roles/artifactregistry.writer"
