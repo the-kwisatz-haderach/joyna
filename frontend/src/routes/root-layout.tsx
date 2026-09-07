@@ -93,6 +93,23 @@ function UsersIcon() {
   )
 }
 
+function PlusIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="size-5"
+    >
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  )
+}
+
 function getScreenName(pathname: string): string {
   if (pathname === '/') return 'Home'
   if (pathname === '/events') return 'Events'
@@ -149,21 +166,30 @@ function BottomMenu() {
   return (
     <nav
       aria-label="Primary"
-      className="sticky bottom-0 z-10 flex items-center gap-6 border-t border-border bg-background px-6 py-3"
+      className="sticky bottom-0 z-10 flex items-center justify-between border-t border-border bg-background px-6 py-3"
     >
+      <div className="flex items-center gap-6">
+        <Link
+          to="/events"
+          className="flex items-center gap-1.5 text-sm text-foreground hover:text-primary"
+        >
+          <CalendarIcon />
+          Events
+        </Link>
+        <Link
+          to="/network"
+          className="flex items-center gap-1.5 text-sm text-foreground hover:text-primary"
+        >
+          <UsersIcon />
+          Network
+        </Link>
+      </div>
       <Link
-        to="/events"
-        className="flex items-center gap-1.5 text-sm text-foreground hover:text-primary"
+        to="/events/new"
+        aria-label="Create event"
+        className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-muted"
       >
-        <CalendarIcon />
-        Events
-      </Link>
-      <Link
-        to="/network"
-        className="flex items-center gap-1.5 text-sm text-foreground hover:text-primary"
-      >
-        <UsersIcon />
-        Network
+        <PlusIcon />
       </Link>
     </nav>
   )

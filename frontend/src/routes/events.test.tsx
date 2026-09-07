@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { MemoryRouter, Route, Routes } from "react-router"
 import { describe, expect, it } from "vitest"
 
@@ -16,15 +17,7 @@ function renderEvents() {
 }
 
 describe("Events", () => {
-  it("links the create event button to the create event screen", async () => {
-    renderEvents()
-
-    expect(
-      await screen.findByRole("link", { name: /create event/i }),
-    ).toHaveAttribute("href", "/events/new")
-  })
-
-  it("splits events into upcoming and archive sections, each linking to a detail page", async () => {
+  it("shows upcoming events with a link to their detail page", async () => {
     renderEvents()
 
     const upcomingHeading = await screen.findByRole("heading", {
@@ -38,19 +31,33 @@ describe("Events", () => {
       "href",
       "/events/c1a2b3c4-1111-4a1a-8a1a-000000000001",
     )
+  })
 
-    const archiveHeading = screen.getByRole("heading", { name: /archive/i })
-    const archiveSection = archiveHeading.parentElement as HTMLElement
-    const archivedLink = await within(archiveSection).findByRole("link", {
+  it("hides happened events behind a collapsed, expandable section", async () => {
+    const user = userEvent.setup()
+    renderEvents()
+
+    const happenedToggle = await screen.findByRole("button", {
+      name: /happened/i,
+    })
+    expect(happenedToggle).toHaveAttribute("aria-expanded", "false")
+    expect(
+      screen.queryByRole("link", { name: /welcome mixer/i }),
+    ).not.toBeInTheDocument()
+
+    await user.click(happenedToggle)
+
+    expect(happenedToggle).toHaveAttribute("aria-expanded", "true")
+    const happenedSection = happenedToggle.closest("div") as HTMLElement
+    const happenedLink = await within(happenedSection).findByRole("link", {
       name: /welcome mixer/i,
     })
-    expect(archivedLink).toHaveAttribute(
+    expect(happenedLink).toHaveAttribute(
       "href",
       "/events/c1a2b3c4-1111-4a1a-8a1a-000000000003",
     )
-
     expect(
-      within(archiveSection).queryByText(/summer rooftop party/i),
+      within(happenedSection).queryByText(/summer rooftop party/i),
     ).not.toBeInTheDocument()
   })
 })
