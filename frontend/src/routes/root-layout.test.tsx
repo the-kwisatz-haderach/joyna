@@ -79,6 +79,9 @@ describe("RootLayout", () => {
       "href",
       "/network",
     )
+    expect(
+      bottomMenu.getByRole("link", { name: /create event/i }),
+    ).toHaveAttribute("href", "/events/new")
   })
 
   it("updates the screen name based on the current route", () => {
