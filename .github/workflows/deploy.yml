@@ -29,7 +29,7 @@ jobs:
     with:
       gh_env: 'dev'
       imageName: 'frontend'
-      dockerfile: 'Dockerfile'
+      dockerfile: 'frontend/Dockerfile'
       context: './frontend'
   build-migrate:
     permissions:

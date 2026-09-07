@@ -1,8 +1,7 @@
 name: Dependabot auto-merge
 on:
   pull_request:
-  workflow_run:
-    workflows: ['Code Quality', 'Frontend Check']
+  check_suite:
     types: [completed]
 permissions:
   contents: write
@@ -22,23 +21,27 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # workflow_run fires once the checks that back the branch protection's
-  # required "check" context finish, unlike `pull_request`, which fires
-  # before those checks even start. Only nudges PRs the job above already
-  # armed (update-type gate already passed there); merge is a no-op if the
-  # PR isn't actually mergeable yet (e.g. review still pending), so this is
-  # safe to attempt on every relevant workflow completion.
+  # check_suite fires once per check suite completion - covering every
+  # workflow and app (Code Quality, Frontend Check, CodeQL, ...) without
+  # naming them here, so "all checks passed" stays whatever GitHub's own
+  # merge check says it is rather than a hardcoded list going stale. Only
+  # nudges PRs the job above already armed (update-type gate already passed
+  # there); merge is a no-op if the PR isn't actually mergeable yet (other
+  # checks still running, review missing, etc.), so it's safe to attempt on
+  # every suite completion.
   merge-when-green:
-    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
+    if: github.event_name == 'check_suite' && github.event.check_suite.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - run: |
-          pr_url=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$HEAD_BRANCH" --state open \
-            --json url,author,autoMergeRequest \
-            --jq '[.[] | select(.author.login == "dependabot[bot]" and .autoMergeRequest != null)][0].url')
-          if [ -n "$pr_url" ]; then
-            gh pr merge --squash "$pr_url" || true
+          pr_number=$(jq -r '.check_suite.pull_requests[0].number // empty' "$GITHUB_EVENT_PATH")
+          if [ -z "$pr_number" ]; then
+            exit 0
+          fi
+          armed=$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" --json author,autoMergeRequest \
+            --jq 'select(.author.login == "dependabot[bot]" and .autoMergeRequest != null) | "yes"')
+          if [ "$armed" = "yes" ]; then
+            gh pr merge --squash "$pr_number" --repo "$GITHUB_REPOSITORY" || true
           fi
         env:
-          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
