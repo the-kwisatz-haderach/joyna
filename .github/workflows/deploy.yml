@@ -84,7 +84,7 @@ jobs:
 
       - name: Helm diff
         run: |
-          make helm-diff || test $? -eq 1
+          make helm-diff
 
       - name: Helm upgrade
         run: |
