@@ -89,4 +89,16 @@ describe("RootLayout", () => {
     const topMenu = within(screen.getByRole("banner"))
     expect(topMenu.getByText("Network")).toBeInTheDocument()
   })
+
+  it("shows a back button to events on the event detail route", () => {
+    loginAsMockUser()
+
+    renderRootLayout(["/events/c1a2b3c4-1111-4a1a-8a1a-000000000001"])
+
+    const topMenu = within(screen.getByRole("banner"))
+    expect(topMenu.getByRole("link", { name: /events/i })).toHaveAttribute(
+      "href",
+      "/events",
+    )
+  })
 })

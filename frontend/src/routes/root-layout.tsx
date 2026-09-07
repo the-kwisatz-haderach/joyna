@@ -38,6 +38,23 @@ function UserIcon() {
   )
 }
 
+function BackIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="size-5"
+    >
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  )
+}
+
 function CalendarIcon() {
   return (
     <svg
@@ -87,13 +104,27 @@ function getScreenName(pathname: string): string {
   return 'joyna'
 }
 
+function isEventDetailPath(pathname: string): boolean {
+  return pathname.startsWith('/events/') && pathname !== '/events/new'
+}
+
 function TopMenu() {
   const { pathname } = useLocation()
   const screenName = getScreenName(pathname)
 
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background px-6 py-4">
-      <span className="font-semibold text-foreground">{screenName}</span>
+      {isEventDetailPath(pathname) ? (
+        <Link
+          to="/events"
+          className="flex items-center gap-1 font-semibold text-foreground hover:text-primary"
+        >
+          <BackIcon />
+          Events
+        </Link>
+      ) : (
+        <span className="font-semibold text-foreground">{screenName}</span>
+      )}
       <nav aria-label="Account" className="flex items-center gap-3">
         <Link
           to="/notifications"
