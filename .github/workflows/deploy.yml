@@ -12,6 +12,9 @@ permissions:
 
 jobs:
   build-api:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     uses: $/.github/workflows/build-and-push.yml
     with:
       gh_env: 'dev'
@@ -19,6 +22,9 @@ jobs:
       dockerfile: 'Dockerfile'
       context: '.'
   build-frontend:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     uses: $/.github/workflows/build-and-push.yml
     with:
       gh_env: 'dev'
@@ -26,6 +32,9 @@ jobs:
       dockerfile: 'Dockerfile'
       context: './frontend'
   build-migrate:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     uses: $/.github/workflows/build-and-push.yml
     with:
       gh_env: 'dev'
