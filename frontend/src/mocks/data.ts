@@ -74,16 +74,25 @@ export const mockUsers: MockUser[] = [
   },
 ]
 
+// Event/RSVP dates are offsets from "now" (rather than fixed calendar dates)
+// so the upcoming/archive split fixtures depend on stays correct as real time
+// passes, instead of rotting once a hardcoded date is in the past.
+function daysFromNow(offsetDays: number): string {
+  const date = new Date()
+  date.setUTCDate(date.getUTCDate() + offsetDays)
+  return date.toISOString()
+}
+
 export const mockEvents: MockEvent[] = [
   {
     id: 'c1a2b3c4-1111-4a1a-8a1a-000000000001',
     ownerId: mockUsers[0].id,
     name: 'Summer Rooftop Party',
     description: 'Drinks and music under the stars.',
-    createdAt: '2026-06-01T12:00:00Z',
-    date: '2026-08-30T18:00:00Z',
+    createdAt: daysFromNow(-20),
+    date: daysFromNow(30),
     location: 'Downtown Rooftop, Stockholm',
-    rsvpDeadline: '2026-08-25T23:59:59Z',
+    rsvpDeadline: daysFromNow(25),
     type: 'party',
     defaultSpreadAllowed: 2,
   },
@@ -92,8 +101,8 @@ export const mockEvents: MockEvent[] = [
     ownerId: mockUsers[0].id,
     name: 'Board Game Night',
     description: 'Bring your favorite board game.',
-    createdAt: '2026-07-15T12:00:00Z',
-    date: '2026-09-05T19:00:00Z',
+    createdAt: daysFromNow(-10),
+    date: daysFromNow(45),
     location: "Ada's place",
     type: 'gathering',
     defaultSpreadAllowed: 1,
@@ -103,8 +112,8 @@ export const mockEvents: MockEvent[] = [
     ownerId: mockUsers[1].id,
     name: 'Turing Award Dinner',
     description: 'Celebrating a milestone in computing.',
-    createdAt: '2026-07-20T12:00:00Z',
-    date: '2026-09-12T19:00:00Z',
+    createdAt: daysFromNow(-5),
+    date: daysFromNow(60),
     location: 'The Guild Hall, Cambridge',
     type: 'dinner',
     defaultSpreadAllowed: 0,
@@ -114,8 +123,8 @@ export const mockEvents: MockEvent[] = [
     ownerId: mockUsers[0].id,
     name: 'Welcome Mixer',
     description: 'Kickoff mixer for new members.',
-    createdAt: '2026-01-05T12:00:00Z',
-    date: '2026-01-15T18:00:00Z',
+    createdAt: daysFromNow(-70),
+    date: daysFromNow(-60),
     location: 'Community Hall, Stockholm',
     type: 'mixer',
     defaultSpreadAllowed: 1,
