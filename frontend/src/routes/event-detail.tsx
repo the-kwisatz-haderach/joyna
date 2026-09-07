@@ -177,10 +177,6 @@ function EventDetail() {
 
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-8 px-6 py-16">
-      <Link to="/events" className="text-sm text-primary hover:underline">
-        ← Back to events
-      </Link>
-
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
