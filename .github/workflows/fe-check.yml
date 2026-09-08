@@ -40,3 +40,11 @@ jobs:
         working-directory: frontend
       - run: npm run build
         working-directory: frontend
+
+  gate:
+    needs: check
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.check.result == 'failure'
+        run: exit 1

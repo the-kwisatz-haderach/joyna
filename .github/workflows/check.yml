@@ -54,3 +54,11 @@ jobs:
         uses: golang/govulncheck-action@v1
         with:
           go-package: ./...
+
+  gate:
+    needs: check
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.check.result == 'failure'
+        run: exit 1
