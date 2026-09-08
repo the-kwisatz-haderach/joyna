@@ -11,7 +11,27 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      migrations: ${{ steps.filter.outputs.migrations }}
+    steps:
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            backend:
+              - '!frontend/**'
+            migrations:
+              - 'migrations/**'
+            frontend:
+              - 'frontend/**'
+
   build-api:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -22,6 +42,8 @@ jobs:
       dockerfile: 'Dockerfile'
       context: '.'
   build-frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -32,6 +54,8 @@ jobs:
       dockerfile: 'frontend/Dockerfile'
       context: './frontend'
   build-migrate:
+    needs: changes
+    if: needs.changes.outputs.migrations == 'true'
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -41,9 +65,70 @@ jobs:
       imageName: 'migrate'
       dockerfile: 'Dockerfile.migrate'
       context: '.'
-  deploy:
+  deploy-api:
     runs-on: ubuntu-latest
-    needs: [build-api, build-frontend, build-migrate]
+    needs: [changes, build-api, build-migrate]
+    if: |
+      always() &&                                                                                                                                                                          
+      needs.changes.outputs.backend == 'true' &&                                                                                                                                           
+      needs.build-api.result != 'failure' &&                                                                                                                                               
+      needs.build-migrate.result != 'failure'
+    environment:
+      name: dev
+      deployment: true
+      url: http://${{ steps.gateway.outputs.ip }}
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Authenticate to Google Cloud
+        uses: 'google-github-actions/auth@v3'
+        id: auth
+        with:
+          token_format: 'access_token'
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_GH_SERVICE_ACCOUNT }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ vars.GCP_GKE_CLUSTER }}
+          location: ${{ vars.GCP_GKE_REGION }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Get Gateway IP
+        id: gateway
+        run: |
+          ip=$(kubectl get gateway joyna-gw -n joyna -o jsonpath='{.status.addresses[0].value}')
+          echo "ip=$ip" >> "$GITHUB_OUTPUT"
+
+      - name: Setup helm
+        uses: azure/setup-helm@v5
+      - name: Setup secrets
+        run: |
+          cat <<EOF > joyna-app/values.secret.yaml
+          postgres:
+            password: ${{ secrets.POSTGRES_PASSWORD }}
+          EOF
+
+      - name: Helm lint
+        run: |
+          make helm-lint
+
+      - name: Helm diff
+        run: |
+          make helm-diff
+
+      - name: Helm upgrade api
+        run: |
+          make helm-upgrade-api
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: build-frontend
     environment:
       name: dev
       deployment: false
@@ -86,6 +171,6 @@ jobs:
         run: |
           make helm-diff
 
-      - name: Helm upgrade
+      - name: Helm upgrade frontend
         run: |
-          make helm-upgrade
+          make helm-upgrade-frontend

@@ -15,10 +15,11 @@ export REPO
 CHART_DIR := joyna-app
 RELEASE := joyna
 NAMESPACE := joyna
-HELM_VALUES := -f $(CHART_DIR)/values.secret.yaml \
-	--set api.image.tag=$(TAG) \
-	--set migrate.image.tag=$(TAG) \
-	--set frontend.image.tag=$(TAG)
+HELM_VALUES_SECRET := -f $(CHART_DIR)/values.secret.yaml
+HELM_VALUES_FRONTEND := --set frontend.image.tag=$(TAG)
+HELM_VALUES_API := --set api.image.tag=$(TAG)
+HELM_VALUES_MIGRATE := --set migrate.image.tag=$(TAG)
+HELM_VALUES_FULL := $(HELM_VALUES_SECRET) $(HELM_VALUES_API) $(HELM_VALUES_MIGRATE) $(HELM_VALUES_FRONTEND)
 
 # Creates new db migration following correct sequence.
 .PHONY: migrate-create
@@ -61,15 +62,15 @@ push-frontend-image:
 
 .PHONY: helm-lint
 helm-lint:
-	helm lint $(CHART_DIR) --namespace $(NAMESPACE) $(HELM_VALUES)
+	helm lint $(CHART_DIR) --namespace $(NAMESPACE) $(HELM_VALUES_FULL)
 
 .PHONY: helm-template
 helm-template:
-	helm template $(RELEASE) $(CHART_DIR) --namespace $(NAMESPACE) $(HELM_VALUES)
+	helm template $(RELEASE) $(CHART_DIR) --namespace $(NAMESPACE) $(HELM_VALUES_FULL)
 
 .PHONY: helm-diff
 helm-diff:
-	helm template $(RELEASE) $(CHART_DIR) --namespace $(NAMESPACE) $(HELM_VALUES) --no-hooks | kubectl diff -n $(NAMESPACE) -f -; \
+	helm template $(RELEASE) $(CHART_DIR) --namespace $(NAMESPACE) $(HELM_VALUES_FULL) --no-hooks | kubectl diff -n $(NAMESPACE) -f -; \
 	code=$$?; \
 	if [ $$code -gt 1 ]; then exit $$code; fi
 
@@ -77,7 +78,28 @@ helm-diff:
 helm-upgrade:
 	helm upgrade --install $(RELEASE) $(CHART_DIR) \
 		--namespace $(NAMESPACE) --create-namespace \
-		$(HELM_VALUES) \
+		$(HELM_VALUES_FULL) --set migrate.enabled=true \
+		--wait --timeout 5m
+
+.PHONY: helm-upgrade-frontend
+helm-upgrade-frontend:
+	helm upgrade --reuse-values --install $(RELEASE) $(CHART_DIR) \
+		--namespace $(NAMESPACE) --create-namespace \
+		$(HELM_VALUES_SECRET) $(HELM_VALUES_FRONTEND) --set migrate.enabled=false \
+		--wait --timeout 5m
+
+.PHONY: helm-upgrade-api
+helm-upgrade-api:
+	helm upgrade --reuse-values --install $(RELEASE) $(CHART_DIR) \
+		--namespace $(NAMESPACE) --create-namespace \
+		$(HELM_VALUES_SECRET) $(HELM_VALUES_API) --set migrate.enabled=true \
+		--wait --timeout 5m
+
+.PHONY: helm-upgrade-migrate
+helm-upgrade-migrate:
+	helm upgrade --reuse-values --install $(RELEASE) $(CHART_DIR) \
+		--namespace $(NAMESPACE) --create-namespace \
+		$(HELM_VALUES_SECRET) $(HELM_VALUES_MIGRATE) --set migrate.enabled=true \
 		--wait --timeout 5m
 
 .PHONY: helm-undeploy
