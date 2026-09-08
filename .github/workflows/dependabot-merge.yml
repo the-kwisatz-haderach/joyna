@@ -1,15 +1,12 @@
 name: Dependabot auto-merge
 on:
   pull_request:
-  workflow_run:
-    workflows: ['Code Quality', 'Frontend Check']
-    types: [completed]
 permissions:
   contents: write
   pull-requests: write
 jobs:
   arm-auto-merge:
-    if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - id: metadata
@@ -20,19 +17,4 @@ jobs:
         run: gh pr merge --auto --squash "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  merge-when-green:
-    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          pr_url=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$HEAD_BRANCH" --state open \
-            --json url,author,autoMergeRequest \
-            --jq '[.[] | select(.author.login == "dependabot[bot]" and .autoMergeRequest != null)][0].url')
-          if [ -n "$pr_url" ]; then
-            gh pr merge --squash "$pr_url" || true
-          fi
-        env:
-          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
