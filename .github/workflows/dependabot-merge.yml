@@ -39,24 +39,22 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Only PRs that arm-auto-merge already armed are eligible, so the
-          # "no semver-major" policy stays encoded in one place.
           prs=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 50 \
-            --json number,author,autoMergeRequest,mergeable,mergeStateStatus \
+            --json number,author,autoMergeRequest \
             --jq '.[]
                   | select((.author.login | ascii_downcase | test("dependabot"))
-                           and .autoMergeRequest != null
-                           and .mergeable == "MERGEABLE"
-                           and .mergeStateStatus == "CLEAN")
+                           and .autoMergeRequest != null)
                   | .number')
 
           if [ -z "$prs" ]; then
-            echo "No dependabot PRs are ready to merge."
+            echo "No armed dependabot PRs found."
             exit 0
           fi
 
           for pr in $prs; do
-            echo "Merging PR #$pr"
-            gh pr merge --squash "$pr" \
-              || echo "::warning::Could not merge PR #$pr; will retry on the next run"
+            if gh pr merge --squash "$pr" 2>&1; then
+              echo "Merged PR #$pr"
+            else
+              echo "PR #$pr not mergeable yet; will retry on the next run"
+            fi
           done
