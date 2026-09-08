@@ -18,9 +18,14 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       migrations: ${{ steps.filter.outputs.migrations }}
     steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
       - uses: dorny/paths-filter@v4
         id: filter
         with:
+          base: last-deploy
           filters: |
             backend:
               - 'internal/**'
@@ -179,3 +184,22 @@ jobs:
       - name: Helm upgrade frontend
         run: |
           make helm-upgrade-frontend
+
+  finalize:
+    runs-on: ubuntu-latest
+    needs: [deploy-api, deploy-frontend]
+    if: |
+      always() &&
+      needs.deploy-api.result != 'failure' &&
+      needs.deploy-frontend.result != 'failure'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Move last-deploy tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f last-deploy
+          git push origin last-deploy --force
