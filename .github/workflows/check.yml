@@ -20,7 +20,11 @@ jobs:
         with:
           filters: |
             backend:
-              - '!frontend/**'
+              - 'internal/**'
+              - 'cmd/**'
+              - 'go.mod'
+              - 'go.sum'
+              - 'Dockerfile'
   check:
     needs: changes
     if: needs.changes.outputs.backend == 'true'

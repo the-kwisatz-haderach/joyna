@@ -23,7 +23,11 @@ jobs:
         with:
           filters: |
             backend:
-              - '!frontend/**'
+              - 'internal/**'
+              - 'cmd/**'
+              - 'go.mod'
+              - 'go.sum'
+              - 'Dockerfile'
             migrations:
               - 'migrations/**'
             frontend:
@@ -69,9 +73,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes, build-api, build-migrate]
     if: |
-      always() &&                                                                                                                                                                          
-      needs.changes.outputs.backend == 'true' &&                                                                                                                                           
-      needs.build-api.result != 'failure' &&                                                                                                                                               
+      always() &&
+      needs.changes.outputs.backend == 'true' &&
+      needs.build-api.result != 'failure' &&
+      needs.build-api.result != 'cancelled' &&
       needs.build-migrate.result != 'failure'
     environment:
       name: dev
