@@ -51,10 +51,16 @@ jobs:
             exit 0
           fi
 
+          # Merge via the REST API rather than `gh pr merge`: this job has no
+          # checkout, and gh's PR commands try to resolve the repo from a local
+          # git remote unless every call is given --repo. The API call has no
+          # local git dependency at all, and surfaces GitHub's own rejection
+          # reason when a PR isn't ready.
           for pr in $prs; do
-            if gh pr merge --squash "$pr" 2>&1; then
+            if out=$(gh api -X PUT "repos/$GITHUB_REPOSITORY/pulls/$pr/merge" \
+                       -f merge_method=squash 2>&1); then
               echo "Merged PR #$pr"
             else
-              echo "PR #$pr not mergeable yet; will retry on the next run"
+              echo "PR #$pr not merged: $out"
             fi
           done
