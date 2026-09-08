@@ -1,1 +1,9 @@
 * @the-kwisatz-haderach
+go.mod
+go.sum
+Dockerfile
+Dockerfile.migrate
+frontend/package.json
+frontend/package-lock.json
+frontend/Dockerfile
+.github/workflows/*.yml 
