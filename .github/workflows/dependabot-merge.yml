@@ -1,12 +1,19 @@
 name: Dependabot auto-merge
 on:
   pull_request:
+  workflow_run:
+    workflows: ['Code Quality', 'Frontend Check']
+    types: [completed]
+  schedule:
+    # Safety net: native auto-merge is event-driven and can go stale
+    # (e.g. when required checks finish before a ruleset change).
+    - cron: '*/15 * * * *'
 permissions:
   contents: write
   pull-requests: write
 jobs:
   arm-auto-merge:
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - id: metadata
@@ -18,3 +25,38 @@ jobs:
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  merge-when-green:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: dependabot-merge-sweep
+      cancel-in-progress: false
+    steps:
+      - name: Merge dependabot PRs that are already green
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Only PRs that arm-auto-merge already armed are eligible, so the
+          # "no semver-major" policy stays encoded in one place.
+          prs=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 50 \
+            --json number,author,autoMergeRequest,mergeable,mergeStateStatus \
+            --jq '.[]
+                  | select((.author.login | ascii_downcase | test("dependabot"))
+                           and .autoMergeRequest != null
+                           and .mergeable == "MERGEABLE"
+                           and .mergeStateStatus == "CLEAN")
+                  | .number')
+
+          if [ -z "$prs" ]; then
+            echo "No dependabot PRs are ready to merge."
+            exit 0
+          fi
+
+          for pr in $prs; do
+            echo "Merging PR #$pr"
+            gh pr merge --squash "$pr" \
+              || echo "::warning::Could not merge PR #$pr; will retry on the next run"
+          done
