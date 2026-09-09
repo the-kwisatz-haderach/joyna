@@ -1,0 +1,39 @@
+# Build context for Dockerfile (api) and Dockerfile.migrate, both of which use
+# the repo root as context. The api build needs go.mod/go.sum, cmd/ and
+# internal/; the migrate build needs only migrations/. Everything else is
+# excluded to keep the context small and to keep secrets out of it.
+
+# VCS and CI
+.git
+.gitignore
+.github
+
+# Frontend has its own image and build context
+frontend
+
+# Deployment / infra config (joyna-app holds values.secret.yaml)
+joyna-app
+terraform
+docker-compose.yml
+
+# Secrets and local config
+.env
+.env.*
+
+# Editor and tooling
+.vscode
+.claude
+
+# Docs and local dev helpers
+CLAUDE.md
+LICENSE
+openapi.yaml
+requests
+
+# Dockerfiles themselves are not needed inside the context
+Dockerfile
+Dockerfile.migrate
+
+# Build output from `make build-api`
+main
+api
