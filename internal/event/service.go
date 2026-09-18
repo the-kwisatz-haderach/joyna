@@ -18,7 +18,7 @@ type repository interface {
 	CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error)
 	UpdateEvent(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error)
 	DeleteEvent(ctx context.Context, eventID, ownerID string) error
-	GetEventsByOwner(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]Event, error)
+	GetEventsByOwner(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]EventView, error)
 	GetEvent(ctx context.Context, eventID string) (Event, error)
 	GetEventInvite(ctx context.Context, eventID, userID string) (EventInvite, error)
 	RespondToEventInvite(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error)
@@ -78,7 +78,7 @@ func (s *Service) UpdateEvent(ctx context.Context, eventUpdate UpdateEventPayloa
 	return s.repo.UpdateEvent(ctx, eventUpdate, eventID, ownerID)
 }
 
-func (s *Service) GetEvents(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]Event, error) {
+func (s *Service) GetEvents(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]EventView, error) {
 	return s.repo.GetEventsByOwner(ctx, userID, sortField, order, scope)
 }
 

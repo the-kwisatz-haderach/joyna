@@ -104,7 +104,11 @@ func (r *Repository) GetEvent(ctx context.Context, eventID string) (Event, error
 	return event, nil
 }
 
-func (r *Repository) GetEventsByOwner(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]Event, error) {
+// GetEventsByOwner lists events in scope, enriched per-event with whether
+// the viewer owns it and (if not) their invite status — the events listing
+// UI uses both to power its Hosting/Invited filters and host/accepted
+// badges without an N+1 lookup per event.
+func (r *Repository) GetEventsByOwner(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]EventView, error) {
 	column := "date"
 	if sortField == EventSortFieldCreatedAt {
 		column = "created_at"
@@ -128,19 +132,40 @@ func (r *Repository) GetEventsByOwner(ctx context.Context, userID string, sortFi
 		userID,
 	)
 	if err != nil {
-		return []Event{}, fmt.Errorf("listing events query: %w", err)
+		return []EventView{}, fmt.Errorf("listing events query: %w", err)
 	}
-	defer rows.Close()
-
 	events, err := pgx.CollectRows(rows, pgx.RowToStructByName[Event])
+	rows.Close()
 	if err != nil {
-		return []Event{}, fmt.Errorf("listing events: %w", err)
-	}
-	if events == nil {
-		events = []Event{}
+		return []EventView{}, fmt.Errorf("listing events: %w", err)
 	}
 
-	return events, nil
+	inviteRows, err := r.pool.Query(ctx,
+		`SELECT * FROM event_invites WHERE invited_user_id = $1`,
+		userID,
+	)
+	if err != nil {
+		return []EventView{}, fmt.Errorf("listing viewer invites: %w", err)
+	}
+	invites, err := pgx.CollectRows(inviteRows, pgx.RowToStructByName[EventInvite])
+	inviteRows.Close()
+	if err != nil {
+		return []EventView{}, fmt.Errorf("listing viewer invites: %w", err)
+	}
+	statusByEventID := make(map[string]EventInviteStatus, len(invites))
+	for _, invite := range invites {
+		statusByEventID[invite.EventID] = invite.Status
+	}
+
+	views := make([]EventView, len(events))
+	for i, ev := range events {
+		views[i] = EventView{Event: ev, IsOwner: ev.OwnerId == userID}
+		if status, ok := statusByEventID[ev.ID]; ok {
+			views[i].ViewerInviteStatus = &status
+		}
+	}
+
+	return views, nil
 }
 
 func (r *Repository) GetEventInvite(ctx context.Context, eventID, userID string) (EventInvite, error) {

@@ -4,6 +4,7 @@ import RootLayout from './routes/root-layout'
 import Login from './routes/login'
 import Register from './routes/register'
 import Events from './routes/events'
+import AllEvents from './routes/events-all'
 import EventDetail from './routes/event-detail'
 import CreateEvent from './routes/create-event'
 import EditEvent from './routes/edit-event'
@@ -31,6 +32,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <Events />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'events/all',
+        element: (
+          <RequireAuth>
+            <AllEvents />
           </RequireAuth>
         ),
       },
