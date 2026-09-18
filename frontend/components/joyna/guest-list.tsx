@@ -198,7 +198,7 @@ export function GuestList({
 
       {!readOnly &&
         (editing ? (
-          <StickyActionBar className="mt-4 -mx-5 px-5">
+          <StickyActionBar className="sticky bottom-0 z-10 mt-4 -mx-5 px-5">
             <Button
               variant="secondary"
               className="h-11 flex-1 rounded-control font-display text-sm"
@@ -214,7 +214,7 @@ export function GuestList({
             </Button>
           </StickyActionBar>
         ) : (
-          <StickyActionBar className="mt-4 -mx-5 px-5">
+          <StickyActionBar className="sticky bottom-0 z-10 mt-4 -mx-5 px-5">
             <Button
               className="h-11 w-full rounded-control font-display text-sm"
               onClick={enterEdit}
