@@ -380,12 +380,17 @@ function EventDetail() {
             />
             {guests.length} guest{guests.length === 1 ? '' : 's'}
           </span>
-          {rsvpClosed || rsvpLabel ? (
+          {rsvpClosed || rsvpLabel || mood ? (
             <div className="mt-0.5 flex flex-wrap items-center gap-2">
               {rsvpClosed ? (
                 <Pill tone="muted">🔒 RSVP closed</Pill>
               ) : (
                 rsvpLabel && <Pill tone="sunflower">{rsvpLabel}</Pill>
+              )}
+              {mood && (
+                <Pill tone="periwinkle">
+                  {mood.emoji} {mood.label} mood
+                </Pill>
               )}
             </div>
           ) : null}
