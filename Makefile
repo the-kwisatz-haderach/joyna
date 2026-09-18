@@ -40,6 +40,22 @@ migrate-down:
 integration-tests:
 	go test ./... -tags=integration
 
+# Runs api, db, migrate and pgadmin only — the prometheus/node_exporter/grafana
+# stack is gated behind the "monitoring" compose profile so it stays opt-in.
+# Always rebuilds first so this never serves a stale image after code changes.
+.PHONY: compose-up
+compose-up:
+	docker compose up -d --build
+
+# Runs the full stack, including local prometheus/grafana.
+.PHONY: compose-up-monitoring
+compose-up-monitoring:
+	docker compose --profile monitoring up -d --build
+
+.PHONY: compose-down
+compose-down:
+	docker compose --profile monitoring down
+
 .PHONY: build-api
 build-api:
 	go build ./cmd/api/main.go
