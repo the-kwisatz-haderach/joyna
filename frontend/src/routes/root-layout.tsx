@@ -91,13 +91,15 @@ function BottomMenu() {
           Network
         </Link>
       </div>
-      <Link
-        to="/events/new"
-        aria-label="Create event"
-        className="flex h-11 shrink-0 items-center justify-center rounded-full bg-joyna-coral px-5 font-display text-sm font-semibold text-white shadow-sm transition-transform active:scale-95"
-      >
-        + New
-      </Link>
+      {eventsActive && (
+        <Link
+          to="/events/new"
+          aria-label="Create event"
+          className="flex h-11 shrink-0 items-center justify-center rounded-full bg-joyna-coral px-5 font-display text-sm font-semibold text-white shadow-sm transition-transform active:scale-95"
+        >
+          + New
+        </Link>
+      )}
     </nav>
   )
 }
