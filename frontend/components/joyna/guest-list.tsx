@@ -199,16 +199,26 @@ export function GuestList({
       {!readOnly &&
         (editing ? (
           <StickyActionBar className="mt-4 -mx-5 px-5">
-            <Button variant="secondary" className="flex-1" onClick={cancelEdit}>
+            <Button
+              variant="secondary"
+              className="h-11 flex-1 rounded-control font-display text-sm"
+              onClick={cancelEdit}
+            >
               Cancel
             </Button>
-            <Button className="flex-1" onClick={commitEdit}>
+            <Button
+              className="h-11 flex-1 rounded-control font-display text-sm"
+              onClick={commitEdit}
+            >
               Done
             </Button>
           </StickyActionBar>
         ) : (
           <StickyActionBar className="mt-4 -mx-5 px-5">
-            <Button className="w-full" onClick={enterEdit}>
+            <Button
+              className="h-11 w-full rounded-control font-display text-sm"
+              onClick={enterEdit}
+            >
               {hasAnyGuests ? "Update guest list" : "Add guests"}
             </Button>
           </StickyActionBar>
