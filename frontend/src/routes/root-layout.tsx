@@ -1,9 +1,9 @@
-import { Link, Outlet, useLocation } from 'react-router'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { ArrowLeft01Icon, Notification03Icon, UserCircleIcon } from '@hugeicons/core-free-icons'
+import {Link, Outlet, useLocation} from 'react-router'
+import {HugeiconsIcon} from '@hugeicons/react'
+import {Notification03Icon, UserCircleIcon} from '@hugeicons/core-free-icons'
 
-import { cn } from '@/lib/utils'
-import { useAuth } from '../auth-context'
+import {cn} from '@/lib/utils'
+import {useAuth} from '../auth-context'
 
 function isPushedPath(pathname: string): boolean {
   return (
@@ -20,7 +20,7 @@ function getScreenTitle(pathname: string): string {
 }
 
 function TopMenu() {
-  const { pathname } = useLocation()
+  const {pathname} = useLocation()
   const pushed = isPushedPath(pathname)
 
   return (
@@ -28,10 +28,9 @@ function TopMenu() {
       {pushed ? (
         <Link
           to="/events"
-          aria-label="Back to events"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-joyna-ink transition-colors hover:bg-joyna-border"
+          className="-ml-1.5 flex items-center gap-0.5 rounded-full py-1.5 pr-2.5 pl-1.5 font-display text-sm font-semibold text-joyna-ink transition-colors hover:bg-joyna-border"
         >
-          <HugeiconsIcon icon={ArrowLeft01Icon} className="h-5 w-5" strokeWidth={2} />
+          <span aria-hidden="true">&lt;</span> Events
         </Link>
       ) : (
         <span className="font-display text-lg font-semibold text-joyna-ink">
@@ -44,20 +43,32 @@ function TopMenu() {
           aria-label="Notifications"
           className={cn(
             'flex h-10 w-10 items-center justify-center rounded-control border border-joyna-border bg-white shadow-sm transition-colors',
-            pathname === '/notifications' ? 'text-joyna-coral' : 'text-joyna-ink-soft hover:text-joyna-ink'
+            pathname === '/notifications'
+              ? 'text-joyna-coral'
+              : 'text-joyna-ink-soft hover:text-joyna-ink',
           )}
         >
-          <HugeiconsIcon icon={Notification03Icon} className="h-5 w-5" strokeWidth={2} />
+          <HugeiconsIcon
+            icon={Notification03Icon}
+            className="h-5 w-5"
+            strokeWidth={2}
+          />
         </Link>
         <Link
           to="/profile"
           aria-label="Profile"
           className={cn(
             'flex h-10 w-10 items-center justify-center rounded-control border border-joyna-border bg-white shadow-sm transition-colors',
-            pathname === '/profile' ? 'text-joyna-coral' : 'text-joyna-ink-soft hover:text-joyna-ink'
+            pathname === '/profile'
+              ? 'text-joyna-coral'
+              : 'text-joyna-ink-soft hover:text-joyna-ink',
           )}
         >
-          <HugeiconsIcon icon={UserCircleIcon} className="h-5 w-5" strokeWidth={2} />
+          <HugeiconsIcon
+            icon={UserCircleIcon}
+            className="h-5 w-5"
+            strokeWidth={2}
+          />
         </Link>
       </nav>
     </header>
@@ -65,18 +76,21 @@ function TopMenu() {
 }
 
 function BottomMenu() {
-  const { pathname } = useLocation()
+  const {pathname} = useLocation()
   const eventsActive = pathname === '/' || pathname === '/events'
   const networkActive = pathname === '/network'
 
   return (
-    <nav aria-label="Primary" className="sticky bottom-0 z-10 flex items-center justify-between px-5 py-3">
+    <nav
+      aria-label="Primary"
+      className="sticky bottom-0 z-10 flex items-center justify-between px-5 py-3"
+    >
       <div className="flex h-11 items-center gap-1 rounded-full border border-joyna-border-strong px-1">
         <Link
           to="/events"
           className={cn(
             'flex h-9 items-center rounded-full px-4 text-xs font-semibold transition-colors',
-            eventsActive ? 'bg-joyna-ink text-white' : 'text-joyna-ink-soft'
+            eventsActive ? 'bg-joyna-ink text-white' : 'text-joyna-ink-soft',
           )}
         >
           Events
@@ -85,7 +99,7 @@ function BottomMenu() {
           to="/network"
           className={cn(
             'flex h-9 items-center rounded-full px-4 text-xs font-semibold transition-colors',
-            networkActive ? 'bg-joyna-ink text-white' : 'text-joyna-ink-soft'
+            networkActive ? 'bg-joyna-ink text-white' : 'text-joyna-ink-soft',
           )}
         >
           Network
@@ -103,8 +117,8 @@ function BottomMenu() {
 }
 
 function RootLayout() {
-  const { user } = useAuth()
-  const { pathname } = useLocation()
+  const {user} = useAuth()
+  const {pathname} = useLocation()
 
   if (!user) {
     return <Outlet />

@@ -107,7 +107,7 @@ function CreateEvent() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="h-10 rounded-field"
+            className="h-10 rounded-field bg-white"
           />
         </label>
 
@@ -127,7 +127,7 @@ function CreateEvent() {
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="h-10 w-32 rounded-field"
+              className="h-10 w-32 rounded-field bg-white"
             />
           </label>
         </div>
@@ -138,7 +138,7 @@ function CreateEvent() {
             placeholder="Search for a place…"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="h-10 rounded-field"
+            className="h-10 rounded-field bg-white"
           />
           <div className="flex h-28 items-center justify-center rounded-card border border-dashed border-joyna-border-strong bg-joyna-border/40 text-joyna-ink-faint">
             Map preview
@@ -159,7 +159,7 @@ function CreateEvent() {
               onChange={(e) => setRsvpAmount(Number(e.target.value))}
               className="h-10 rounded-field border border-joyna-border-strong bg-white px-2 text-sm"
             >
-              {[1, 2, 3, 4].map((n) => (
+              {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>
@@ -194,7 +194,7 @@ function CreateEvent() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
-            className="rounded-field"
+            className="rounded-field bg-white"
           />
         </label>
 
