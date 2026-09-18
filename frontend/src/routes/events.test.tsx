@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it } from 'vitest'
 
@@ -24,6 +25,7 @@ function renderEvents() {
       <MemoryRouter initialEntries={['/events']}>
         <Routes>
           <Route path="/events" element={<Events />} />
+          <Route path="/events/all" element={<div>All events screen</div>} />
           <Route path="/events/:id" element={<div>Event detail</div>} />
         </Routes>
       </MemoryRouter>
@@ -36,33 +38,42 @@ describe('Events', () => {
     localStorage.clear()
   })
 
-  it('shows events the user is hosting under Your events', async () => {
+  it('shows a "View all" link to the paginated events screen', async () => {
     loginAsMockUser()
     renderEvents()
 
-    const heading = await screen.findByRole('heading', { name: /your events/i })
-    const section = heading.closest('div')?.parentElement as HTMLElement
-    const link = await within(section).findByRole('link', { name: /summer rooftop party/i })
-    expect(link).toHaveAttribute('href', '/events/c1a2b3c4-1111-4a1a-8a1a-000000000001')
+    const link = await screen.findByRole('link', { name: /view all/i })
+    expect(link).toHaveAttribute('href', '/events/all')
   })
 
-  it('shows events the user is invited to under Upcoming', async () => {
+  it('marks an event the user is hosting with a host badge', async () => {
     loginAsMockUser()
     renderEvents()
 
-    const heading = await screen.findByRole('heading', { name: /^upcoming$/i })
-    const section = heading.closest('div')?.parentElement as HTMLElement
-    const link = await within(section).findByRole('link', { name: /turing award dinner/i })
-    expect(link).toHaveAttribute('href', '/events/c1a2b3c4-1111-4a1a-8a1a-000000000004')
+    const link = await screen.findByRole('link', { name: /board game night/i })
+    expect(within(link).getByLabelText('Hosting')).toBeInTheDocument()
+    expect(link).toHaveAttribute('href', '/events/c1a2b3c4-1111-4a1a-8a1a-000000000002')
   })
 
-  it('shows dimmed past events under Past events', async () => {
+  it('marks an accepted invite with an attending badge', async () => {
     loginAsMockUser()
     renderEvents()
 
-    const heading = await screen.findByRole('heading', { name: /past events/i })
-    const section = heading.closest('div')?.parentElement as HTMLElement
-    const link = await within(section).findByRole('link', { name: /welcome mixer/i })
-    expect(link).toHaveAttribute('href', '/events/c1a2b3c4-1111-4a1a-8a1a-000000000003')
+    const link = await screen.findByRole('link', { name: /quiz night/i })
+    expect(within(link).getByLabelText('Attending')).toBeInTheDocument()
+  })
+
+  it('hides hosted events when the Hosting filter is toggled off', async () => {
+    const user = userEvent.setup()
+    loginAsMockUser()
+    renderEvents()
+
+    await screen.findByRole('link', { name: /board game night/i })
+
+    await user.click(screen.getByRole('button', { name: 'Hosting' }))
+
+    expect(screen.queryByRole('link', { name: /board game night/i })).not.toBeInTheDocument()
+    // Invited-to events (Hosting is now off, Invited stays on) still show.
+    expect(await screen.findByRole('link', { name: /turing award dinner/i })).toBeInTheDocument()
   })
 })

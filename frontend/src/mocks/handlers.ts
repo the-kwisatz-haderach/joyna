@@ -164,7 +164,24 @@ export const handlers = [
       return order === "asc" ? diff : -diff
     })
 
-    return HttpResponse.json(sorted)
+    // Mirrors internal/event's EventView: the real GET /events enriches each
+    // event with the viewer's relationship to it (isOwner/viewerInviteStatus)
+    // so the listing UI can power its Hosting/Invited filters and host/
+    // accepted badges without a per-event follow-up request.
+    const withViewerContext = sorted.map((event) => {
+      const invite = eventInvites.find(
+        (candidate) =>
+          candidate.eventId === event.id &&
+          candidate.invitedUserId === currentUser.id,
+      )
+      return {
+        ...event,
+        isOwner: event.ownerId === currentUser.id,
+        viewerInviteStatus: invite?.status,
+      }
+    })
+
+    return HttpResponse.json(withViewerContext)
   }),
 
   http.post("/api/events", async ({ request }) => {

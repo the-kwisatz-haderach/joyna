@@ -144,4 +144,33 @@ func TestEventRepository(t *testing.T) {
 		err = repo.DeleteEventInvite(ctx, createdEvent.ID, invitee.Id)
 		require.ErrorIs(t, err, ErrInviteNotFound)
 	})
+
+	t.Run("GetEventsByOwner enriches events with the viewer's relationship to them", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		invitee := authtest.CreateUser(t, pool)
+		ownedEvent, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(24 * time.Hour)}, owner.Id)
+		require.NoError(t, err)
+		invitedEvent, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(48 * time.Hour)}, invitee.Id)
+		require.NoError(t, err)
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: invitedEvent.ID, InvitedUserID: owner.Id}, invitee.Id)
+		require.NoError(t, err)
+		_, err = repo.RespondToEventInvite(ctx, invitedEvent.ID, owner.Id, InviteStateAccepted)
+		require.NoError(t, err)
+
+		views, err := repo.GetEventsByOwner(ctx, owner.Id, EventSortFieldDate, SortOrderAsc, EventListScopeAll)
+		require.NoError(t, err)
+		require.Len(t, views, 2)
+
+		byID := make(map[string]EventView, len(views))
+		for _, v := range views {
+			byID[v.ID] = v
+		}
+
+		require.True(t, byID[ownedEvent.ID].IsOwner)
+		require.Nil(t, byID[ownedEvent.ID].ViewerInviteStatus)
+
+		require.False(t, byID[invitedEvent.ID].IsOwner)
+		require.NotNil(t, byID[invitedEvent.ID].ViewerInviteStatus)
+		require.Equal(t, InviteStateAccepted, *byID[invitedEvent.ID].ViewerInviteStatus)
+	})
 }

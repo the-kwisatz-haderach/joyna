@@ -13,7 +13,7 @@ type fakeRepository struct {
 	createEventFunc          func(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error)
 	updateEventFunc          func(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error)
 	deleteEventFunc          func(ctx context.Context, eventID, ownerID string) error
-	getEventsByOwnerFunc     func(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]Event, error)
+	getEventsByOwnerFunc     func(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]EventView, error)
 	getEventFunc             func(ctx context.Context, eventID string) (Event, error)
 	getEventInviteFunc       func(ctx context.Context, eventID, userID string) (EventInvite, error)
 	respondToEventInviteFunc func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error)
@@ -35,7 +35,7 @@ func (f *fakeRepository) DeleteEvent(ctx context.Context, eventID, ownerID strin
 	return f.deleteEventFunc(ctx, eventID, ownerID)
 }
 
-func (f *fakeRepository) GetEventsByOwner(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]Event, error) {
+func (f *fakeRepository) GetEventsByOwner(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]EventView, error) {
 	return f.getEventsByOwnerFunc(ctx, userID, sortField, order, scope)
 }
 
@@ -185,9 +185,9 @@ func TestUpdateEvent_InvalidRsvpDeadline(t *testing.T) {
 }
 
 func TestGetEvents(t *testing.T) {
-	events := []Event{{ID: "event-id"}}
+	events := []EventView{{Event: Event{ID: "event-id"}}}
 	repo := &fakeRepository{
-		getEventsByOwnerFunc: func(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]Event, error) {
+		getEventsByOwnerFunc: func(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]EventView, error) {
 			require.Equal(t, "owner-id", userID)
 			require.Equal(t, EventSortFieldDate, sortField)
 			require.Equal(t, SortOrderDesc, order)
