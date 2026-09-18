@@ -67,4 +67,16 @@ describe('AllEvents', () => {
     const link = await screen.findByRole('link', { name: /coffee catchup/i })
     expect(link.className).toMatch(/opacity-60/)
   })
+
+  it('shows only declined invites when the Not attending filter is selected', async () => {
+    const user = userEvent.setup()
+    loginAsMockUser()
+    renderAllEvents()
+
+    await screen.findByRole('heading', { name: /all events/i })
+    await user.click(screen.getByRole('radio', { name: 'Not attending' }))
+
+    expect(await screen.findByRole('link', { name: /new year kickoff/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('link')).toHaveLength(1)
+  })
 })

@@ -294,7 +294,7 @@ export const mockEventInvites: MockEventInvite[] = [
     eventId: mockEvents[10].id, // New Year Kickoff
     invitedBy: mockUsers[3].id,
     invitedUserId: mockUsers[0].id,
-    status: "pending",
+    status: "declined",
     spreadAllowed: 0,
     createdAt: daysFromNow(-39),
   },

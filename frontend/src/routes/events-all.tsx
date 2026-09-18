@@ -4,9 +4,9 @@ import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import {
   EventFilterBar,
-  DEFAULT_EVENT_FILTERS,
-  matchesEventFilters,
-  type EventFilters,
+  DEFAULT_EVENT_FILTER,
+  matchesEventFilter,
+  type EventFilter,
 } from '../../components/joyna/event-filter-bar'
 import { EventListByMonth } from '../../components/joyna/event-list'
 import type { EventListItem } from '../../components/joyna/event-card'
@@ -84,7 +84,7 @@ function Pagination({
 function AllEvents() {
   const [events, setEvents] = useState<EventListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [filters, setFilters] = useState<EventFilters>(DEFAULT_EVENT_FILTERS)
+  const [filter, setFilter] = useState<EventFilter>(DEFAULT_EVENT_FILTER)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
 
@@ -119,7 +119,7 @@ function AllEvents() {
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
     return events.filter((event) => {
-      if (!matchesEventFilters(event, filters)) {
+      if (!matchesEventFilter(event, filter)) {
         return false
       }
       if (!query) {
@@ -130,14 +130,14 @@ function AllEvents() {
         event.location.toLowerCase().includes(query)
       )
     })
-  }, [events, filters, search])
+  }, [events, filter, search])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
   const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
-  function updateFilters(next: EventFilters) {
-    setFilters(next)
+  function updateFilter(next: EventFilter) {
+    setFilter(next)
     setPage(1)
   }
 
@@ -165,7 +165,7 @@ function AllEvents() {
           className="h-11 rounded-control border-joyna-border-strong bg-white pl-9 text-sm"
         />
       </div>
-      <EventFilterBar filters={filters} onChange={updateFilters} />
+      <EventFilterBar filter={filter} onChange={updateFilter} />
       {filtered.length === 0 ? (
         <p className="text-sm text-joyna-ink-faint">No events match your search or filters.</p>
       ) : (
