@@ -11,6 +11,7 @@ var (
 	ErrInvalidRsvpDeadline     = errors.New("rsvp deadline must be on or before the event date")
 	ErrInviteNotAllowed        = errors.New("user not allowed to invite (additional) users to event")
 	ErrUnauthorizedEventUpdate = errors.New("user must be owner of event to update it")
+	ErrRemoveNotAllowed        = errors.New("user not allowed to remove this guest")
 )
 
 type repository interface {
@@ -24,6 +25,7 @@ type repository interface {
 	ListEventAttendees(ctx context.Context, eventID string) ([]Attendee, error)
 	CreateEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 	ForwardEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
+	DeleteEventInvite(ctx context.Context, eventID, userID string) error
 }
 
 type Service struct {
@@ -101,7 +103,8 @@ func (s *Service) GetEventDetail(ctx context.Context, eventID, viewerID string) 
 	}
 
 	status := invite.Status
-	return EventView{Event: ev, ViewerInviteStatus: &status}, nil
+	spreadAllowed := invite.SpreadAllowed
+	return EventView{Event: ev, ViewerInviteStatus: &status, ViewerSpreadAllowed: &spreadAllowed}, nil
 }
 
 func (s *Service) GetEventAttendees(ctx context.Context, eventID, viewerID string) ([]Attendee, error) {
@@ -137,4 +140,26 @@ func (s *Service) SendEventInvite(ctx context.Context, payload CreateEventInvite
 	createdInvite, err := s.repo.ForwardEventInvite(ctx, payload, invitedBy)
 	// TODO: Create notification(s)
 	return createdInvite, err
+}
+
+// RemoveEventInvite uninvites targetUserID from an event. Only the event's
+// owner (who can remove anyone) or the invite's original inviter (who can
+// only remove people they personally invited) may do this.
+func (s *Service) RemoveEventInvite(ctx context.Context, eventID, removerID, targetUserID string) error {
+	ev, err := s.repo.GetEvent(ctx, eventID)
+	if err != nil {
+		return err
+	}
+	if ev.OwnerId == removerID {
+		return s.repo.DeleteEventInvite(ctx, eventID, targetUserID)
+	}
+
+	invite, err := s.repo.GetEventInvite(ctx, eventID, targetUserID)
+	if err != nil {
+		return err
+	}
+	if invite.InvitedBy != removerID {
+		return ErrRemoveNotAllowed
+	}
+	return s.repo.DeleteEventInvite(ctx, eventID, targetUserID)
 }

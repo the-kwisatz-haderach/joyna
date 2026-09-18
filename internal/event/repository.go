@@ -186,15 +186,15 @@ func (r *Repository) RespondToEventInvite(ctx context.Context, eventID, userID s
 
 func (r *Repository) ListEventAttendees(ctx context.Context, eventID string) ([]Attendee, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT u.id AS user_id, u.name, u.email, TRUE AS is_owner
+		`SELECT u.id AS user_id, u.name, u.email, TRUE AS is_owner, ''::TEXT AS status, ''::TEXT AS invited_by
 		FROM events e
 		JOIN users u ON u.id = e.owner_id
 		WHERE e.id = $1
 		UNION
-		SELECT u.id AS user_id, u.name, u.email, FALSE AS is_owner
+		SELECT u.id AS user_id, u.name, u.email, FALSE AS is_owner, ei.status, ei.invited_by::TEXT AS invited_by
 		FROM event_invites ei
 		JOIN users u ON u.id = ei.invited_user_id
-		WHERE ei.event_id = $1 AND ei.status <> 'declined'
+		WHERE ei.event_id = $1
 		ORDER BY is_owner DESC, name ASC`,
 		eventID,
 	)
@@ -212,6 +212,18 @@ func (r *Repository) ListEventAttendees(ctx context.Context, eventID string) ([]
 	}
 
 	return attendees, nil
+}
+
+func (r *Repository) DeleteEventInvite(ctx context.Context, eventID, userID string) error {
+	cmd, err := r.pool.Exec(ctx,
+		`DELETE FROM event_invites WHERE event_id = $1 AND invited_user_id = $2`, eventID, userID,
+	)
+	if err != nil {
+		return fmt.Errorf("deleting event invite: %w", err)
+	} else if cmd.RowsAffected() == 0 {
+		return ErrInviteNotFound
+	}
+	return nil
 }
 
 func (r *Repository) CreateEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error) {

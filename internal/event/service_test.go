@@ -20,6 +20,7 @@ type fakeRepository struct {
 	listEventAttendeesFunc   func(ctx context.Context, eventID string) ([]Attendee, error)
 	createEventInviteFunc    func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 	forwardEventInviteFunc   func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
+	deleteEventInviteFunc    func(ctx context.Context, eventID, userID string) error
 }
 
 func (f *fakeRepository) CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error) {
@@ -60,6 +61,10 @@ func (f *fakeRepository) CreateEventInvite(ctx context.Context, payload CreateEv
 
 func (f *fakeRepository) ForwardEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error) {
 	return f.forwardEventInviteFunc(ctx, payload, invitedBy)
+}
+
+func (f *fakeRepository) DeleteEventInvite(ctx context.Context, eventID, userID string) error {
+	return f.deleteEventInviteFunc(ctx, eventID, userID)
 }
 
 func TestCreateEvent(t *testing.T) {
@@ -295,7 +300,7 @@ func TestGetEventDetail_Invitee(t *testing.T) {
 		},
 		getEventInviteFunc: func(ctx context.Context, eventID, userID string) (EventInvite, error) {
 			require.Equal(t, "invitee-id", userID)
-			return EventInvite{EventID: eventID, InvitedUserID: userID, Status: InviteStatePending}, nil
+			return EventInvite{EventID: eventID, InvitedUserID: userID, Status: InviteStatePending, SpreadAllowed: 2}, nil
 		},
 	}
 	service := NewService(repo)
@@ -304,6 +309,8 @@ func TestGetEventDetail_Invitee(t *testing.T) {
 	require.False(t, detail.IsOwner)
 	require.NotNil(t, detail.ViewerInviteStatus)
 	require.Equal(t, InviteStatePending, *detail.ViewerInviteStatus)
+	require.NotNil(t, detail.ViewerSpreadAllowed)
+	require.Equal(t, 2, *detail.ViewerSpreadAllowed)
 }
 
 func TestGetEventDetail_NotInvited(t *testing.T) {
@@ -394,4 +401,68 @@ func TestRespondToEventInvite_NotFound(t *testing.T) {
 	service := NewService(repo)
 	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateDeclined)
 	require.ErrorIs(t, err, ErrInviteNotFound)
+}
+
+func TestRemoveEventInvite_ByOwner(t *testing.T) {
+	var deleteCalled bool
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+		deleteEventInviteFunc: func(ctx context.Context, eventID, userID string) error {
+			deleteCalled = true
+			require.Equal(t, "event-id", eventID)
+			require.Equal(t, "guest-id", userID)
+			return nil
+		},
+	}
+	service := NewService(repo)
+	err := service.RemoveEventInvite(context.Background(), "event-id", "owner-id", "guest-id")
+	require.NoError(t, err)
+	require.True(t, deleteCalled)
+}
+
+func TestRemoveEventInvite_ByOriginalInviter(t *testing.T) {
+	var deleteCalled bool
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+		getEventInviteFunc: func(ctx context.Context, eventID, userID string) (EventInvite, error) {
+			return EventInvite{EventID: eventID, InvitedUserID: userID, InvitedBy: "inviter-id"}, nil
+		},
+		deleteEventInviteFunc: func(ctx context.Context, eventID, userID string) error {
+			deleteCalled = true
+			return nil
+		},
+	}
+	service := NewService(repo)
+	err := service.RemoveEventInvite(context.Background(), "event-id", "inviter-id", "guest-id")
+	require.NoError(t, err)
+	require.True(t, deleteCalled)
+}
+
+func TestRemoveEventInvite_NotAllowed(t *testing.T) {
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+		getEventInviteFunc: func(ctx context.Context, eventID, userID string) (EventInvite, error) {
+			return EventInvite{EventID: eventID, InvitedUserID: userID, InvitedBy: "someone-else"}, nil
+		},
+	}
+	service := NewService(repo)
+	err := service.RemoveEventInvite(context.Background(), "event-id", "not-the-inviter", "guest-id")
+	require.ErrorIs(t, err, ErrRemoveNotAllowed)
+}
+
+func TestRemoveEventInvite_EventNotFound(t *testing.T) {
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{}, ErrEventNotFound
+		},
+	}
+	service := NewService(repo)
+	err := service.RemoveEventInvite(context.Background(), "event-id", "owner-id", "guest-id")
+	require.ErrorIs(t, err, ErrEventNotFound)
 }

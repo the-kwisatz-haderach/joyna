@@ -134,3 +134,13 @@ Content-Type: application/json
 {
   "status": "maybe"
 }
+
+# --- Remove event invite (uninvite a guest) ---
+# Switches the session back to the owner — log in as the owner via auth.http
+# before running these.
+
+### Remove the invitee — expect 204 (run as the event owner, or as whoever sent the invite)
+DELETE {{baseUrl}}/events/{{createEvent.response.body.$.id}}/invites/{{registerInvitee.response.body.$.id}}
+
+### Remove the invitee again — already removed, expect 404
+DELETE {{baseUrl}}/events/{{createEvent.response.body.$.id}}/invites/{{registerInvitee.response.body.$.id}}

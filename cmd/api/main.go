@@ -89,6 +89,7 @@ func main() {
 	mux.HandleFunc("GET /events/{id}/attendees", authHandler.Middleware(eventHandler.GetEventAttendees))
 	mux.HandleFunc("PATCH /events/{id}/invite", authHandler.Middleware(eventHandler.RespondToEventInvite))
 	mux.HandleFunc("POST /events/invites", authHandler.Middleware(eventHandler.CreateEventInvite))
+	mux.HandleFunc("DELETE /events/{id}/invites/{userId}", authHandler.Middleware(eventHandler.RemoveEventInvite))
 
 	// Group handlers
 	mux.HandleFunc("POST /groups", authHandler.Middleware(groupHandler.CreateGroup))

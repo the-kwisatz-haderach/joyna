@@ -280,3 +280,37 @@ func (h *Handler) CreateEventInvite(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(created)
 }
+
+func (h *Handler) RemoveEventInvite(w http.ResponseWriter, r *http.Request) {
+	eventID := r.PathValue("id")
+	if err := uuid.Validate(eventID); err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	targetUserID := r.PathValue("userId")
+	if err := uuid.Validate(targetUserID); err != nil {
+		http.Error(w, "invalid userId", http.StatusBadRequest)
+		return
+	}
+	removerID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := h.service.RemoveEventInvite(r.Context(), eventID, removerID, targetUserID); err != nil {
+		if errors.Is(err, ErrRemoveNotAllowed) {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+		if errors.Is(err, ErrEventNotFound) || errors.Is(err, ErrInviteNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		slog.Error("failed to remove event invite", "error", err)
+		http.Error(w, "failed to remove event invite", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

@@ -35,17 +35,21 @@ type EventInvite struct {
 // to it, since the detail page renders owner/invitee actions differently.
 type EventView struct {
 	Event
-	IsOwner            bool               `json:"isOwner"`
-	ViewerInviteStatus *EventInviteStatus `json:"viewerInviteStatus,omitempty"`
+	IsOwner             bool               `json:"isOwner"`
+	ViewerInviteStatus  *EventInviteStatus `json:"viewerInviteStatus,omitempty"`
+	ViewerSpreadAllowed *int               `json:"viewerSpreadAllowed,omitempty"`
 }
 
-// Attendee is a user attending an event, either as its owner or via an
-// invite that hasn't been declined.
+// Attendee is a user associated with an event: its owner, or anyone with an
+// invite (pending, accepted, or declined). The owner row has no meaningful
+// Status/InvitedBy since they aren't invited to their own event.
 type Attendee struct {
-	UserID  string `json:"userId" db:"user_id"`
-	Name    string `json:"name" db:"name"`
-	Email   string `json:"email" db:"email"`
-	IsOwner bool   `json:"isOwner" db:"is_owner"`
+	UserID    string            `json:"userId" db:"user_id"`
+	Name      string            `json:"name" db:"name"`
+	Email     string            `json:"email" db:"email"`
+	IsOwner   bool              `json:"isOwner" db:"is_owner"`
+	Status    EventInviteStatus `json:"status,omitempty" db:"status"`
+	InvitedBy string            `json:"invitedBy,omitempty" db:"invited_by"`
 }
 
 type RespondToEventInvitePayload struct {
