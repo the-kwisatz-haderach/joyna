@@ -95,4 +95,26 @@ describe('RootLayout', () => {
       screen.queryByRole('navigation', { name: 'Primary' }),
     ).not.toBeInTheDocument()
   })
+
+  it('hides the create event button outside of the events listing screen', () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/network'])
+
+    const bottomMenu = within(screen.getByRole('navigation', { name: 'Primary' }))
+    expect(
+      bottomMenu.queryByRole('link', { name: /create event/i }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows the create event button on the root events listing route', () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/'])
+
+    const bottomMenu = within(screen.getByRole('navigation', { name: 'Primary' }))
+    expect(
+      bottomMenu.getByRole('link', { name: /create event/i }),
+    ).toHaveAttribute('href', '/events/new')
+  })
 })
