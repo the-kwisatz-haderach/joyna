@@ -1,13 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
-import {
-  ArrowLeft01Icon,
-  Notification03Icon,
-  UserCircleIcon,
-  Calendar01Icon,
-  UserGroupIcon,
-  PlusSignIcon,
-} from '@hugeicons/core-free-icons'
+import { ArrowLeft01Icon, Notification03Icon, UserCircleIcon } from '@hugeicons/core-free-icons'
 
 import { cn } from '@/lib/utils'
 import { useAuth } from '../auth-context'
@@ -50,10 +43,8 @@ function TopMenu() {
           to="/notifications"
           aria-label="Notifications"
           className={cn(
-            'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
-            pathname === '/notifications'
-              ? 'bg-joyna-coral/10 text-joyna-coral'
-              : 'text-joyna-ink-soft hover:bg-joyna-border'
+            'flex h-10 w-10 items-center justify-center rounded-control border border-joyna-border bg-white shadow-sm transition-colors',
+            pathname === '/notifications' ? 'text-joyna-coral' : 'text-joyna-ink-soft hover:text-joyna-ink'
           )}
         >
           <HugeiconsIcon icon={Notification03Icon} className="h-5 w-5" strokeWidth={2} />
@@ -62,10 +53,8 @@ function TopMenu() {
           to="/profile"
           aria-label="Profile"
           className={cn(
-            'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
-            pathname === '/profile'
-              ? 'bg-joyna-coral/10 text-joyna-coral'
-              : 'text-joyna-ink-soft hover:bg-joyna-border'
+            'flex h-10 w-10 items-center justify-center rounded-control border border-joyna-border bg-white shadow-sm transition-colors',
+            pathname === '/profile' ? 'text-joyna-coral' : 'text-joyna-ink-soft hover:text-joyna-ink'
           )}
         >
           <HugeiconsIcon icon={UserCircleIcon} className="h-5 w-5" strokeWidth={2} />
@@ -81,38 +70,33 @@ function BottomMenu() {
   const networkActive = pathname === '/network'
 
   return (
-    <nav
-      aria-label="Primary"
-      className="sticky bottom-0 z-10 flex items-center justify-between border-t border-joyna-border bg-white px-5 py-3"
-    >
-      <div className="flex items-center gap-1 rounded-full bg-joyna-border/60 p-1">
+    <nav aria-label="Primary" className="sticky bottom-0 z-10 flex items-center justify-between px-5 py-3">
+      <div className="flex h-11 items-center gap-1 rounded-full border border-joyna-border-strong px-1">
         <Link
           to="/events"
           className={cn(
-            'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
-            eventsActive ? 'bg-white text-joyna-coral shadow-sm' : 'text-joyna-ink-soft'
+            'flex h-9 items-center rounded-full px-4 text-xs font-semibold transition-colors',
+            eventsActive ? 'bg-joyna-ink text-white' : 'text-joyna-ink-soft'
           )}
         >
-          <HugeiconsIcon icon={Calendar01Icon} className="h-4 w-4" strokeWidth={2} />
           Events
         </Link>
         <Link
           to="/network"
           className={cn(
-            'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
-            networkActive ? 'bg-white text-joyna-coral shadow-sm' : 'text-joyna-ink-soft'
+            'flex h-9 items-center rounded-full px-4 text-xs font-semibold transition-colors',
+            networkActive ? 'bg-joyna-ink text-white' : 'text-joyna-ink-soft'
           )}
         >
-          <HugeiconsIcon icon={UserGroupIcon} className="h-4 w-4" strokeWidth={2} />
           Network
         </Link>
       </div>
       <Link
         to="/events/new"
         aria-label="Create event"
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-joyna-coral text-white shadow-sm transition-transform active:scale-95"
+        className="flex h-11 shrink-0 items-center justify-center rounded-full bg-joyna-coral px-5 font-display text-sm font-semibold text-white shadow-sm transition-transform active:scale-95"
       >
-        <HugeiconsIcon icon={PlusSignIcon} className="h-5 w-5" strokeWidth={2.5} />
+        + New
       </Link>
     </nav>
   )

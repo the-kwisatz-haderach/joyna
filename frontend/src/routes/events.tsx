@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Calendar03Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
+import { format, isSameYear } from 'date-fns'
 
 import { Button } from '@/components/ui/button'
 import { Pill } from '../../components/joyna/pill'
@@ -19,10 +20,10 @@ type Event = {
 
 const PREVIEW_COUNT = 3
 
-const dateFormatter = new Intl.DateTimeFormat('en', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-})
+function formatEventDate(date: string): string {
+  const parsed = new Date(date)
+  return isSameYear(parsed, Date.now()) ? format(parsed, 'd MMM') : format(parsed, 'd MMM, yyyy')
+}
 
 function formatRsvpDeadline(rsvpDeadline?: string): string | null {
   if (!rsvpDeadline) {
@@ -53,16 +54,32 @@ function EventCard({
       to={`/events/${event.id}`}
       className={
         dimmed
-          ? 'flex flex-col gap-1 rounded-card border border-joyna-border bg-white p-4 opacity-60 transition-opacity hover:opacity-80'
-          : 'flex flex-col gap-1 rounded-card border border-joyna-border bg-white p-4 shadow-sm transition-shadow hover:shadow'
+          ? 'flex items-center justify-between gap-3 rounded-card border border-joyna-border bg-white p-4 opacity-60 transition-opacity hover:opacity-80'
+          : 'flex items-center justify-between gap-3 rounded-card border border-joyna-border bg-white p-4 shadow-sm transition-shadow hover:shadow'
       }
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="font-display text-sm font-semibold text-joyna-ink">{event.name}</span>
-        {rsvpLabel && <Pill tone="sunflower">{rsvpLabel}</Pill>}
+      <div className="flex min-w-0 flex-col gap-1">
+        <span className="truncate font-display text-sm font-semibold text-joyna-ink">{event.name}</span>
+        <div className="flex items-center gap-1.5 text-xs">
+          <span className="text-joyna-ink-soft">{formatEventDate(event.date)}</span>
+          {rsvpLabel ? (
+            <>
+              <span className="text-joyna-ink-faint">·</span>
+              <Pill tone="sunflower">{rsvpLabel}</Pill>
+            </>
+          ) : (
+            event.location && (
+              <>
+                <span className="text-joyna-ink-faint">·</span>
+                <span className="truncate text-joyna-ink-faint">{event.location}</span>
+              </>
+            )
+          )}
+        </div>
       </div>
-      <span className="text-xs text-joyna-ink-soft">{dateFormatter.format(new Date(event.date))}</span>
-      <span className="text-xs text-joyna-ink-faint">{event.location}</span>
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-joyna-border-strong text-joyna-ink-soft">
+        <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
+      </span>
     </Link>
   )
 }
