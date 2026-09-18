@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Location01Icon } from '@hugeicons/core-free-icons'
+import { Location01Icon, Cancel01Icon } from '@hugeicons/core-free-icons'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,7 +22,12 @@ const UNIT_IN_MS: Record<RsvpUnit, number> = {
 // docs/design/screens-export/SCREENS.md screen 04.
 const DEFAULT_EVENT_TYPE = 'other'
 
-const dateCaptionFormatter = new Intl.DateTimeFormat('en', { dateStyle: 'medium' })
+function formatRsvpDeadlineCaption(deadline: Date): string {
+  const day = deadline.getDate()
+  const month = deadline.toLocaleString('en', { month: 'short' })
+  const year = deadline.getFullYear()
+  return year === new Date().getFullYear() ? `${day} ${month}` : `${day} ${month}, ${year}`
+}
 
 function combineDateAndTime(date: Date, time: string): Date {
   const [hours, minutes] = time.split(':').map(Number)
@@ -44,6 +49,7 @@ function CreateEvent() {
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [time, setTime] = useState('18:00')
   const [location, setLocation] = useState('')
+  const [hasRsvpDeadline, setHasRsvpDeadline] = useState(false)
   const [rsvpAmount, setRsvpAmount] = useState(1)
   const [rsvpUnit, setRsvpUnit] = useState<RsvpUnit>('day')
   const [moodId, setMoodId] = useState('')
@@ -51,9 +57,15 @@ function CreateEvent() {
 
   const eventDate = useMemo(() => (date ? combineDateAndTime(date, time) : undefined), [date, time])
   const rsvpDeadline = useMemo(() => {
-    if (!eventDate) return undefined
+    if (!eventDate || !hasRsvpDeadline) return undefined
     return new Date(eventDate.getTime() - rsvpAmount * UNIT_IN_MS[rsvpUnit])
-  }, [eventDate, rsvpAmount, rsvpUnit])
+  }, [eventDate, hasRsvpDeadline, rsvpAmount, rsvpUnit])
+
+  function handleRemoveRsvpDeadline() {
+    setHasRsvpDeadline(false)
+    setRsvpAmount(1)
+    setRsvpUnit('day')
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -108,7 +120,7 @@ function CreateEvent() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="h-10 rounded-field bg-white"
+            className="h-10 rounded-xl bg-white"
           />
         </label>
 
@@ -128,9 +140,62 @@ function CreateEvent() {
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="h-10 w-32 rounded-field bg-white"
+              className="h-10 w-32 rounded-xl bg-white"
             />
           </label>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-joyna-ink-soft">RSVP deadline</span>
+          {hasRsvpDeadline ? (
+            <>
+              <div className="flex items-center gap-2 text-sm text-joyna-ink">
+                <button
+                  type="button"
+                  aria-label="Remove RSVP deadline"
+                  onClick={handleRemoveRsvpDeadline}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-white text-joyna-ink-soft transition-colors hover:text-joyna-ink"
+                >
+                  <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" strokeWidth={2} />
+                </button>
+                <select
+                  value={rsvpAmount}
+                  onChange={(e) => setRsvpAmount(Number(e.target.value))}
+                  className="h-10 rounded-xl border border-joyna-border-strong bg-white px-2 text-sm"
+                >
+                  {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={rsvpUnit}
+                  onChange={(e) => setRsvpUnit(e.target.value as RsvpUnit)}
+                  className="h-10 rounded-xl border border-joyna-border-strong bg-white px-2 text-sm"
+                >
+                  <option value="day">day(s)</option>
+                  <option value="week">week(s)</option>
+                  <option value="month">month(s)</option>
+                </select>
+                <span>before</span>
+              </div>
+              {rsvpDeadline && (
+                <p className="text-xs text-joyna-ink-faint">
+                  Guests must respond by {formatRsvpDeadlineCaption(rsvpDeadline)}
+                </p>
+              )}
+            </>
+          ) : (
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-10 w-fit rounded-xl px-4 font-display text-sm"
+              onClick={() => setHasRsvpDeadline(true)}
+            >
+              Add deadline
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -139,7 +204,7 @@ function CreateEvent() {
             placeholder="Search for a place…"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="h-10 rounded-field bg-white"
+            className="h-10 rounded-xl bg-white"
           />
           <div className="flex h-28 items-center justify-center rounded-card border border-dashed border-joyna-border-strong bg-joyna-border/40 text-joyna-ink-faint">
             Map preview
@@ -153,38 +218,6 @@ function CreateEvent() {
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-joyna-ink-soft">RSVP deadline</span>
-          <div className="flex items-center gap-2 text-sm text-joyna-ink">
-            <select
-              value={rsvpAmount}
-              onChange={(e) => setRsvpAmount(Number(e.target.value))}
-              className="h-10 rounded-field border border-joyna-border-strong bg-white px-2 text-sm"
-            >
-              {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-            <select
-              value={rsvpUnit}
-              onChange={(e) => setRsvpUnit(e.target.value as RsvpUnit)}
-              className="h-10 rounded-field border border-joyna-border-strong bg-white px-2 text-sm"
-            >
-              <option value="day">day(s)</option>
-              <option value="week">week(s)</option>
-              <option value="month">month(s)</option>
-            </select>
-            <span>before</span>
-          </div>
-          {rsvpDeadline && (
-            <p className="text-xs text-joyna-ink-faint">
-              Guests must respond by {dateCaptionFormatter.format(rsvpDeadline)}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-joyna-ink-soft">Mood</span>
           <MoodPicker value={moodId} onChange={setMoodId} />
         </div>
@@ -194,8 +227,8 @@ function CreateEvent() {
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className="rounded-field bg-white"
+            rows={3}
+            className="rounded-xl bg-white"
           />
         </label>
 

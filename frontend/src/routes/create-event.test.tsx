@@ -76,14 +76,37 @@ describe('CreateEvent', () => {
     expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
   })
 
-  it('offers 1-7 as RSVP deadline amount options', () => {
+  it('hides the RSVP deadline fields behind an "Add deadline" button by default', () => {
     renderCreateEvent()
+
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /add deadline/i })).toBeInTheDocument()
+  })
+
+  it('offers 1-7 as RSVP deadline amount options once a deadline is added', async () => {
+    const user = userEvent.setup()
+    renderCreateEvent()
+
+    await user.click(screen.getByRole('button', { name: /add deadline/i }))
 
     const [amountSelect] = screen.getAllByRole('combobox')
     const optionLabels = [...amountSelect.querySelectorAll('option')].map(
       (option) => option.textContent,
     )
     expect(optionLabels).toEqual(['1', '2', '3', '4', '5', '6', '7'])
+  })
+
+  it('removes the RSVP deadline fields when the "X" button is clicked', async () => {
+    const user = userEvent.setup()
+    renderCreateEvent()
+
+    await user.click(screen.getByRole('button', { name: /add deadline/i }))
+    expect(screen.getAllByRole('combobox')).toHaveLength(2)
+
+    await user.click(screen.getByRole('button', { name: /remove rsvp deadline/i }))
+
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /add deadline/i })).toBeInTheDocument()
   })
 
   it('creates the event and navigates to its detail page on success', async () => {
