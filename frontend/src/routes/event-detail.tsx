@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Location01Icon, Calendar01Icon } from '@hugeicons/core-free-icons'
+import { Location01Icon, Calendar01Icon, UserMultipleIcon } from '@hugeicons/core-free-icons'
 
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -43,7 +43,20 @@ type NetworkConnection = {
 
 const DEFAULT_GROUP_NAME = 'Acquaintances'
 
-const dateFormatter = new Intl.DateTimeFormat('en', { dateStyle: 'full', timeStyle: 'short' })
+const weekdayFormatter = new Intl.DateTimeFormat('en', { weekday: 'long' })
+const monthFormatter = new Intl.DateTimeFormat('en', { month: 'short' })
+const timeFormatter = new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' })
+
+/** e.g. "Saturday, 26 Sep at 2:30 pm" — year is only shown when the event isn't in the current year. */
+function formatEventDate(date: Date): string {
+  const showYear = date.getFullYear() !== new Date().getFullYear()
+  const weekday = weekdayFormatter.format(date)
+  const day = date.getDate()
+  const month = monthFormatter.format(date)
+  const year = showYear ? ` ${date.getFullYear()}` : ''
+  const time = timeFormatter.format(date).toLowerCase()
+  return `${weekday}, ${day} ${month}${year} at ${time}`
+}
 
 async function fetchJson<T>(url: string): Promise<T | null> {
   const response = await fetch(url, { credentials: 'include' })
@@ -274,10 +287,10 @@ function EventDetail() {
 
       <div>
         <h1 className="font-display text-xl font-semibold text-joyna-ink">{event.name}</h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-joyna-ink-soft">
+        <div className="mt-2 flex flex-col gap-1.5 text-xs text-joyna-ink-soft">
           <span className="flex items-center gap-1">
             <HugeiconsIcon icon={Calendar01Icon} className="h-3.5 w-3.5" strokeWidth={2} />
-            {dateFormatter.format(new Date(event.date))}
+            {formatEventDate(new Date(event.date))}
           </span>
           {event.location && (
             <span className="flex items-center gap-1">
@@ -285,14 +298,17 @@ function EventDetail() {
               {event.location}
             </span>
           )}
-          {rsvpClosed ? (
-            <Pill tone="muted">🔒 RSVP closed</Pill>
-          ) : (
-            rsvpLabel && <Pill tone="sunflower">{rsvpLabel}</Pill>
-          )}
+          <span className="flex items-center gap-1">
+            <HugeiconsIcon icon={UserMultipleIcon} className="h-3.5 w-3.5" strokeWidth={2} />
+            {guests.length} guest{guests.length === 1 ? '' : 's'}
+          </span>
+          {rsvpClosed || rsvpLabel ? (
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
+              {rsvpClosed ? <Pill tone="muted">🔒 RSVP closed</Pill> : rsvpLabel && <Pill tone="sunflower">{rsvpLabel}</Pill>}
+            </div>
+          ) : null}
         </div>
-        <p className="mt-2 text-sm text-joyna-ink-soft">{guests.length} guest{guests.length === 1 ? '' : 's'}</p>
-        {event.description && <p className="mt-3 text-sm text-joyna-ink">{event.description}</p>}
+        {event.description && <p className="mt-3 whitespace-pre-line text-sm text-joyna-ink">{event.description}</p>}
       </div>
 
       {event.isOwner ? (
