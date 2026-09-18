@@ -38,9 +38,9 @@ describe('useHideOnScroll', () => {
   })
 
   it('ignores small scroll movements', () => {
+    Object.defineProperty(window, 'scrollY', { value: 100, configurable: true })
     const { result } = renderHook(() => useHideOnScroll())
 
-    act(() => scrollTo(100))
     act(() => scrollTo(103))
 
     expect(result.current).toBe(false)
