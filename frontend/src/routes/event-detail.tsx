@@ -353,8 +353,8 @@ function EventDetail() {
         <h1 className="font-display text-xl font-semibold text-joyna-ink">
           {event.name}
         </h1>
-        <div className="mt-2 flex flex-col gap-3 text-xs text-joyna-ink-soft">
-          <span className="flex items-center gap-1">
+        <div className="mt-3 flex flex-col gap-3 text-sm text-joyna-ink">
+          <span className="flex items-center gap-2">
             <HugeiconsIcon
               icon={Calendar01Icon}
               className="h-3.5 w-3.5"
@@ -363,7 +363,7 @@ function EventDetail() {
             {formatEventDate(new Date(event.date))}
           </span>
           {event.location && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-2">
               <HugeiconsIcon
                 icon={Location01Icon}
                 className="h-3.5 w-3.5"
@@ -372,16 +372,8 @@ function EventDetail() {
               {event.location}
             </span>
           )}
-          <span className="flex items-center gap-1">
-            <HugeiconsIcon
-              icon={UserMultipleIcon}
-              className="h-3.5 w-3.5"
-              strokeWidth={2}
-            />
-            {guests.length} guest{guests.length === 1 ? '' : 's'}
-          </span>
           {rsvpClosed || rsvpLabel || mood ? (
-            <div className="mt-0.5 flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {rsvpClosed ? (
                 <Pill tone="muted">🔒 RSVP closed</Pill>
               ) : (
@@ -394,13 +386,23 @@ function EventDetail() {
               )}
             </div>
           ) : null}
+          <span className="flex items-center gap-2">
+            <HugeiconsIcon
+              icon={UserMultipleIcon}
+              className="h-3.5 w-3.5"
+              strokeWidth={2}
+            />
+            {guests.length} attending
+          </span>
         </div>
         {event.description && (
-          <p className="mt-3 whitespace-pre-line text-sm text-joyna-ink">
+          <p className="mt-4 whitespace-pre-line text-sm text-joyna-ink-soft">
             {event.description}
           </p>
         )}
       </div>
+
+      <div className="border-t border-joyna-border" />
 
       {event.isOwner ? (
         <Button
@@ -411,8 +413,8 @@ function EventDetail() {
           Edit details
         </Button>
       ) : (
-        <div className="flex flex-col gap-3">
-          <p className="font-display text-sm font-semibold text-joyna-ink">
+        <div className="flex flex-col gap-4">
+          <p className="text-center font-display text-base font-semibold text-joyna-ink">
             Will you be attending?
           </p>
           <div className="flex gap-3">
@@ -425,8 +427,8 @@ function EventDetail() {
               onClick={() => handleRespond('declined')}
               className={
                 event.viewerInviteStatus === 'declined'
-                  ? 'h-11 flex-1 rounded-control bg-joyna-bubblegum text-joyna-bubblegum-dark hover:bg-joyna-bubblegum'
-                  : 'h-11 flex-1 rounded-control'
+                  ? 'h-11 flex-1 rounded-control font-display text-sm bg-joyna-bubblegum text-joyna-bubblegum-dark hover:bg-joyna-bubblegum'
+                  : 'h-11 flex-1 rounded-control font-display text-sm text-joyna-ink-soft'
               }
             >
               No
@@ -440,8 +442,8 @@ function EventDetail() {
               onClick={() => handleRespond('accepted')}
               className={
                 event.viewerInviteStatus === 'accepted'
-                  ? 'h-11 flex-1 rounded-control bg-joyna-mint text-joyna-mint-dark hover:bg-joyna-mint'
-                  : 'h-11 flex-1 rounded-control'
+                  ? 'h-11 flex-1 rounded-control font-display text-sm bg-joyna-mint text-white hover:bg-joyna-mint'
+                  : 'h-11 flex-1 rounded-control font-display text-sm text-joyna-ink-soft'
               }
             >
               Yes
@@ -453,11 +455,8 @@ function EventDetail() {
             </p>
           )}
           {!rsvpClosed && event.viewerInviteStatus === 'declined' && (
-            <div className="flex flex-col gap-2">
-              <label
-                className="text-xs font-medium text-joyna-ink-soft"
-                htmlFor="decline-note"
-              >
+            <div className="flex flex-col gap-3">
+              <label className="text-sm text-joyna-ink" htmlFor="decline-note">
                 Let the host know why (optional)
               </label>
               <Textarea
@@ -467,13 +466,13 @@ function EventDetail() {
                   setDeclineNote(e.target.value)
                   setNoteSaved(false)
                 }}
-                rows={2}
+                rows={3}
                 className="rounded-field"
               />
               <Button
                 type="button"
                 variant="secondary"
-                className="h-9 self-start rounded-control text-xs"
+                className="h-10 self-end rounded-control font-display text-sm"
                 onClick={() => setNoteSaved(true)}
               >
                 {noteSaved ? 'Saved' : 'Save note'}
@@ -482,6 +481,8 @@ function EventDetail() {
           )}
         </div>
       )}
+
+      <div className="border-t border-joyna-border" />
 
       {event.isOwner ? (
         <GuestList
