@@ -12,6 +12,7 @@ var (
 	ErrMultipleEventsFound = errors.New("expected single event for query, got multiple")
 	ErrAlreadyInvited      = errors.New("user has already been invited")
 	ErrInvalidEventType    = errors.New("invalid event type supplied")
+	ErrInvalidEventMood    = errors.New("invalid event mood supplied")
 	ErrInvitedUserNotFound = errors.New("invited user not found")
 	ErrInviteNotFound      = errors.New("invite not found")
 )
@@ -25,6 +26,8 @@ func GetSentinelError(err error, fallback error) error {
 		switch {
 		case pgError.Code == pgForeignKeyViolation && pgError.ConstraintName == "events_type_fkey":
 			return ErrInvalidEventType
+		case pgError.Code == pgForeignKeyViolation && pgError.ConstraintName == "events_mood_fkey":
+			return ErrInvalidEventMood
 		case pgError.Code == pgForeignKeyViolation && pgError.ConstraintName == "events_owner_id_fkey":
 			return ErrEventOwnerNotFound
 		case pgError.Code == pgUniqueViolation && pgError.ConstraintName == "event_invites_pkey":

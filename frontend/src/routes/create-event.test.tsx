@@ -1,9 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useParams } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
+import { AuthProvider } from '../auth-context'
+import { mockUsers } from '../mocks/data'
 import CreateEvent from './create-event'
+import EventDetail from './event-detail'
 
 function EventDetailStub() {
   const { id } = useParams()
@@ -22,6 +25,32 @@ function renderCreateEvent() {
   )
 }
 
+function loginAsMockUser() {
+  localStorage.setItem(
+    'joyna.currentUser',
+    JSON.stringify({
+      id: mockUsers[0].id,
+      name: mockUsers[0].name,
+      email: mockUsers[0].email,
+      joinedAt: mockUsers[0].joinedAt,
+    }),
+  )
+}
+
+function renderCreateEventWithRealDetail() {
+  return render(
+    <AuthProvider>
+      <MemoryRouter initialEntries={['/events/new']}>
+        <Routes>
+          <Route path="/events" element={<div>Events</div>} />
+          <Route path="/events/new" element={<CreateEvent />} />
+          <Route path="/events/:id" element={<EventDetail />} />
+        </Routes>
+      </MemoryRouter>
+    </AuthProvider>,
+  )
+}
+
 function pickAnEnabledDay() {
   const dayButtons = document.querySelectorAll<HTMLButtonElement>('button[data-day]')
   const enabled = [...dayButtons].find((btn) => !btn.disabled)
@@ -32,6 +61,10 @@ function pickAnEnabledDay() {
 }
 
 describe('CreateEvent', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
   it('renders the event fields', () => {
     renderCreateEvent()
 
@@ -72,5 +105,18 @@ describe('CreateEvent', () => {
     await waitFor(() => {
       expect(screen.getByText(/event detail/i)).toBeInTheDocument()
     })
+  })
+
+  it('submits the selected mood and shows it as a chip on the created event', async () => {
+    const user = userEvent.setup()
+    loginAsMockUser()
+    renderCreateEventWithRealDetail()
+
+    await user.type(screen.getByLabelText(/title/i), 'Launch Party')
+    await user.click(pickAnEnabledDay())
+    await user.click(screen.getByRole('button', { name: /chill/i }))
+    await user.click(screen.getByRole('button', { name: /^create$/i }))
+
+    expect(await screen.findByText(/chill mood/i)).toBeInTheDocument()
   })
 })

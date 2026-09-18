@@ -19,9 +19,9 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 
 func (r *Repository) CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error) {
 	rows, err := r.pool.Query(ctx,
-		`INSERT INTO events (owner_id, name, description, date, location, rsvp_deadline, type, default_spread_allowed)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-		ownerID, payload.Name, payload.Description, payload.Date, payload.Location, payload.RsvpDeadline, payload.Type, payload.DefaultSpreadAllowed,
+		`INSERT INTO events (owner_id, name, description, date, location, rsvp_deadline, type, default_spread_allowed, mood)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+		ownerID, payload.Name, payload.Description, payload.Date, payload.Location, payload.RsvpDeadline, payload.Type, payload.DefaultSpreadAllowed, payload.Mood,
 	)
 	if err != nil {
 		return Event{}, fmt.Errorf("inserting event: %w", err)
@@ -52,17 +52,18 @@ func (r *Repository) DeleteEvent(ctx context.Context, eventID, ownerID string) e
 func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error) {
 	var event Event
 	rows, err := r.pool.Query(ctx,
-		`UPDATE events SET 
+		`UPDATE events SET
 			name = COALESCE($3, name),
 			description = COALESCE($4, description),
 			date = COALESCE($5, date),
 			location = COALESCE($6, location),
 			rsvp_deadline = COALESCE($7, rsvp_deadline),
 			type = COALESCE($8, type),
-			default_spread_allowed = COALESCE($9, default_spread_allowed)
+			default_spread_allowed = COALESCE($9, default_spread_allowed),
+			mood = COALESCE($10, mood)
 		WHERE id = $1 AND owner_id = $2
 		RETURNING *`,
-		eventID, ownerID, eventUpdate.Name, eventUpdate.Description, eventUpdate.Date, eventUpdate.Location, eventUpdate.RsvpDeadline, eventUpdate.Type, eventUpdate.DefaultSpreadAllowed,
+		eventID, ownerID, eventUpdate.Name, eventUpdate.Description, eventUpdate.Date, eventUpdate.Location, eventUpdate.RsvpDeadline, eventUpdate.Type, eventUpdate.DefaultSpreadAllowed, eventUpdate.Mood,
 	)
 	if err != nil {
 		return Event{}, fmt.Errorf("updating event: %w", err)

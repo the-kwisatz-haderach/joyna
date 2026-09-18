@@ -37,7 +37,7 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 
 	created, err := h.service.CreateEvent(r.Context(), payload, ownerID)
 	if err != nil {
-		if errors.Is(err, ErrEventOwnerNotFound) || errors.Is(err, ErrPastEventDate) || errors.Is(err, ErrInvalidRsvpDeadline) || errors.Is(err, ErrInvalidEventType) {
+		if errors.Is(err, ErrEventOwnerNotFound) || errors.Is(err, ErrPastEventDate) || errors.Is(err, ErrInvalidRsvpDeadline) || errors.Is(err, ErrInvalidEventType) || errors.Is(err, ErrInvalidEventMood) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -105,7 +105,7 @@ func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		if errors.Is(err, ErrPastEventDate) || errors.Is(err, ErrInvalidRsvpDeadline) || errors.Is(err, ErrEventOwnerNotFound) {
+		if errors.Is(err, ErrPastEventDate) || errors.Is(err, ErrInvalidRsvpDeadline) || errors.Is(err, ErrEventOwnerNotFound) || errors.Is(err, ErrInvalidEventType) || errors.Is(err, ErrInvalidEventMood) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}

@@ -45,6 +45,28 @@ func TestEventRepository(t *testing.T) {
 		require.Equal(t, payload.Type, event.Type)
 	})
 
+	t.Run("CreateEvent and UpdateEvent with mood", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		mood := Mood("chill")
+		createdEvent, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(24 * time.Hour), Mood: &mood}, owner.Id)
+		require.NoError(t, err)
+		require.NotNil(t, createdEvent.Mood)
+		require.Equal(t, mood, *createdEvent.Mood)
+
+		newMood := Mood("party")
+		updatedEvent, err := repo.UpdateEvent(ctx, UpdateEventPayload{Mood: &newMood}, createdEvent.ID, owner.Id)
+		require.NoError(t, err)
+		require.NotNil(t, updatedEvent.Mood)
+		require.Equal(t, newMood, *updatedEvent.Mood)
+	})
+
+	t.Run("CreateEvent with invalid mood", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		invalidMood := Mood("nonexistent")
+		_, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(24 * time.Hour), Mood: &invalidMood}, owner.Id)
+		require.ErrorIs(t, err, ErrInvalidEventMood)
+	})
+
 	t.Run("GetEventInvite and RespondToEventInvite", func(t *testing.T) {
 		owner := authtest.CreateUser(t, pool)
 		invitee := authtest.CreateUser(t, pool)

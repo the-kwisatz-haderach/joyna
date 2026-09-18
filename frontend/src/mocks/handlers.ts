@@ -186,6 +186,7 @@ export const handlers = [
       rsvpDeadline: body.rsvpDeadline,
       type: body.type ?? "party",
       defaultSpreadAllowed: body.defaultSpreadAllowed ?? 0,
+      mood: body.mood,
     }
     events = [...events, created]
     return HttpResponse.json(created)

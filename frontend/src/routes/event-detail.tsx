@@ -1,14 +1,29 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { Location01Icon, Calendar01Icon, UserMultipleIcon } from '@hugeicons/core-free-icons'
+import {useCallback, useEffect, useMemo, useState} from 'react'
+import {Link, useParams} from 'react-router'
+import {HugeiconsIcon} from '@hugeicons/react'
+import {
+  Location01Icon,
+  Calendar01Icon,
+  UserMultipleIcon,
+} from '@hugeicons/core-free-icons'
 
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Pill } from '../../components/joyna/pill'
-import { GuestList, type NetworkCandidate } from '../../components/joyna/guest-list'
-import { GuestRow, GuestGroupLabel, STATUS_ORDER, STATUS_LABEL, type Guest, type GuestStatus } from '../../components/joyna/guest-row'
-import { useAuth } from '../auth-context'
+import {Button} from '@/components/ui/button'
+import {Textarea} from '@/components/ui/textarea'
+import {Pill} from '../../components/joyna/pill'
+import {
+  GuestList,
+  type NetworkCandidate,
+} from '../../components/joyna/guest-list'
+import {
+  GuestRow,
+  GuestGroupLabel,
+  STATUS_ORDER,
+  STATUS_LABEL,
+  type Guest,
+  type GuestStatus,
+} from '../../components/joyna/guest-row'
+import {DEFAULT_MOODS} from '../../components/joyna/mood-picker'
+import {useAuth} from '../auth-context'
 
 type ViewerInviteStatus = 'pending' | 'accepted' | 'declined'
 
@@ -23,6 +38,7 @@ type EventDetailData = {
   isOwner: boolean
   viewerInviteStatus?: ViewerInviteStatus
   viewerSpreadAllowed?: number
+  mood?: string
 }
 
 type Attendee = {
@@ -43,9 +59,12 @@ type NetworkConnection = {
 
 const DEFAULT_GROUP_NAME = 'Acquaintances'
 
-const weekdayFormatter = new Intl.DateTimeFormat('en', { weekday: 'long' })
-const monthFormatter = new Intl.DateTimeFormat('en', { month: 'short' })
-const timeFormatter = new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' })
+const weekdayFormatter = new Intl.DateTimeFormat('en', {weekday: 'long'})
+const monthFormatter = new Intl.DateTimeFormat('en', {month: 'short'})
+const timeFormatter = new Intl.DateTimeFormat('en', {
+  hour: 'numeric',
+  minute: '2-digit',
+})
 
 /** e.g. "Saturday, 26 Sep at 2:30 pm" — year is only shown when the event isn't in the current year. */
 function formatEventDate(date: Date): string {
@@ -59,14 +78,16 @@ function formatEventDate(date: Date): string {
 }
 
 async function fetchJson<T>(url: string): Promise<T | null> {
-  const response = await fetch(url, { credentials: 'include' })
+  const response = await fetch(url, {credentials: 'include'})
   if (!response.ok) {
     return null
   }
   return (await response.json()) as T
 }
 
-function inviteStatusToGuestStatus(status?: 'pending' | 'accepted' | 'declined'): GuestStatus | undefined {
+function inviteStatusToGuestStatus(
+  status?: 'pending' | 'accepted' | 'declined',
+): GuestStatus | undefined {
   if (status === 'accepted') return 'going'
   if (status === 'declined') return 'not_attending'
   if (status === 'pending') return 'pending'
@@ -75,7 +96,9 @@ function inviteStatusToGuestStatus(status?: 'pending' | 'accepted' | 'declined')
 
 function formatRsvpDeadline(rsvpDeadline?: string): string | null {
   if (!rsvpDeadline) return null
-  const diffDays = Math.ceil((new Date(rsvpDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  const diffDays = Math.ceil(
+    (new Date(rsvpDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+  )
   if (diffDays <= 0) return null
   return `RSVP in ${diffDays} day${diffDays === 1 ? '' : 's'}`
 }
@@ -96,7 +119,11 @@ function StaticGuestList({
 }) {
   const host = guests.find((g) => g.isHost)
   const grouped = useMemo(() => {
-    const groups: Record<GuestStatus, Guest[]> = { going: [], pending: [], not_attending: [] }
+    const groups: Record<GuestStatus, Guest[]> = {
+      going: [],
+      pending: [],
+      not_attending: [],
+    }
     guests
       .filter((g) => !g.isHost)
       .forEach((g) => {
@@ -110,7 +137,14 @@ function StaticGuestList({
       <div className="mb-1 flex items-center gap-1.5">
         <h3 className="font-display text-base font-semibold">Guest list</h3>
         {locked && (
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A79FB0" strokeWidth={2}>
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#A79FB0"
+            strokeWidth={2}
+          >
             <rect x="5" y="11" width="14" height="9" rx="2.5" />
             <path d="M8 11V7a4 4 0 0 1 8 0v4" />
           </svg>
@@ -123,10 +157,14 @@ function StaticGuestList({
             <div key={status}>
               <GuestGroupLabel>{STATUS_LABEL[status]}</GuestGroupLabel>
               {grouped[status].map((g) => (
-                <GuestRow key={g.id} guest={g} onAddToNetwork={locked ? undefined : onAddToNetwork} />
+                <GuestRow
+                  key={g.id}
+                  guest={g}
+                  onAddToNetwork={locked ? undefined : onAddToNetwork}
+                />
               ))}
             </div>
-          )
+          ),
       )}
       {locked && (
         <p className="mt-2.5 text-[11px] text-joyna-ink-faint">
@@ -138,8 +176,8 @@ function StaticGuestList({
 }
 
 function EventDetail() {
-  const { id } = useParams()
-  const { user } = useAuth()
+  const {id} = useParams()
+  const {user} = useAuth()
   const [event, setEvent] = useState<EventDetailData | null>(null)
   const [attendees, setAttendees] = useState<Attendee[]>([])
   const [connections, setConnections] = useState<NetworkConnection[]>([])
@@ -176,15 +214,21 @@ function EventDetail() {
   const guests: Guest[] = useMemo(() => {
     return attendees.map((attendee) => {
       if (attendee.isOwner) {
-        return { id: attendee.userId, name: attendee.name, isHost: true }
+        return {id: attendee.userId, name: attendee.name, isHost: true}
       }
-      const connection = connections.find((c) => c.contactId === attendee.userId)
+      const connection = connections.find(
+        (c) => c.contactId === attendee.userId,
+      )
       const isViewer = attendee.userId === user?.id
       return {
         id: attendee.userId,
         name: attendee.name,
         status: inviteStatusToGuestStatus(attendee.status),
-        group: isViewer ? undefined : connection ? connection.groupName ?? DEFAULT_GROUP_NAME : null,
+        group: isViewer
+          ? undefined
+          : connection
+            ? (connection.groupName ?? DEFAULT_GROUP_NAME)
+            : null,
       }
     })
   }, [attendees, connections, user?.id])
@@ -193,7 +237,11 @@ function EventDetail() {
     const attendeeIds = new Set(attendees.map((a) => a.userId))
     return connections
       .filter((c) => !attendeeIds.has(c.contactId))
-      .map((c) => ({ id: c.contactId, name: c.contactName, group: c.groupName ?? DEFAULT_GROUP_NAME }))
+      .map((c) => ({
+        id: c.contactId,
+        name: c.contactName,
+        group: c.groupName ?? DEFAULT_GROUP_NAME,
+      }))
   }, [attendees, connections])
 
   async function handleRespond(status: 'accepted' | 'declined') {
@@ -203,9 +251,9 @@ function EventDetail() {
     try {
       const response = await fetch(`/api/events/${id}/invite`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {'Content-Type': 'application/json'},
         credentials: 'include',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({status}),
       })
       if (!response.ok) {
         throw new Error('failed to respond to invite')
@@ -221,9 +269,9 @@ function EventDetail() {
   async function handleAddToNetwork(contactId: string) {
     await fetch('/api/network', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {'Content-Type': 'application/json'},
       credentials: 'include',
-      body: JSON.stringify({ contactId }),
+      body: JSON.stringify({contactId}),
     })
     const connectionList = await fetchJson<NetworkConnection[]>('/api/network')
     setConnections(connectionList ?? [])
@@ -231,23 +279,32 @@ function EventDetail() {
 
   async function handleCommitGuests(nextGuests: Guest[]) {
     if (!id) return
-    const originalIds = new Set(attendees.filter((a) => !a.isOwner).map((a) => a.userId))
-    const nextIds = new Set(nextGuests.filter((g) => !g.isHost).map((g) => g.id))
+    const originalIds = new Set(
+      attendees.filter((a) => !a.isOwner).map((a) => a.userId),
+    )
+    const nextIds = new Set(
+      nextGuests.filter((g) => !g.isHost).map((g) => g.id),
+    )
 
-    const additions = [...nextIds].filter((guestId) => !originalIds.has(guestId))
+    const additions = [...nextIds].filter(
+      (guestId) => !originalIds.has(guestId),
+    )
     const removals = [...originalIds].filter((guestId) => !nextIds.has(guestId))
 
     await Promise.all([
       ...additions.map((invitedUserId) =>
         fetch('/api/events/invites', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {'Content-Type': 'application/json'},
           credentials: 'include',
-          body: JSON.stringify({ eventId: id, invitedUserId, spreadAllowed: 0 }),
+          body: JSON.stringify({eventId: id, invitedUserId, spreadAllowed: 0}),
         }),
       ),
       ...removals.map((userId) =>
-        fetch(`/api/events/${id}/invites/${userId}`, { method: 'DELETE', credentials: 'include' }),
+        fetch(`/api/events/${id}/invites/${userId}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        }),
       ),
     ])
 
@@ -266,11 +323,18 @@ function EventDetail() {
   }
 
   if (isLoading || !event) {
-    return <p className="px-6 py-16 text-center text-sm text-joyna-ink-faint">Loading event…</p>
+    return (
+      <p className="px-6 py-16 text-center text-sm text-joyna-ink-faint">
+        Loading event…
+      </p>
+    )
   }
 
-  const rsvpClosed = Boolean(event.rsvpDeadline && new Date(event.rsvpDeadline).getTime() < Date.now())
+  const rsvpClosed = Boolean(
+    event.rsvpDeadline && new Date(event.rsvpDeadline).getTime() < Date.now(),
+  )
   const rsvpLabel = formatRsvpDeadline(event.rsvpDeadline)
+  const mood = DEFAULT_MOODS.find((m) => m.id === event.mood)
   const canAddGuests =
     !event.isOwner &&
     event.viewerInviteStatus === 'accepted' &&
@@ -286,29 +350,51 @@ function EventDetail() {
       )}
 
       <div>
-        <h1 className="font-display text-xl font-semibold text-joyna-ink">{event.name}</h1>
+        <h1 className="font-display text-xl font-semibold text-joyna-ink">
+          {event.name}
+        </h1>
         <div className="mt-2 flex flex-col gap-1.5 text-xs text-joyna-ink-soft">
           <span className="flex items-center gap-1">
-            <HugeiconsIcon icon={Calendar01Icon} className="h-3.5 w-3.5" strokeWidth={2} />
+            <HugeiconsIcon
+              icon={Calendar01Icon}
+              className="h-3.5 w-3.5"
+              strokeWidth={2}
+            />
             {formatEventDate(new Date(event.date))}
           </span>
           {event.location && (
             <span className="flex items-center gap-1">
-              <HugeiconsIcon icon={Location01Icon} className="h-3.5 w-3.5" strokeWidth={2} />
+              <HugeiconsIcon
+                icon={Location01Icon}
+                className="h-3.5 w-3.5"
+                strokeWidth={2}
+              />
               {event.location}
             </span>
           )}
           <span className="flex items-center gap-1">
-            <HugeiconsIcon icon={UserMultipleIcon} className="h-3.5 w-3.5" strokeWidth={2} />
+            <HugeiconsIcon
+              icon={UserMultipleIcon}
+              className="h-3.5 w-3.5"
+              strokeWidth={2}
+            />
             {guests.length} guest{guests.length === 1 ? '' : 's'}
           </span>
           {rsvpClosed || rsvpLabel ? (
             <div className="mt-0.5 flex flex-wrap items-center gap-2">
-              {rsvpClosed ? <Pill tone="muted">🔒 RSVP closed</Pill> : rsvpLabel && <Pill tone="sunflower">{rsvpLabel}</Pill>}
+              {rsvpClosed ? (
+                <Pill tone="muted">🔒 RSVP closed</Pill>
+              ) : (
+                rsvpLabel && <Pill tone="sunflower">{rsvpLabel}</Pill>
+              )}
             </div>
           ) : null}
         </div>
-        {event.description && <p className="mt-3 whitespace-pre-line text-sm text-joyna-ink">{event.description}</p>}
+        {event.description && (
+          <p className="mt-3 whitespace-pre-line text-sm text-joyna-ink">
+            {event.description}
+          </p>
+        )}
       </div>
 
       {event.isOwner ? (
@@ -321,11 +407,15 @@ function EventDetail() {
         </Button>
       ) : (
         <div className="flex flex-col gap-3">
-          <p className="font-display text-sm font-semibold text-joyna-ink">Will you be attending?</p>
+          <p className="font-display text-sm font-semibold text-joyna-ink">
+            Will you be attending?
+          </p>
           <div className="flex gap-3">
             <Button
               type="button"
-              variant={event.viewerInviteStatus === 'declined' ? 'default' : 'outline'}
+              variant={
+                event.viewerInviteStatus === 'declined' ? 'default' : 'outline'
+              }
               disabled={isResponding || rsvpClosed}
               onClick={() => handleRespond('declined')}
               className={
@@ -338,7 +428,9 @@ function EventDetail() {
             </Button>
             <Button
               type="button"
-              variant={event.viewerInviteStatus === 'accepted' ? 'default' : 'outline'}
+              variant={
+                event.viewerInviteStatus === 'accepted' ? 'default' : 'outline'
+              }
               disabled={isResponding || rsvpClosed}
               onClick={() => handleRespond('accepted')}
               className={
@@ -357,7 +449,10 @@ function EventDetail() {
           )}
           {!rsvpClosed && event.viewerInviteStatus === 'declined' && (
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-medium text-joyna-ink-soft" htmlFor="decline-note">
+              <label
+                className="text-xs font-medium text-joyna-ink-soft"
+                htmlFor="decline-note"
+              >
                 Let the host know why (optional)
               </label>
               <Textarea
@@ -399,10 +494,16 @@ function EventDetail() {
           candidates={candidates}
           onCommit={handleCommitGuests}
           onAddToNetwork={handleAddToNetwork}
-          canRemove={(g) => attendees.find((a) => a.userId === g.id)?.invitedBy === user?.id}
+          canRemove={(g) =>
+            attendees.find((a) => a.userId === g.id)?.invitedBy === user?.id
+          }
         />
       ) : (
-        <StaticGuestList guests={guests} locked={rsvpClosed} onAddToNetwork={handleAddToNetwork} />
+        <StaticGuestList
+          guests={guests}
+          locked={rsvpClosed}
+          onAddToNetwork={handleAddToNetwork}
+        />
       )}
     </section>
   )
