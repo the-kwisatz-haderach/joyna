@@ -35,7 +35,7 @@ function TopMenu() {
       {pushed ? (
         <Link
           to="/events"
-          className="-ml-1.5 flex items-center gap-0.5 rounded-full py-1.5 pr-2.5 pl-1.5 font-display text-sm font-semibold text-joyna-ink transition-colors hover:bg-joyna-border"
+          className="-ml-1.5 flex items-center gap-2 rounded-full py-1.5 pr-2.5 pl-1.5 font-display text-lg font-semibold text-joyna-ink transition-colors hover:bg-joyna-border"
         >
           <span aria-hidden="true">&lt;</span> Events
         </Link>
@@ -49,10 +49,10 @@ function TopMenu() {
           to="/notifications"
           aria-label="Notifications"
           className={cn(
-            'flex h-10 w-10 items-center justify-center rounded-control border border-joyna-border bg-white shadow-sm transition-colors',
+            'flex h-10 w-10 items-center justify-center rounded-control border transition-colors',
             pathname === '/notifications'
-              ? 'text-joyna-coral'
-              : 'text-joyna-ink-soft hover:text-joyna-ink',
+              ? 'border-joyna-ink bg-joyna-ink text-white'
+              : 'border-joyna-border bg-white text-joyna-ink-soft hover:text-joyna-ink',
           )}
         >
           <HugeiconsIcon
@@ -65,10 +65,10 @@ function TopMenu() {
           to="/profile"
           aria-label="Profile"
           className={cn(
-            'flex h-10 w-10 items-center justify-center rounded-control border border-joyna-border bg-white shadow-sm transition-colors',
+            'flex h-10 w-10 items-center justify-center rounded-control border transition-colors',
             pathname === '/profile'
-              ? 'text-joyna-coral'
-              : 'text-joyna-ink-soft hover:text-joyna-ink',
+              ? 'border-joyna-ink bg-joyna-ink text-white'
+              : 'border-joyna-border bg-white text-joyna-ink-soft hover:text-joyna-ink',
           )}
         >
           <HugeiconsIcon
@@ -92,7 +92,7 @@ function BottomMenu() {
       aria-label="Primary"
       className="sticky bottom-0 z-10 flex items-center justify-between px-5 py-3"
     >
-      <div className="flex h-11 items-center gap-1 rounded-full border border-joyna-border-strong px-1">
+      <div className="flex h-11 items-center gap-1 rounded-full border border-joyna-border-strong bg-white px-1">
         <Link
           to="/events"
           className={cn(
@@ -116,7 +116,7 @@ function BottomMenu() {
         <Link
           to="/events/new"
           aria-label="Create event"
-          className="flex h-11 shrink-0 items-center justify-center rounded-full bg-joyna-coral px-5 font-display text-sm font-semibold text-white shadow-sm transition-transform active:scale-95"
+          className="flex h-11 shrink-0 items-center justify-center rounded-full bg-joyna-coral px-5 font-display text-sm font-semibold text-white transition-transform active:scale-95"
         >
           + New
         </Link>
