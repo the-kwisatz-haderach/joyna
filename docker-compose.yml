@@ -58,6 +58,7 @@ services:
         condition: service_healthy
   
   prometheus:
+    profiles: ["monitoring"]
     image: prom/prometheus:v3.5.0
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -69,6 +70,7 @@ services:
     restart: unless-stopped
 
   node_exporter:
+    profiles: ["monitoring"]
     image: quay.io/prometheus/node-exporter:latest
     container_name: node_exporter
     command:
@@ -81,6 +83,7 @@ services:
       - '/:/host:ro,rslave'
   
   grafana:
+    profiles: ["monitoring"]
     image: grafana/grafana-enterprise
     ports:
       - 3000:3000
