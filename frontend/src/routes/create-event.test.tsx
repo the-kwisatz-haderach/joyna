@@ -43,6 +43,16 @@ describe('CreateEvent', () => {
     expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
   })
 
+  it('offers 1-7 as RSVP deadline amount options', () => {
+    renderCreateEvent()
+
+    const [amountSelect] = screen.getAllByRole('combobox')
+    const optionLabels = [...amountSelect.querySelectorAll('option')].map(
+      (option) => option.textContent,
+    )
+    expect(optionLabels).toEqual(['1', '2', '3', '4', '5', '6', '7'])
+  })
+
   it('creates the event and navigates to its detail page on success', async () => {
     const user = userEvent.setup()
     renderCreateEvent()

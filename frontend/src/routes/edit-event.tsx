@@ -7,6 +7,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Calendar } from '@/components/ui/calendar'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { MoodPicker } from '../../components/joyna/mood-picker'
 
 type RsvpUnit = 'day' | 'week' | 'month'
@@ -48,6 +56,7 @@ function EditEvent() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
 
   const [name, setName] = useState('')
   const [date, setDate] = useState<Date | undefined>(undefined)
@@ -140,6 +149,7 @@ function EditEvent() {
       navigate('/events', { replace: true })
     } finally {
       setIsCancelling(false)
+      setShowCancelConfirm(false)
     }
   }
 
@@ -154,7 +164,7 @@ function EditEvent() {
       <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
         <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
           Title
-          <Input value={name} onChange={(e) => setName(e.target.value)} required className="h-10 rounded-field" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} required className="h-10 rounded-field bg-white" />
         </label>
 
         <div className="flex flex-col gap-2">
@@ -164,7 +174,7 @@ function EditEvent() {
           </div>
           <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
             Time
-            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-10 w-32 rounded-field" />
+            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-10 w-32 rounded-field bg-white" />
           </label>
         </div>
 
@@ -174,7 +184,7 @@ function EditEvent() {
             placeholder="Search for a place…"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="h-10 rounded-field"
+            className="h-10 rounded-field bg-white"
           />
           <div className="flex h-28 items-center justify-center rounded-card border border-dashed border-joyna-border-strong bg-joyna-border/40 text-joyna-ink-faint">
             Map preview
@@ -195,7 +205,7 @@ function EditEvent() {
               onChange={(e) => setRsvpAmount(Number(e.target.value))}
               className="h-10 rounded-field border border-joyna-border-strong bg-white px-2 text-sm"
             >
-              {[1, 2, 3, 4].map((n) => (
+              {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>
@@ -226,7 +236,7 @@ function EditEvent() {
 
         <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
           Description
-          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className="rounded-field" />
+          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className="rounded-field bg-white" />
         </label>
 
         {error && (
@@ -253,10 +263,9 @@ function EditEvent() {
       <div className="flex flex-col gap-2 rounded-card border border-joyna-red/20 bg-joyna-red/5 p-4">
         <Button
           type="button"
-          variant="destructive"
-          className="h-11 w-full rounded-control font-display text-sm"
+          className="h-11 w-full rounded-control bg-joyna-red font-display text-sm text-white hover:bg-joyna-red-dark"
           disabled={isCancelling}
-          onClick={handleCancelEvent}
+          onClick={() => setShowCancelConfirm(true)}
         >
           {isCancelling ? 'Cancelling…' : 'Cancel event'}
         </Button>
@@ -264,6 +273,34 @@ function EditEvent() {
           Notifies all guests — this can&apos;t be undone.
         </p>
       </div>
+
+      <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Cancelling event</DialogTitle>
+            <DialogDescription>This notifies all guests and can&apos;t be undone.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              className="rounded-control font-display text-sm"
+              disabled={isCancelling}
+              onClick={() => setShowCancelConfirm(false)}
+            >
+              Go back
+            </Button>
+            <Button
+              type="button"
+              className="rounded-control bg-joyna-red font-display text-sm text-white hover:bg-joyna-red-dark"
+              disabled={isCancelling}
+              onClick={handleCancelEvent}
+            >
+              {isCancelling ? 'Cancelling…' : 'Confirm'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }
