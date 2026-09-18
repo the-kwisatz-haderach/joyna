@@ -3,6 +3,7 @@ import {HugeiconsIcon} from '@hugeicons/react'
 import {Notification03Icon, UserCircleIcon} from '@hugeicons/core-free-icons'
 
 import {cn} from '@/lib/utils'
+import {useHideOnScroll} from '@/hooks/use-hide-on-scroll'
 import {useAuth} from '../auth-context'
 
 function isPushedPath(pathname: string): boolean {
@@ -22,9 +23,15 @@ function getScreenTitle(pathname: string): string {
 function TopMenu() {
   const {pathname} = useLocation()
   const pushed = isPushedPath(pathname)
+  const hidden = useHideOnScroll()
 
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between border-b border-joyna-border bg-joyna-cream px-5 py-4">
+    <header
+      className={cn(
+        'sticky top-0 z-10 flex items-center justify-between border-b border-joyna-border bg-joyna-cream px-5 py-4 transition-transform duration-300 ease-in-out',
+        hidden ? '-translate-y-full' : 'translate-y-0',
+      )}
+    >
       {pushed ? (
         <Link
           to="/events"
