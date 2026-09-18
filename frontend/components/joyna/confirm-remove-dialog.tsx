@@ -46,7 +46,7 @@ export function ConfirmRemoveDialog({
         <DialogFooter className="flex-col gap-2 sm:flex-col">
           <Button
             variant="destructive"
-            className="w-full"
+            className="h-11 w-full rounded-control font-display text-sm"
             onClick={() => {
               onConfirm();
               onOpenChange(false);
@@ -54,7 +54,11 @@ export function ConfirmRemoveDialog({
           >
             Remove guest
           </Button>
-          <Button variant="secondary" className="w-full" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="secondary"
+            className="h-11 w-full rounded-control font-display text-sm"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
         </DialogFooter>

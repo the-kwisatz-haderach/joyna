@@ -353,7 +353,7 @@ function EventDetail() {
         <h1 className="font-display text-xl font-semibold text-joyna-ink">
           {event.name}
         </h1>
-        <div className="mt-2 flex flex-col gap-1.5 text-xs text-joyna-ink-soft">
+        <div className="mt-2 flex flex-col gap-3 text-xs text-joyna-ink-soft">
           <span className="flex items-center gap-1">
             <HugeiconsIcon
               icon={Calendar01Icon}
