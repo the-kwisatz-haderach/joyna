@@ -1,8 +1,15 @@
-import { useEffect, useState } from "react"
-import { Link } from "react-router"
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Calendar03Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
+
+import { Button } from '@/components/ui/button'
+import { Pill } from '../../components/joyna/pill'
+import { useAuth } from '../auth-context'
 
 type Event = {
   id: string
+  ownerId: string
   name: string
   description: string
   date: string
@@ -10,9 +17,11 @@ type Event = {
   rsvpDeadline?: string
 }
 
-const dateFormatter = new Intl.DateTimeFormat("en", {
-  dateStyle: "medium",
-  timeStyle: "short",
+const PREVIEW_COUNT = 3
+
+const dateFormatter = new Intl.DateTimeFormat('en', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
 })
 
 function formatRsvpDeadline(rsvpDeadline?: string): string | null {
@@ -25,91 +34,115 @@ function formatRsvpDeadline(rsvpDeadline?: string): string | null {
   if (diffDays <= 0) {
     return null
   }
-  return `RSVP within ${diffDays} day${diffDays === 1 ? "" : "s"}`
-}
-
-function ArrowRightIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="size-5"
-    >
-      <path d="M5 12h14M13 5l7 7-7 7" />
-    </svg>
-  )
-}
-
-function ChevronDownIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={className ?? "size-4"}
-    >
-      <path d="M6 9l6 6 6-6" />
-    </svg>
-  )
+  return `RSVP in ${diffDays} day${diffDays === 1 ? '' : 's'}`
 }
 
 function EventCard({
   event,
+  dimmed,
   showRsvpDeadline,
 }: {
   event: Event
+  dimmed?: boolean
   showRsvpDeadline?: boolean
 }) {
-  const rsvpLabel = showRsvpDeadline
-    ? formatRsvpDeadline(event.rsvpDeadline)
-    : null
+  const rsvpLabel = showRsvpDeadline ? formatRsvpDeadline(event.rsvpDeadline) : null
 
   return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4">
-      <div className="flex flex-col gap-1">
-        <span className="font-medium text-card-foreground">{event.name}</span>
-        <span className="text-sm text-muted-foreground">
-          {dateFormatter.format(new Date(event.date))}
-        </span>
-        <span className="text-sm text-muted-foreground">
-          {event.location}
-        </span>
-        {rsvpLabel && (
-          <span className="text-sm text-muted-foreground">{rsvpLabel}</span>
+    <Link
+      to={`/events/${event.id}`}
+      className={
+        dimmed
+          ? 'flex flex-col gap-1 rounded-card border border-joyna-border bg-white p-4 opacity-60 transition-opacity hover:opacity-80'
+          : 'flex flex-col gap-1 rounded-card border border-joyna-border bg-white p-4 shadow-sm transition-shadow hover:shadow'
+      }
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span className="font-display text-sm font-semibold text-joyna-ink">{event.name}</span>
+        {rsvpLabel && <Pill tone="sunflower">{rsvpLabel}</Pill>}
+      </div>
+      <span className="text-xs text-joyna-ink-soft">{dateFormatter.format(new Date(event.date))}</span>
+      <span className="text-xs text-joyna-ink-faint">{event.location}</span>
+    </Link>
+  )
+}
+
+function EventSection({
+  title,
+  events,
+  emptyMessage,
+  dimmed,
+  showRsvpDeadline,
+}: {
+  title: string
+  events: Event[]
+  emptyMessage: string
+  dimmed?: boolean
+  showRsvpDeadline?: boolean
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const visible = expanded ? events : events.slice(0, PREVIEW_COUNT)
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-base font-semibold text-joyna-ink">{title}</h2>
+        {events.length > PREVIEW_COUNT && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="text-xs font-semibold text-joyna-coral"
+          >
+            {expanded ? 'Show less' : 'View all'}
+          </button>
         )}
       </div>
-      <Link
-        to={`/events/${event.id}`}
-        aria-label={`View ${event.name} details`}
-        className="flex size-12 shrink-0 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-muted"
+      {events.length === 0 ? (
+        <p className="text-sm text-joyna-ink-faint">{emptyMessage}</p>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {visible.map((event) => (
+            <EventCard key={event.id} event={event} dimmed={dimmed} showRsvpDeadline={showRsvpDeadline} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function EmptyEventsState() {
+  return (
+    <div className="mx-auto flex max-w-sm flex-col items-center gap-3 px-6 py-20 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-joyna-periwinkle/10 text-joyna-periwinkle">
+        <HugeiconsIcon icon={Calendar03Icon} className="h-8 w-8" strokeWidth={1.8} />
+      </div>
+      <h2 className="font-display text-lg font-semibold text-joyna-ink">No events yet</h2>
+      <p className="text-sm text-joyna-ink-soft">
+        Create your first event or wait for an invite to show up here.
+      </p>
+      <Button
+        render={<Link to="/events/new" />}
+        className="mt-2 h-11 rounded-control px-6 font-display text-sm"
       >
-        <ArrowRightIcon />
-      </Link>
+        <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
+        New event
+      </Button>
     </div>
   )
 }
 
 function Events() {
+  const { user } = useAuth()
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isHappenedOpen, setIsHappenedOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
 
     async function loadEvents() {
       try {
-        const response = await fetch("/api/events", {
-          credentials: "include",
+        const response = await fetch('/api/events?scope=all&sort=date&order=desc', {
+          credentials: 'include',
         })
         if (!response.ok) {
           return
@@ -131,60 +164,35 @@ function Events() {
     }
   }, [])
 
+  if (isLoading) {
+    return <p className="px-6 py-16 text-center text-sm text-joyna-ink-faint">Loading events…</p>
+  }
+
   const now = Date.now()
-  const upcomingEvents = events
-    .filter((event) => new Date(event.date).getTime() >= now)
+  const hosting = events
+    .filter((event) => event.ownerId === user?.id && new Date(event.date).getTime() >= now)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  const happenedEvents = events
+  const upcoming = events
+    .filter((event) => event.ownerId !== user?.id && new Date(event.date).getTime() >= now)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  const past = events
     .filter((event) => new Date(event.date).getTime() < now)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
-  return (
-    <section className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-6">
-      <div className="flex flex-col gap-3">
-        <h2 className="text-lg font-medium text-foreground">Upcoming</h2>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading events…</p>
-        ) : upcomingEvents.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No upcoming events.</p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {upcomingEvents.map((event) => (
-              <EventCard key={event.id} event={event} showRsvpDeadline />
-            ))}
-          </div>
-        )}
-      </div>
+  if (hosting.length === 0 && upcoming.length === 0 && past.length === 0) {
+    return <EmptyEventsState />
+  }
 
-      {isLoading ? null : (
-        <div className="flex flex-col gap-3">
-          <h2 className="text-lg font-medium text-foreground">
-            <button
-              type="button"
-              aria-expanded={isHappenedOpen}
-              onClick={() => setIsHappenedOpen((open) => !open)}
-              className="flex items-center gap-1.5 text-foreground hover:text-primary"
-            >
-              <ChevronDownIcon
-                className={
-                  isHappenedOpen ? "size-4 transition-transform" : "size-4 -rotate-90 transition-transform"
-                }
-              />
-              Happened
-            </button>
-          </h2>
-          {isHappenedOpen &&
-            (happenedEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No past events.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {happenedEvents.map((event) => (
-                  <EventCard key={event.id} event={event} />
-                ))}
-              </div>
-            ))}
-        </div>
-      )}
+  return (
+    <section className="mx-auto flex max-w-2xl flex-col gap-8 px-5 py-6">
+      <EventSection title="Your events" events={hosting} emptyMessage="You're not hosting any upcoming events." />
+      <EventSection
+        title="Upcoming"
+        events={upcoming}
+        emptyMessage="No upcoming invitations yet."
+        showRsvpDeadline
+      />
+      <EventSection title="Past events" events={past} emptyMessage="No past events." dimmed />
     </section>
   )
 }

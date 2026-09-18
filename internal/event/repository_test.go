@@ -86,10 +86,40 @@ func TestEventRepository(t *testing.T) {
 
 		attendees, err := repo.ListEventAttendees(ctx, createdEvent.ID)
 		require.NoError(t, err)
-		require.Len(t, attendees, 2)
-		ids := []string{attendees[0].UserID, attendees[1].UserID}
-		require.Contains(t, ids, owner.Id)
-		require.Contains(t, ids, accepted.Id)
-		require.NotContains(t, ids, declined.Id)
+		require.Len(t, attendees, 3)
+
+		byID := make(map[string]Attendee, len(attendees))
+		for _, a := range attendees {
+			byID[a.UserID] = a
+		}
+
+		require.True(t, byID[owner.Id].IsOwner)
+
+		require.False(t, byID[accepted.Id].IsOwner)
+		require.Equal(t, InviteStateAccepted, byID[accepted.Id].Status)
+		require.Equal(t, owner.Id, byID[accepted.Id].InvitedBy)
+
+		require.False(t, byID[declined.Id].IsOwner)
+		require.Equal(t, InviteStateDeclined, byID[declined.Id].Status)
+		require.Equal(t, owner.Id, byID[declined.Id].InvitedBy)
+	})
+
+	t.Run("DeleteEventInvite", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		invitee := authtest.CreateUser(t, pool)
+		createdEvent, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(24 * time.Hour)}, owner.Id)
+		require.NoError(t, err)
+
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: createdEvent.ID, InvitedUserID: invitee.Id}, owner.Id)
+		require.NoError(t, err)
+
+		err = repo.DeleteEventInvite(ctx, createdEvent.ID, invitee.Id)
+		require.NoError(t, err)
+
+		_, err = repo.GetEventInvite(ctx, createdEvent.ID, invitee.Id)
+		require.ErrorIs(t, err, ErrInviteNotFound)
+
+		err = repo.DeleteEventInvite(ctx, createdEvent.ID, invitee.Id)
+		require.ErrorIs(t, err, ErrInviteNotFound)
 	})
 }

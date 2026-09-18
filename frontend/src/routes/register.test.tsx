@@ -30,7 +30,9 @@ describe("Register", () => {
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /sign up/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /create account/i }),
+    ).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /log in/i })).toHaveAttribute(
       "href",
       "/login",
@@ -44,7 +46,7 @@ describe("Register", () => {
     await user.type(screen.getByLabelText(/name/i), "Grace Hopper")
     await user.type(screen.getByLabelText(/email/i), "grace@joyna.dev")
     await user.type(screen.getByLabelText(/password/i), "password123")
-    await user.click(screen.getByRole("button", { name: /sign up/i }))
+    await user.click(screen.getByRole("button", { name: /create account/i }))
 
     await waitFor(() => {
       expect(screen.getByText("Home")).toBeInTheDocument()
@@ -61,7 +63,7 @@ describe("Register", () => {
     await user.type(screen.getByLabelText(/name/i), "Ada Lovelace")
     await user.type(screen.getByLabelText(/email/i), "ada@joyna.dev")
     await user.type(screen.getByLabelText(/password/i), "password123")
-    await user.click(screen.getByRole("button", { name: /sign up/i }))
+    await user.click(screen.getByRole("button", { name: /create account/i }))
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       /account with this email already exists/i,

@@ -1,5 +1,5 @@
-import { useMemo, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useNavigate, useParams } from 'react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Location01Icon } from '@hugeicons/core-free-icons'
 
@@ -17,11 +17,6 @@ const UNIT_IN_MS: Record<RsvpUnit, number> = {
   month: 30 * 24 * 60 * 60 * 1000,
 }
 
-// The new design has no Type/spread controls — every event created here is
-// "other" with no default spread, matching the exhaustive field list in
-// docs/design/screens-export/SCREENS.md screen 04.
-const DEFAULT_EVENT_TYPE = 'other'
-
 const dateCaptionFormatter = new Intl.DateTimeFormat('en', { dateStyle: 'medium' })
 
 function combineDateAndTime(date: Date, time: string): Date {
@@ -31,14 +26,28 @@ function combineDateAndTime(date: Date, time: string): Date {
   return combined
 }
 
-type CreatedEvent = {
-  id: string
+function toTimeString(date: Date): string {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
 
-function CreateEvent() {
+type EventDetailData = {
+  id: string
+  ownerId: string
+  name: string
+  description: string
+  date: string
+  location: string
+  rsvpDeadline?: string
+  isOwner: boolean
+}
+
+function EditEvent() {
+  const { id } = useParams()
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCancelling, setIsCancelling] = useState(false)
 
   const [name, setName] = useState('')
   const [date, setDate] = useState<Date | undefined>(undefined)
@@ -49,6 +58,39 @@ function CreateEvent() {
   const [moodId, setMoodId] = useState('')
   const [description, setDescription] = useState('')
 
+  useEffect(() => {
+    if (!id) return
+    let cancelled = false
+
+    async function loadEvent() {
+      const response = await fetch(`/api/events/${id}`, { credentials: 'include' })
+      if (!response.ok || cancelled) {
+        setIsLoading(false)
+        return
+      }
+      const event = (await response.json()) as EventDetailData
+      const eventDate = new Date(event.date)
+      setName(event.name)
+      setDate(eventDate)
+      setTime(toTimeString(eventDate))
+      setLocation(event.location)
+      setDescription(event.description)
+      if (event.rsvpDeadline) {
+        const deadline = new Date(event.rsvpDeadline)
+        const diffMs = eventDate.getTime() - deadline.getTime()
+        const diffDays = Math.max(1, Math.round(diffMs / UNIT_IN_MS.day))
+        setRsvpAmount(diffDays)
+        setRsvpUnit('day')
+      }
+      setIsLoading(false)
+    }
+
+    loadEvent()
+    return () => {
+      cancelled = true
+    }
+  }, [id])
+
   const eventDate = useMemo(() => (date ? combineDateAndTime(date, time) : undefined), [date, time])
   const rsvpDeadline = useMemo(() => {
     if (!eventDate) return undefined
@@ -57,17 +99,12 @@ function CreateEvent() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!id || !eventDate) return
     setError(null)
-
-    if (!eventDate) {
-      setError('Pick a date for the event.')
-      return
-    }
-
     setIsSubmitting(true)
     try {
-      const response = await fetch('/api/events', {
-        method: 'POST',
+      const response = await fetch(`/api/events/${id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
@@ -75,20 +112,15 @@ function CreateEvent() {
           date: eventDate.toISOString(),
           location,
           description,
-          type: DEFAULT_EVENT_TYPE,
           rsvpDeadline: rsvpDeadline?.toISOString(),
-          defaultSpreadAllowed: 0,
         }),
       })
-
       if (!response.ok) {
         const message = await response.text()
         setError(message || 'Something went wrong. Please try again.')
         return
       }
-
-      const created = (await response.json()) as CreatedEvent
-      navigate(`/events/${created.id}`, { replace: true })
+      navigate(`/events/${id}`, { replace: true })
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
@@ -96,39 +128,43 @@ function CreateEvent() {
     }
   }
 
+  async function handleCancelEvent() {
+    if (!id) return
+    setIsCancelling(true)
+    try {
+      const response = await fetch(`/api/events/${id}`, { method: 'DELETE', credentials: 'include' })
+      if (!response.ok) {
+        setError("Couldn't cancel the event. Please try again.")
+        return
+      }
+      navigate('/events', { replace: true })
+    } finally {
+      setIsCancelling(false)
+    }
+  }
+
+  if (isLoading) {
+    return <p className="px-6 py-16 text-center text-sm text-joyna-ink-faint">Loading event…</p>
+  }
+
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-6 px-5 py-6 font-body">
-      <h1 className="font-display text-xl font-semibold text-joyna-ink">Create event</h1>
+      <h1 className="font-display text-xl font-semibold text-joyna-ink">Edit event</h1>
 
       <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
         <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
           Title
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="h-10 rounded-field"
-          />
+          <Input value={name} onChange={(e) => setName(e.target.value)} required className="h-10 rounded-field" />
         </label>
 
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-joyna-ink-soft">Date &amp; time</span>
           <div className="rounded-card border border-joyna-border bg-white p-2">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              disabled={{ before: new Date() }}
-            />
+            <Calendar mode="single" selected={date} onSelect={setDate} disabled={{ before: new Date() }} />
           </div>
           <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
             Time
-            <Input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="h-10 w-32 rounded-field"
-            />
+            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="h-10 w-32 rounded-field" />
           </label>
         </div>
 
@@ -190,12 +226,7 @@ function CreateEvent() {
 
         <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
           Description
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className="rounded-field"
-          />
+          <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className="rounded-field" />
         </label>
 
         {error && (
@@ -209,17 +240,32 @@ function CreateEvent() {
             type="button"
             variant="secondary"
             className="h-11 flex-1 rounded-control font-display text-sm"
-            onClick={() => navigate('/events')}
+            onClick={() => navigate(`/events/${id}`)}
           >
             Cancel
           </Button>
           <Button type="submit" className="h-11 flex-1 rounded-control font-display text-sm" disabled={isSubmitting}>
-            {isSubmitting ? 'Creating…' : 'Create'}
+            {isSubmitting ? 'Saving…' : 'Save'}
           </Button>
         </div>
       </form>
+
+      <div className="flex flex-col gap-2 rounded-card border border-joyna-red/20 bg-joyna-red/5 p-4">
+        <Button
+          type="button"
+          variant="destructive"
+          className="h-11 w-full rounded-control font-display text-sm"
+          disabled={isCancelling}
+          onClick={handleCancelEvent}
+        >
+          {isCancelling ? 'Cancelling…' : 'Cancel event'}
+        </Button>
+        <p className="text-center text-xs text-joyna-ink-faint">
+          Notifies all guests — this can&apos;t be undone.
+        </p>
+      </div>
     </section>
   )
 }
 
-export default CreateEvent
+export default EditEvent

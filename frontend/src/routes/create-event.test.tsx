@@ -1,9 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
-import { MemoryRouter, Route, Routes, useParams } from "react-router"
-import { describe, expect, it } from "vitest"
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { MemoryRouter, Route, Routes, useParams } from 'react-router'
+import { describe, expect, it } from 'vitest'
 
-import CreateEvent from "./create-event"
+import CreateEvent from './create-event'
 
 function EventDetailStub() {
   const { id } = useParams()
@@ -12,7 +12,7 @@ function EventDetailStub() {
 
 function renderCreateEvent() {
   return render(
-    <MemoryRouter initialEntries={["/events/new"]}>
+    <MemoryRouter initialEntries={['/events/new']}>
       <Routes>
         <Route path="/events" element={<div>Events</div>} />
         <Route path="/events/new" element={<CreateEvent />} />
@@ -22,38 +22,42 @@ function renderCreateEvent() {
   )
 }
 
-describe("CreateEvent", () => {
-  it("renders the event fields and a link back to events", () => {
+function pickAnEnabledDay() {
+  const dayButtons = document.querySelectorAll<HTMLButtonElement>('button[data-day]')
+  const enabled = [...dayButtons].find((btn) => !btn.disabled)
+  if (!enabled) {
+    throw new Error('no enabled calendar day found')
+  }
+  return enabled
+}
+
+describe('CreateEvent', () => {
+  it('renders the event fields', () => {
     renderCreateEvent()
 
-    expect(screen.getByLabelText(/name/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/date/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/location/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/title/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/time/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/search for a place/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/^type/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/rsvp deadline/i)).toBeInTheDocument()
-    expect(
-      screen.getByRole("button", { name: /create event/i }),
-    ).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /back to events/i })).toHaveAttribute(
-      "href",
-      "/events",
-    )
+    expect(screen.getByRole('button', { name: /^create$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
   })
 
-  it("creates the event and navigates to its detail page on success", async () => {
+  it('creates the event and navigates to its detail page on success', async () => {
     const user = userEvent.setup()
     renderCreateEvent()
 
-    await user.type(screen.getByLabelText(/name/i), "Launch Party")
-    await user.type(screen.getByLabelText(/date/i), "2026-09-20T18:00")
-    await user.type(screen.getByLabelText(/location/i), "Rooftop, Stockholm")
+    await user.type(screen.getByLabelText(/title/i), 'Launch Party')
+    await user.click(pickAnEnabledDay())
+    await user.type(
+      screen.getByPlaceholderText(/search for a place/i),
+      'Rooftop, Stockholm',
+    )
     await user.type(
       screen.getByLabelText(/description/i),
-      "Celebrating the launch.",
+      'Celebrating the launch.',
     )
-    await user.selectOptions(screen.getByLabelText(/^type/i), "party")
-    await user.click(screen.getByRole("button", { name: /create event/i }))
+    await user.click(screen.getByRole('button', { name: /^create$/i }))
 
     await waitFor(() => {
       expect(screen.getByText(/event detail/i)).toBeInTheDocument()

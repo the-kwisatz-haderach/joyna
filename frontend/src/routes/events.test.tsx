@@ -1,63 +1,68 @@
-import { render, screen, within } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
-import { MemoryRouter, Route, Routes } from "react-router"
-import { describe, expect, it } from "vitest"
+import { render, screen, within } from '@testing-library/react'
+import { MemoryRouter, Route, Routes } from 'react-router'
+import { afterEach, describe, expect, it } from 'vitest'
 
-import Events from "./events"
+import { AuthProvider } from '../auth-context'
+import { mockUsers } from '../mocks/data'
+import Events from './events'
 
-function renderEvents() {
-  return render(
-    <MemoryRouter initialEntries={["/events"]}>
-      <Routes>
-        <Route path="/events" element={<Events />} />
-        <Route path="/events/:id" element={<div>Event detail</div>} />
-      </Routes>
-    </MemoryRouter>,
+function loginAsMockUser() {
+  localStorage.setItem(
+    'joyna.currentUser',
+    JSON.stringify({
+      id: mockUsers[0].id,
+      name: mockUsers[0].name,
+      email: mockUsers[0].email,
+      joinedAt: mockUsers[0].joinedAt,
+    }),
   )
 }
 
-describe("Events", () => {
-  it("shows upcoming events with a link to their detail page", async () => {
-    renderEvents()
+function renderEvents() {
+  return render(
+    <AuthProvider>
+      <MemoryRouter initialEntries={['/events']}>
+        <Routes>
+          <Route path="/events" element={<Events />} />
+          <Route path="/events/:id" element={<div>Event detail</div>} />
+        </Routes>
+      </MemoryRouter>
+    </AuthProvider>,
+  )
+}
 
-    const upcomingHeading = await screen.findByRole("heading", {
-      name: /upcoming/i,
-    })
-    const upcomingSection = upcomingHeading.parentElement as HTMLElement
-    const upcomingLink = await within(upcomingSection).findByRole("link", {
-      name: /summer rooftop party/i,
-    })
-    expect(upcomingLink).toHaveAttribute(
-      "href",
-      "/events/c1a2b3c4-1111-4a1a-8a1a-000000000001",
-    )
+describe('Events', () => {
+  afterEach(() => {
+    localStorage.clear()
   })
 
-  it("hides happened events behind a collapsed, expandable section", async () => {
-    const user = userEvent.setup()
+  it('shows events the user is hosting under Your events', async () => {
+    loginAsMockUser()
     renderEvents()
 
-    const happenedToggle = await screen.findByRole("button", {
-      name: /happened/i,
-    })
-    expect(happenedToggle).toHaveAttribute("aria-expanded", "false")
-    expect(
-      screen.queryByRole("link", { name: /welcome mixer/i }),
-    ).not.toBeInTheDocument()
+    const heading = await screen.findByRole('heading', { name: /your events/i })
+    const section = heading.closest('div')?.parentElement as HTMLElement
+    const link = await within(section).findByRole('link', { name: /summer rooftop party/i })
+    expect(link).toHaveAttribute('href', '/events/c1a2b3c4-1111-4a1a-8a1a-000000000001')
+  })
 
-    await user.click(happenedToggle)
+  it('shows events the user is invited to under Upcoming', async () => {
+    loginAsMockUser()
+    renderEvents()
 
-    expect(happenedToggle).toHaveAttribute("aria-expanded", "true")
-    const happenedSection = happenedToggle.closest("div") as HTMLElement
-    const happenedLink = await within(happenedSection).findByRole("link", {
-      name: /welcome mixer/i,
-    })
-    expect(happenedLink).toHaveAttribute(
-      "href",
-      "/events/c1a2b3c4-1111-4a1a-8a1a-000000000003",
-    )
-    expect(
-      within(happenedSection).queryByText(/summer rooftop party/i),
-    ).not.toBeInTheDocument()
+    const heading = await screen.findByRole('heading', { name: /^upcoming$/i })
+    const section = heading.closest('div')?.parentElement as HTMLElement
+    const link = await within(section).findByRole('link', { name: /turing award dinner/i })
+    expect(link).toHaveAttribute('href', '/events/c1a2b3c4-1111-4a1a-8a1a-000000000004')
+  })
+
+  it('shows dimmed past events under Past events', async () => {
+    loginAsMockUser()
+    renderEvents()
+
+    const heading = await screen.findByRole('heading', { name: /past events/i })
+    const section = heading.closest('div')?.parentElement as HTMLElement
+    const link = await within(section).findByRole('link', { name: /welcome mixer/i })
+    expect(link).toHaveAttribute('href', '/events/c1a2b3c4-1111-4a1a-8a1a-000000000003')
   })
 })
