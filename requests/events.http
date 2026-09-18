@@ -15,7 +15,8 @@ Content-Type: application/json
   "location": "Downtown Bistro",
   "rsvpDeadline": "2026-08-25T00:00:00Z",
   "type": "dinner",
-  "defaultSpreadAllowed": 0
+  "defaultSpreadAllowed": 0,
+  "mood": "chill"
 }
 
 ### Update event (partial — only fields you include are changed)

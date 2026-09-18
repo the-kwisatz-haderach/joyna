@@ -546,6 +546,10 @@ components:
       type: string
       enum: [birthday, party, dinner, gathering, concert, other]
 
+    Mood:
+      type: string
+      enum: [chill, fun, party, cozy, adventure, romantic, competitive, low-key]
+
     EventInviteStatus:
       type: string
       enum: [pending, accepted, declined]
@@ -594,6 +598,8 @@ components:
           $ref: "#/components/schemas/EventType"
         defaultSpreadAllowed:
           type: integer
+        mood:
+          $ref: "#/components/schemas/Mood"
       required:
         [id, ownerId, name, description, createdAt, date, location, type, defaultSpreadAllowed]
 
@@ -618,6 +624,8 @@ components:
         defaultSpreadAllowed:
           type: integer
           minimum: 0
+        mood:
+          $ref: "#/components/schemas/Mood"
       required: [name, description, date, location, type, defaultSpreadAllowed]
 
     UpdateEventPayload:
@@ -642,6 +650,8 @@ components:
         defaultSpreadAllowed:
           type: integer
           minimum: 0
+        mood:
+          $ref: "#/components/schemas/Mood"
 
     EventInvite:
       type: object

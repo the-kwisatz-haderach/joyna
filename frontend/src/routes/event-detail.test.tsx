@@ -47,6 +47,7 @@ describe('EventDetail', () => {
     expect(
       screen.getByText(/drinks and music under the stars/i),
     ).toBeInTheDocument()
+    expect(screen.getByText(/party mood/i)).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: /edit details/i }),
     ).toHaveAttribute('href', '/events/c1a2b3c4-1111-4a1a-8a1a-000000000001/edit')

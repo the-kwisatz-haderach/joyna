@@ -17,6 +17,7 @@ export type MockEvent = {
   rsvpDeadline?: string
   type: string
   defaultSpreadAllowed: number
+  mood?: string
 }
 
 export type MockGroup = {
@@ -95,6 +96,7 @@ export const mockEvents: MockEvent[] = [
     rsvpDeadline: daysFromNow(25),
     type: 'party',
     defaultSpreadAllowed: 2,
+    mood: 'party',
   },
   {
     id: 'c1a2b3c4-1111-4a1a-8a1a-000000000002',

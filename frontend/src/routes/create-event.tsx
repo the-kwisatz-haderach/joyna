@@ -78,6 +78,7 @@ function CreateEvent() {
           type: DEFAULT_EVENT_TYPE,
           rsvpDeadline: rsvpDeadline?.toISOString(),
           defaultSpreadAllowed: 0,
+          mood: moodId || undefined,
         }),
       })
 

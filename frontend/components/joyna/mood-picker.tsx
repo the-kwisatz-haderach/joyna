@@ -14,7 +14,7 @@ export const DEFAULT_MOODS: Mood[] = [
   { id: "adventure", label: "Adventure", emoji: "🧭" },
   { id: "romantic", label: "Romantic", emoji: "💕" },
   { id: "competitive", label: "Competitive", emoji: "🏆" },
-  { id: "lowkey", label: "Low-key", emoji: "😴" },
+  { id: "low-key", label: "Low-key", emoji: "😴" },
 ];
 
 interface MoodPickerProps {

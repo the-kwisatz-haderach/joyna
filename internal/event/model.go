@@ -20,6 +20,7 @@ type Event struct {
 	RsvpDeadline         *time.Time `json:"rsvpDeadline,omitempty" db:"rsvp_deadline"`
 	Type                 EventType  `json:"type" db:"type"`
 	DefaultSpreadAllowed int        `json:"defaultSpreadAllowed" db:"default_spread_allowed"`
+	Mood                 *Mood      `json:"mood,omitempty" db:"mood"`
 }
 
 type EventInvite struct {
@@ -71,6 +72,7 @@ type CreateEventPayload struct {
 	RsvpDeadline         *time.Time `json:"rsvpDeadline,omitempty"`
 	Type                 EventType  `json:"type"`
 	DefaultSpreadAllowed int        `json:"defaultSpreadAllowed"`
+	Mood                 *Mood      `json:"mood,omitempty"`
 }
 
 var (
@@ -116,6 +118,7 @@ func (p CreateEventInvitePayload) Validate() error {
 }
 
 type EventType string
+type Mood string
 type EventInviteStatus string
 
 const (
@@ -132,6 +135,7 @@ type UpdateEventPayload struct {
 	RsvpDeadline         *time.Time `json:"rsvpDeadline,omitempty"`
 	Type                 *EventType `json:"type,omitempty"`
 	DefaultSpreadAllowed *int       `json:"defaultSpreadAllowed,omitempty"`
+	Mood                 *Mood      `json:"mood,omitempty"`
 }
 
 func (p UpdateEventPayload) Validate() error {

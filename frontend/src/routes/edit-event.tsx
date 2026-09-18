@@ -47,6 +47,7 @@ type EventDetailData = {
   location: string
   rsvpDeadline?: string
   isOwner: boolean
+  mood?: string
 }
 
 function EditEvent() {
@@ -84,6 +85,7 @@ function EditEvent() {
       setTime(toTimeString(eventDate))
       setLocation(event.location)
       setDescription(event.description)
+      setMoodId(event.mood ?? '')
       if (event.rsvpDeadline) {
         const deadline = new Date(event.rsvpDeadline)
         const diffMs = eventDate.getTime() - deadline.getTime()
@@ -122,6 +124,7 @@ function EditEvent() {
           location,
           description,
           rsvpDeadline: rsvpDeadline?.toISOString(),
+          mood: moodId || undefined,
         }),
       })
       if (!response.ok) {
