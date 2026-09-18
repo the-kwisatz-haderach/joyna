@@ -55,7 +55,7 @@ function EventCard({
       className={
         dimmed
           ? 'flex items-center justify-between gap-3 rounded-card border border-joyna-border bg-white p-4 opacity-60 transition-opacity hover:opacity-80'
-          : 'flex items-center justify-between gap-3 rounded-card border border-joyna-border bg-white p-4 shadow-sm transition-shadow hover:shadow'
+          : 'flex items-center justify-between gap-3 rounded-card border border-joyna-border bg-white p-4'
       }
     >
       <div className="flex min-w-0 flex-col gap-1">
