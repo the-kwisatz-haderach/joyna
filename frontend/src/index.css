@@ -1,73 +1,63 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-@import '@fontsource-variable/raleway';
-@import '@fontsource-variable/outfit';
+@import '@fontsource-variable/quicksand';
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: oklch(0.925 0.005 214.3 / 60%);
-  --code-bg: #f4f3ec;
-  --accent: oklch(0.963 0.002 197.1);
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* Joyna brand palette — fixed meaning app-wide, don't reassign per screen. */
+  --joyna-coral: #ff6f5e; /* primary actions */
+  --joyna-coral-dark: #d9503f;
+  --joyna-mint: #5cc8a8; /* positive / attending */
+  --joyna-mint-dark: #1f7a5e;
+  --joyna-bubblegum: #ff9ecf; /* soft decline / remove */
+  --joyna-bubblegum-dark: #b23e76;
+  --joyna-sunflower: #ffc85c; /* warnings / deadlines */
+  --joyna-sunflower-dark: #8a5a00;
+  --joyna-periwinkle: #6c7bff; /* info / tags / links */
+  --joyna-periwinkle-dark: #3341c4;
+  --joyna-red: #e3342f; /* hard-destructive only */
+  --joyna-red-dark: #8f211d;
+  --joyna-cream: #fff8f0; /* page background */
+  --joyna-ink: #2e2a3d; /* primary text */
+  --joyna-ink-soft: #6e6880; /* secondary text */
+  --joyna-ink-faint: #a79fb0; /* tertiary / placeholder text */
+  --joyna-border: #efe5d8;
+  --joyna-border-strong: #e2d5c4;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  color-scheme: light;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --background: var(--joyna-cream);
+  --foreground: var(--joyna-ink);
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  --card: #ffffff;
+  --card-foreground: var(--joyna-ink);
 
-  --background: oklch(1 0 0);
+  --popover: #ffffff;
+  --popover-foreground: var(--joyna-ink);
 
-  --foreground: oklch(0.148 0.004 228.8);
+  --primary: var(--joyna-coral);
+  --primary-foreground: #ffffff;
 
-  --card: oklch(1 0 0);
+  --secondary: #ffffff;
+  --secondary-foreground: var(--joyna-ink);
 
-  --card-foreground: oklch(0.148 0.004 228.8);
+  --muted: var(--joyna-border);
+  --muted-foreground: var(--joyna-ink-soft);
 
-  --popover: oklch(1 0 0);
+  --accent: var(--joyna-border);
+  --accent-foreground: var(--joyna-ink);
 
-  --popover-foreground: oklch(0.148 0.004 228.8);
+  --destructive: var(--joyna-red);
 
-  --primary: oklch(0.514 0.222 16.935);
+  --border: var(--joyna-border);
+  --input: var(--joyna-border-strong);
 
-  --primary-foreground: oklch(0.969 0.015 12.422);
-
-  --secondary: oklch(0.967 0.001 286.375);
-
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-
-  --muted: oklch(0.963 0.002 197.1);
-
-  --muted-foreground: oklch(0.56 0.021 213.5);
-
-  --accent-foreground: oklch(0.218 0.008 223.9);
-
-  --destructive: oklch(0.577 0.245 27.325);
-
-  --input: oklch(0.925 0.005 214.3);
-
-  --ring: oklch(0.723 0.014 214.4);
+  --ring: var(--joyna-periwinkle);
 
   --chart-1: oklch(0.855 0.138 181.071);
 
@@ -85,9 +75,9 @@
 
   --sidebar-foreground: oklch(0.148 0.004 228.8);
 
-  --sidebar-primary: oklch(0.586 0.253 17.585);
+  --sidebar-primary: var(--joyna-coral);
 
-  --sidebar-primary-foreground: oklch(0.969 0.015 12.422);
+  --sidebar-primary-foreground: #ffffff;
 
   --sidebar-accent: oklch(0.963 0.002 197.1);
 
@@ -96,85 +86,6 @@
   --sidebar-border: oklch(0.925 0.005 214.3);
 
   --sidebar-ring: oklch(0.723 0.014 214.4);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: rgba(255, 255, 255, 0.08);
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
 }
 
 .dark {
@@ -212,8 +123,36 @@ code {
 }
 
 @theme inline {
-  --font-sans: 'Raleway Variable', sans-serif;
-  --font-heading: 'Outfit Variable', sans-serif;
+  --font-sans: 'Poppins', sans-serif;
+  --font-body: 'Poppins', sans-serif;
+  --font-heading: 'Quicksand Variable', sans-serif;
+  --font-display: 'Quicksand Variable', sans-serif;
+
+  /* Raw brand palette — bg-joyna-coral, text-joyna-mint-dark, etc. */
+  --color-joyna-coral: var(--joyna-coral);
+  --color-joyna-coral-dark: var(--joyna-coral-dark);
+  --color-joyna-mint: var(--joyna-mint);
+  --color-joyna-mint-dark: var(--joyna-mint-dark);
+  --color-joyna-bubblegum: var(--joyna-bubblegum);
+  --color-joyna-bubblegum-dark: var(--joyna-bubblegum-dark);
+  --color-joyna-sunflower: var(--joyna-sunflower);
+  --color-joyna-sunflower-dark: var(--joyna-sunflower-dark);
+  --color-joyna-periwinkle: var(--joyna-periwinkle);
+  --color-joyna-periwinkle-dark: var(--joyna-periwinkle-dark);
+  --color-joyna-red: var(--joyna-red);
+  --color-joyna-red-dark: var(--joyna-red-dark);
+  --color-joyna-cream: var(--joyna-cream);
+  --color-joyna-ink: var(--joyna-ink);
+  --color-joyna-ink-soft: var(--joyna-ink-soft);
+  --color-joyna-ink-faint: var(--joyna-ink-faint);
+  --color-joyna-border: var(--joyna-border);
+  --color-joyna-border-strong: var(--joyna-border-strong);
+
+  /* rounded-card / rounded-control / rounded-field */
+  --radius-card: 20px;
+  --radius-control: 14px;
+  --radius-field: 12px;
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -263,5 +202,8 @@ code {
   }
   html {
     @apply font-sans;
+  }
+  button {
+    @apply cursor-pointer;
   }
 }

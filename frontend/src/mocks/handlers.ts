@@ -219,9 +219,14 @@ export const handlers = [
       ...event,
       isOwner,
       viewerInviteStatus: isOwner ? undefined : invite?.status,
+      viewerSpreadAllowed: isOwner ? undefined : invite?.spreadAllowed,
     })
   }),
 
+  // Owner + everyone with an invite (pending, accepted, or declined) — mirrors
+  // internal/event/repository.go's ListEventAttendees, including status and
+  // invitedBy so the frontend can group by status and gate who can remove
+  // whom.
   http.get("/api/events/:id/attendees", ({ params }) => {
     const event = events.find((candidate) => candidate.id === params.id)
     if (!event) {
@@ -236,15 +241,23 @@ export const handlers = [
     if (!isOwner && !isInvited) {
       return new HttpResponse("event not found", { status: 404 })
     }
-    const attendees = [...eventAttendees(event.id)].map((userId) => {
-      const user = mockUsers.find((candidate) => candidate.id === userId)
-      return {
-        userId,
-        name: user?.name ?? "",
-        email: user?.email ?? "",
-        isOwner: userId === event.ownerId,
-      }
-    })
+    const owner = mockUsers.find((candidate) => candidate.id === event.ownerId)
+    const attendees = [
+      { userId: event.ownerId, name: owner?.name ?? "", email: owner?.email ?? "", isOwner: true },
+      ...eventInvites
+        .filter((invite) => invite.eventId === event.id)
+        .map((invite) => {
+          const user = mockUsers.find((candidate) => candidate.id === invite.invitedUserId)
+          return {
+            userId: invite.invitedUserId,
+            name: user?.name ?? "",
+            email: user?.email ?? "",
+            isOwner: false,
+            status: invite.status,
+            invitedBy: invite.invitedBy,
+          }
+        }),
+    ]
     return HttpResponse.json(attendees)
   }),
 
@@ -294,6 +307,26 @@ export const handlers = [
     }
     eventInvites = [...eventInvites, created]
     return HttpResponse.json(created)
+  }),
+
+  http.delete("/api/events/:id/invites/:userId", ({ params }) => {
+    const index = eventInvites.findIndex(
+      (invite) =>
+        invite.eventId === params.id && invite.invitedUserId === params.userId,
+    )
+    if (index === -1) {
+      return new HttpResponse("invite not found", { status: 404 })
+    }
+    const event = events.find((candidate) => candidate.id === params.id)
+    const invite = eventInvites[index]
+    const isOwner = event?.ownerId === currentUser.id
+    if (!isOwner && invite.invitedBy !== currentUser.id) {
+      return new HttpResponse("user not allowed to remove this guest", {
+        status: 403,
+      })
+    }
+    eventInvites = eventInvites.filter((_, i) => i !== index)
+    return new HttpResponse(null, { status: 204 })
   }),
 
   http.post("/api/groups", async ({ request }) => {

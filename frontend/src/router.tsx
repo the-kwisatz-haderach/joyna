@@ -1,12 +1,12 @@
 import { createBrowserRouter } from 'react-router'
 
 import RootLayout from './routes/root-layout'
-import Home from './routes/home'
 import Login from './routes/login'
 import Register from './routes/register'
 import Events from './routes/events'
 import EventDetail from './routes/event-detail'
 import CreateEvent from './routes/create-event'
+import EditEvent from './routes/edit-event'
 import RequireAuth from './routes/require-auth'
 import RequireGuest from './routes/require-guest'
 import Network from './routes/network'
@@ -22,7 +22,7 @@ export const router = createBrowserRouter([
         index: true,
         element: (
           <RequireAuth>
-            <Home />
+            <Events />
           </RequireAuth>
         ),
       },
@@ -47,6 +47,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <EventDetail />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'events/:id/edit',
+        element: (
+          <RequireAuth>
+            <EditEvent />
           </RequireAuth>
         ),
       },

@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from "react"
-import { Link, useNavigate } from "react-router"
+import { useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router'
 
-import { Button } from "@/components/ui/button"
-import { useAuth } from "../auth-context"
-import type { SessionUser } from "../auth-context"
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useAuth } from '../auth-context'
+import type { SessionUser } from '../auth-context'
 
 function Register() {
   const { login } = useAuth()
@@ -16,91 +17,72 @@ function Register() {
     setError(null)
 
     const form = new FormData(event.currentTarget)
-    const name = String(form.get("name") ?? "")
-    const email = String(form.get("email") ?? "")
-    const password = String(form.get("password") ?? "")
+    const name = String(form.get('name') ?? '')
+    const email = String(form.get('email') ?? '')
+    const password = String(form.get('password') ?? '')
 
     setIsSubmitting(true)
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ name, email, password }),
       })
 
       if (!response.ok) {
         setError(
           response.status === 409
-            ? "An account with this email already exists."
-            : "Something went wrong. Please try again.",
+            ? 'An account with this email already exists.'
+            : 'Something went wrong. Please try again.',
         )
         return
       }
 
       const user = (await response.json()) as SessionUser
       login(user)
-      navigate("/", { replace: true })
+      navigate('/', { replace: true })
     } catch {
-      setError("Something went wrong. Please try again.")
+      setError('Something went wrong. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <section
-      style={{ viewTransitionName: "auth-background" }}
-      className="ml-[calc(50%-50vw)] mr-[calc(50%-50vw)] flex min-h-dvh w-screen items-center justify-center bg-gradient-to-br from-background via-chart-2/20 to-secondary/60 px-6 py-16"
-    >
-      <div
-        style={{ viewTransitionName: "auth-card" }}
-        className="flex w-full max-w-sm flex-col gap-4 rounded-lg border border-border bg-background/80 p-8 shadow-sm backdrop-blur-sm"
-      >
-        <Link to="/" className="text-lg font-semibold text-foreground">
+    <section className="flex min-h-dvh w-full items-center justify-center bg-joyna-cream px-6 py-16 font-body">
+      <div className="flex w-full max-w-sm flex-col gap-6 rounded-card border border-joyna-border bg-white p-8 shadow-sm">
+        <Link
+          to="/"
+          className="text-center font-display text-3xl font-bold text-joyna-coral"
+        >
           joyna
         </Link>
-        <h1 className="text-2xl font-semibold text-foreground">Sign up</h1>
-        <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
-          <label className="flex flex-col gap-1 text-sm">
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
             Name
-            <input
-              type="text"
-              name="name"
-              required
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
-            />
+            <Input type="text" name="name" required className="h-10 rounded-field" />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
             Email
-            <input
-              type="email"
-              name="email"
-              required
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
-            />
+            <Input type="email" name="email" required className="h-10 rounded-field" />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
             Password
-            <input
-              type="password"
-              name="password"
-              required
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
-            />
+            <Input type="password" name="password" required className="h-10 rounded-field" />
           </label>
           {error && (
-            <p role="alert" className="text-sm text-destructive">
+            <p role="alert" className="text-sm text-joyna-red-dark">
               {error}
             </p>
           )}
-          <Button type="submit" className="mt-2" disabled={isSubmitting}>
-            {isSubmitting ? "Signing up…" : "Sign up"}
+          <Button type="submit" className="mt-2 h-11 w-full rounded-control font-display text-sm" disabled={isSubmitting}>
+            {isSubmitting ? 'Signing up…' : 'Create account'}
           </Button>
         </form>
-        <p className="text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link to="/login" viewTransition className="text-primary hover:underline">
+        <p className="text-center text-sm text-joyna-ink-soft">
+          Already have an account?{' '}
+          <Link to="/login" viewTransition className="font-medium text-joyna-coral hover:underline">
             Log in
           </Link>
         </p>

@@ -1,161 +1,74 @@
 import { Link, Outlet, useLocation } from 'react-router'
+import { HugeiconsIcon } from '@hugeicons/react'
+import {
+  ArrowLeft01Icon,
+  Notification03Icon,
+  UserCircleIcon,
+  Calendar01Icon,
+  UserGroupIcon,
+  PlusSignIcon,
+} from '@hugeicons/core-free-icons'
 
+import { cn } from '@/lib/utils'
 import { useAuth } from '../auth-context'
 
-function BellIcon() {
+function isPushedPath(pathname: string): boolean {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="size-5"
-    >
-      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
+    pathname === '/events/new' ||
+    /^\/events\/[^/]+\/edit$/.test(pathname) ||
+    /^\/events\/[^/]+$/.test(pathname)
   )
 }
 
-function UserIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="size-5"
-    >
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6" />
-    </svg>
-  )
-}
-
-function BackIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="size-5"
-    >
-      <path d="M15 18l-6-6 6-6" />
-    </svg>
-  )
-}
-
-function CalendarIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="size-4"
-    >
-      <rect x="3" y="5" width="18" height="16" rx="2" />
-      <path d="M16 3v4M8 3v4M3 10h18" />
-    </svg>
-  )
-}
-
-function UsersIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="size-4"
-    >
-      <circle cx="9" cy="8" r="3" />
-      <path d="M2 20c1-3.5 3.8-5.5 7-5.5s6 2 7 5.5" />
-      <circle cx="17" cy="9" r="2.5" />
-      <path d="M16 14.2c2.4.4 4.2 2 5 5.8" />
-    </svg>
-  )
-}
-
-function PlusIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="size-5"
-    >
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  )
-}
-
-function getScreenName(pathname: string): string {
-  if (pathname === '/') return 'Home'
-  if (pathname === '/events') return 'Events'
-  if (pathname === '/events/new') return 'New event'
-  if (pathname.startsWith('/events/')) return 'Event'
-  if (pathname === '/network') return 'Network'
+function getScreenTitle(pathname: string): string {
   if (pathname === '/notifications') return 'Notifications'
   if (pathname === '/profile') return 'Profile'
-  return 'joyna'
-}
-
-function isEventDetailPath(pathname: string): boolean {
-  return pathname.startsWith('/events/') && pathname !== '/events/new'
+  return 'Events'
 }
 
 function TopMenu() {
   const { pathname } = useLocation()
-  const screenName = getScreenName(pathname)
+  const pushed = isPushedPath(pathname)
 
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background px-6 py-4">
-      {isEventDetailPath(pathname) ? (
+    <header className="sticky top-0 z-10 flex items-center justify-between border-b border-joyna-border bg-joyna-cream px-5 py-4">
+      {pushed ? (
         <Link
           to="/events"
-          className="flex items-center gap-1 font-semibold text-foreground hover:text-primary"
+          aria-label="Back to events"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-joyna-ink transition-colors hover:bg-joyna-border"
         >
-          <BackIcon />
-          Events
+          <HugeiconsIcon icon={ArrowLeft01Icon} className="h-5 w-5" strokeWidth={2} />
         </Link>
       ) : (
-        <span className="font-semibold text-foreground">{screenName}</span>
+        <span className="font-display text-lg font-semibold text-joyna-ink">
+          {getScreenTitle(pathname)}
+        </span>
       )}
-      <nav aria-label="Account" className="flex items-center gap-3">
+      <nav aria-label="Account" className="flex items-center gap-2">
         <Link
           to="/notifications"
           aria-label="Notifications"
-          className="text-foreground hover:text-primary"
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
+            pathname === '/notifications'
+              ? 'bg-joyna-coral/10 text-joyna-coral'
+              : 'text-joyna-ink-soft hover:bg-joyna-border'
+          )}
         >
-          <BellIcon />
+          <HugeiconsIcon icon={Notification03Icon} className="h-5 w-5" strokeWidth={2} />
         </Link>
         <Link
           to="/profile"
           aria-label="Profile"
-          className="text-foreground hover:text-primary"
+          className={cn(
+            'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
+            pathname === '/profile'
+              ? 'bg-joyna-coral/10 text-joyna-coral'
+              : 'text-joyna-ink-soft hover:bg-joyna-border'
+          )}
         >
-          <UserIcon />
+          <HugeiconsIcon icon={UserCircleIcon} className="h-5 w-5" strokeWidth={2} />
         </Link>
       </nav>
     </header>
@@ -163,77 +76,65 @@ function TopMenu() {
 }
 
 function BottomMenu() {
+  const { pathname } = useLocation()
+  const eventsActive = pathname === '/' || pathname === '/events'
+  const networkActive = pathname === '/network'
+
   return (
     <nav
       aria-label="Primary"
-      className="sticky bottom-0 z-10 flex items-center justify-between border-t border-border bg-background px-6 py-3"
+      className="sticky bottom-0 z-10 flex items-center justify-between border-t border-joyna-border bg-white px-5 py-3"
     >
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-1 rounded-full bg-joyna-border/60 p-1">
         <Link
           to="/events"
-          className="flex items-center gap-1.5 text-sm text-foreground hover:text-primary"
+          className={cn(
+            'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
+            eventsActive ? 'bg-white text-joyna-coral shadow-sm' : 'text-joyna-ink-soft'
+          )}
         >
-          <CalendarIcon />
+          <HugeiconsIcon icon={Calendar01Icon} className="h-4 w-4" strokeWidth={2} />
           Events
         </Link>
         <Link
           to="/network"
-          className="flex items-center gap-1.5 text-sm text-foreground hover:text-primary"
+          className={cn(
+            'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
+            networkActive ? 'bg-white text-joyna-coral shadow-sm' : 'text-joyna-ink-soft'
+          )}
         >
-          <UsersIcon />
+          <HugeiconsIcon icon={UserGroupIcon} className="h-4 w-4" strokeWidth={2} />
           Network
         </Link>
       </div>
       <Link
         to="/events/new"
         aria-label="Create event"
-        className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-muted"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-joyna-coral text-white shadow-sm transition-transform active:scale-95"
       >
-        <PlusIcon />
+        <HugeiconsIcon icon={PlusSignIcon} className="h-5 w-5" strokeWidth={2.5} />
       </Link>
     </nav>
   )
 }
 
-function GuestHeader() {
-  return (
-    <header className="flex items-center justify-between border-b border-border px-6 py-4">
-      <Link to="/" className="font-semibold text-foreground">
-        joyna
-      </Link>
-      <nav className="flex items-center gap-4 text-sm">
-        <Link to="/login" className="text-foreground hover:text-primary">
-          Log in
-        </Link>
-        <Link to="/register" className="text-foreground hover:text-primary">
-          Sign up
-        </Link>
-      </nav>
-    </header>
-  )
-}
-
 function RootLayout() {
   const { user } = useAuth()
+  const { pathname } = useLocation()
 
   if (!user) {
-    return (
-      <div className="flex min-h-dvh flex-col">
-        <GuestHeader />
-        <main className="flex-1">
-          <Outlet />
-        </main>
-      </div>
-    )
+    return <Outlet />
   }
 
+  const showBottomMenu = !isPushedPath(pathname)
+
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col bg-joyna-cream font-body text-joyna-ink">
       <TopMenu />
       <main className="flex-1">
         <Outlet />
       </main>
-      <BottomMenu />
+      {showBottomMenu && <BottomMenu />}
     </div>
   )
 }
