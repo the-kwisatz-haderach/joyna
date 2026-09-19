@@ -1,33 +1,60 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_EVENT_FILTERS, matchesEventFilters, type EventFilters } from './event-filter-bar'
+import { DEFAULT_EVENT_FILTER, matchesEventFilter } from './event-filter-bar'
 
-describe('matchesEventFilters', () => {
-  it('defaults to showing both hosted and invited events', () => {
-    expect(DEFAULT_EVENT_FILTERS).toEqual({ hosting: true, invited: true, rsvpDeadline: false })
+describe('matchesEventFilter', () => {
+  it('defaults to showing everything', () => {
+    expect(DEFAULT_EVENT_FILTER).toBe('all')
   })
 
-  it('matches hosted events only when Hosting is on and Invited is off', () => {
-    const filters: EventFilters = { hosting: true, invited: false, rsvpDeadline: false }
-    expect(matchesEventFilters({ isOwner: true }, filters)).toBe(true)
-    expect(matchesEventFilters({ isOwner: false }, filters)).toBe(false)
+  it('"all" matches every event', () => {
+    expect(matchesEventFilter({ isOwner: true }, 'all')).toBe(true)
+    expect(matchesEventFilter({ isOwner: false }, 'all')).toBe(true)
   })
 
-  it('matches invited events only when Invited is on and Hosting is off', () => {
-    const filters: EventFilters = { hosting: false, invited: true, rsvpDeadline: false }
-    expect(matchesEventFilters({ isOwner: false }, filters)).toBe(true)
-    expect(matchesEventFilters({ isOwner: true }, filters)).toBe(false)
+  it('"hasDeadline" matches only invited events with an RSVP deadline', () => {
+    expect(
+      matchesEventFilter({ isOwner: false, rsvpDeadline: '2026-01-01' }, 'hasDeadline'),
+    ).toBe(true)
+    expect(matchesEventFilter({ isOwner: false }, 'hasDeadline')).toBe(false)
+    expect(
+      matchesEventFilter({ isOwner: true, rsvpDeadline: '2026-01-01' }, 'hasDeadline'),
+    ).toBe(false)
   })
 
-  it('matches events with an RSVP deadline regardless of ownership, when toggled on', () => {
-    const filters: EventFilters = { hosting: false, invited: false, rsvpDeadline: true }
-    expect(matchesEventFilters({ isOwner: true, rsvpDeadline: '2026-01-01' }, filters)).toBe(true)
-    expect(matchesEventFilters({ isOwner: false, rsvpDeadline: '2026-01-01' }, filters)).toBe(true)
-    expect(matchesEventFilters({ isOwner: false }, filters)).toBe(false)
+  it('"invites" matches events the user isn\'t hosting', () => {
+    expect(matchesEventFilter({ isOwner: false }, 'invites')).toBe(true)
+    expect(matchesEventFilter({ isOwner: true }, 'invites')).toBe(false)
   })
 
-  it('shows nothing when every filter is off', () => {
-    const filters: EventFilters = { hosting: false, invited: false, rsvpDeadline: false }
-    expect(matchesEventFilters({ isOwner: true, rsvpDeadline: '2026-01-01' }, filters)).toBe(false)
+  it('"hosting" matches events the user is hosting', () => {
+    expect(matchesEventFilter({ isOwner: true }, 'hosting')).toBe(true)
+    expect(matchesEventFilter({ isOwner: false }, 'hosting')).toBe(false)
+  })
+
+  it('"attending" matches hosted events and accepted invites', () => {
+    expect(matchesEventFilter({ isOwner: true }, 'attending')).toBe(true)
+    expect(
+      matchesEventFilter({ isOwner: false, viewerInviteStatus: 'accepted' }, 'attending'),
+    ).toBe(true)
+    expect(
+      matchesEventFilter({ isOwner: false, viewerInviteStatus: 'pending' }, 'attending'),
+    ).toBe(false)
+    expect(
+      matchesEventFilter({ isOwner: false, viewerInviteStatus: 'declined' }, 'attending'),
+    ).toBe(false)
+  })
+
+  it('"notAttending" matches only declined invites', () => {
+    expect(
+      matchesEventFilter({ isOwner: false, viewerInviteStatus: 'declined' }, 'notAttending'),
+    ).toBe(true)
+    expect(
+      matchesEventFilter({ isOwner: false, viewerInviteStatus: 'accepted' }, 'notAttending'),
+    ).toBe(false)
+    expect(
+      matchesEventFilter({ isOwner: false, viewerInviteStatus: 'pending' }, 'notAttending'),
+    ).toBe(false)
+    expect(matchesEventFilter({ isOwner: true }, 'notAttending')).toBe(false)
   })
 })

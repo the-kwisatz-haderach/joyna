@@ -6,9 +6,9 @@ import { Calendar03Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import {
   EventFilterBar,
-  DEFAULT_EVENT_FILTERS,
-  matchesEventFilters,
-  type EventFilters,
+  DEFAULT_EVENT_FILTER,
+  matchesEventFilter,
+  type EventFilter,
 } from '../../components/joyna/event-filter-bar'
 import { EventListByMonth } from '../../components/joyna/event-list'
 import type { EventListItem } from '../../components/joyna/event-card'
@@ -39,7 +39,7 @@ function EmptyEventsState() {
 function Events() {
   const [events, setEvents] = useState<EventListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [filters, setFilters] = useState<EventFilters>(DEFAULT_EVENT_FILTERS)
+  const [filter, setFilter] = useState<EventFilter>(DEFAULT_EVENT_FILTER)
 
   useEffect(() => {
     let cancelled = false
@@ -80,7 +80,7 @@ function Events() {
     return <EmptyEventsState />
   }
 
-  const filtered = upcoming.filter((event) => matchesEventFilters(event, filters))
+  const filtered = upcoming.filter((event) => matchesEventFilter(event, filter))
   const visible = filtered.slice(0, MAX_EVENTS)
 
   return (
@@ -91,7 +91,7 @@ function Events() {
           View all
         </Link>
       </div>
-      <EventFilterBar filters={filters} onChange={setFilters} />
+      <EventFilterBar filter={filter} onChange={setFilter} />
       {visible.length === 0 ? (
         <p className="text-sm text-joyna-ink-faint">No events match these filters.</p>
       ) : (
