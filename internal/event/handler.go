@@ -230,8 +230,12 @@ func (h *Handler) RespondToEventInvite(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if errors.Is(err, ErrInviteNotFound) {
+		if errors.Is(err, ErrEventNotFound) || errors.Is(err, ErrInviteNotFound) {
 			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, ErrRsvpClosed) {
+			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 		slog.Error("failed to respond to event invite", "error", err)
@@ -260,7 +264,7 @@ func (h *Handler) CreateEventInvite(w http.ResponseWriter, r *http.Request) {
 	}
 	created, err := h.service.SendEventInvite(r.Context(), payload, ownerID)
 	if err != nil {
-		if errors.Is(err, ErrInviteNotAllowed) {
+		if errors.Is(err, ErrInviteNotAllowed) || errors.Is(err, ErrRsvpClosed) {
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
@@ -299,7 +303,7 @@ func (h *Handler) RemoveEventInvite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.RemoveEventInvite(r.Context(), eventID, removerID, targetUserID); err != nil {
-		if errors.Is(err, ErrRemoveNotAllowed) {
+		if errors.Is(err, ErrRemoveNotAllowed) || errors.Is(err, ErrRsvpClosed) {
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
