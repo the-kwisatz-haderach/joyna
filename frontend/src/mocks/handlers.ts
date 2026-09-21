@@ -23,6 +23,19 @@ let connections = [...mockConnections]
 let notifications = [...mockNotifications]
 const currentUser = mockUsers[0]
 
+// Every handler below only ever replaces these arrays wholesale (never
+// mutates an existing mock*/array item in place), so re-seeding from the
+// mock* fixtures here is enough to undo any writes a test made. Call this
+// between tests — see src/test/setup.ts — so one test's POST/PATCH/DELETE
+// can't leak into the next.
+export function resetMockData() {
+  events = [...mockEvents]
+  eventInvites = [...mockEventInvites]
+  groups = [...mockGroups]
+  connections = [...mockConnections]
+  notifications = [...mockNotifications]
+}
+
 function serializeConnection(connection: MockConnection) {
   const contact = mockUsers.find((user) => user.id === connection.contactId)
   const group = connection.groupId
