@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
+import { ArrowRight01Icon, PlusSignIcon } from "@hugeicons/core-free-icons"
 
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { GuestAvatar } from "../../components/joyna/guest-avatar"
 
@@ -33,6 +32,23 @@ async function fetchJson<T>(url: string): Promise<T> {
     throw new Error(`failed to load ${url}`)
   }
   return (await response.json()) as T
+}
+
+function SearchIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.35-4.35" />
+    </svg>
+  )
 }
 
 function FavoriteBadge() {
@@ -92,7 +108,7 @@ function groupConnections(connections: NetworkConnection[]) {
 
 function ContactRow({ contact }: { contact: NetworkConnection }) {
   return (
-    <li className="flex items-center justify-between gap-3 rounded-card border border-joyna-border bg-white p-4">
+    <li className="flex items-center justify-between gap-3 py-2">
       <div className="flex min-w-0 items-center gap-3">
         <GuestAvatar name={contact.contactName} />
         <span className="flex items-center gap-1.5 truncate font-display text-sm font-semibold text-joyna-ink">
@@ -108,15 +124,24 @@ function ContactRow({ contact }: { contact: NetworkConnection }) {
   )
 }
 
-function NetworkGroups({ groups }: { groups: ReturnType<typeof groupConnections> }) {
+function NetworkGroups({
+  groups,
+  addByEmailSlot,
+}: {
+  groups: ReturnType<typeof groupConnections>
+  addByEmailSlot: React.ReactNode
+}) {
   return (
     <div className="flex flex-col gap-6">
-      {groups.map((group) => (
+      {groups.map((group, index) => (
         <div key={group.name} className="flex flex-col gap-3">
-          <h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-joyna-ink-faint uppercase">
-            {group.name}
-            {group.isFavorite && <FavoriteBadge />}
-          </h3>
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-joyna-ink-faint uppercase">
+              {group.name}
+              {group.isFavorite && <FavoriteBadge />}
+            </h3>
+            {index === 0 && addByEmailSlot}
+          </div>
           <ul className="flex flex-col gap-2">
             {group.members.map((member) => (
               <ContactRow key={member.contactId} contact={member} />
@@ -138,32 +163,29 @@ function PotentialNetwork({
   onAdd: (userId: string) => void
 }) {
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className="flex flex-col">
       {potentialConnections.map((candidate) => (
-        <li
-          key={candidate.userId}
-          className="flex items-center justify-between gap-3 rounded-card border border-joyna-border bg-white p-4"
-        >
-          <div className="flex min-w-0 items-center gap-3">
-            <GuestAvatar name={candidate.name} />
-            <div className="min-w-0">
-              <p className="truncate font-display text-sm font-semibold text-joyna-ink">
-                {candidate.name}
-              </p>
-              <p className="truncate text-xs text-joyna-ink-faint">
-                {eventsTogetherLabel(candidate.sharedEventCount)}
-              </p>
-            </div>
-          </div>
-          <Button
+        <li key={candidate.userId} className="flex items-center gap-2.5 py-2 text-sm">
+          <GuestAvatar name={candidate.name} />
+          <span className="flex-1 truncate font-display font-semibold text-joyna-ink">
+            {candidate.name}
+          </span>
+          <span className="shrink-0 text-[11px] whitespace-nowrap text-joyna-ink-faint">
+            {eventsTogetherLabel(candidate.sharedEventCount)}
+          </span>
+          <button
             type="button"
-            size="sm"
-            className="shrink-0 rounded-control"
+            aria-label={`Add ${candidate.name}`}
             disabled={pendingUserId === candidate.userId}
             onClick={() => onAdd(candidate.userId)}
+            className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-joyna-mint/20 transition-transform active:scale-90 disabled:opacity-50"
           >
-            {pendingUserId === candidate.userId ? "Adding…" : "Add"}
-          </Button>
+            <HugeiconsIcon
+              icon={PlusSignIcon}
+              className="h-3 w-3 text-joyna-mint-dark"
+              strokeWidth={2.5}
+            />
+          </button>
         </li>
       ))}
     </ul>
@@ -226,19 +248,30 @@ function Network() {
     }
   }
 
+  const addByEmailLink = (
+    <Link to="/network/add" className="text-sm font-semibold text-joyna-coral">
+      + Add by email
+    </Link>
+  )
+
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-5 px-5 py-6">
       <label className="sr-only" htmlFor="network-search">
         Search your network
       </label>
-      <Input
-        id="network-search"
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search your network…"
-        className="h-11 rounded-control bg-white"
-      />
+      <div className="relative">
+        <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-joyna-ink-faint">
+          <SearchIcon />
+        </span>
+        <Input
+          id="network-search"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search your network…"
+          className="h-11 rounded-control border-joyna-border-strong bg-white pl-9 text-sm"
+        />
+      </div>
 
       {error && (
         <p role="alert" className="text-sm text-joyna-red-dark">
@@ -251,34 +284,31 @@ function Network() {
       ) : (
         <div className="flex flex-col gap-8">
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-end">
-              <Link
-                to="/network/add"
-                className="text-sm font-semibold text-joyna-coral"
-              >
-                + Add by email
-              </Link>
-            </div>
-
             {connections.length === 0 ? (
-              <p className="text-sm text-joyna-ink-faint">
-                Your network is empty. Add someone by email, or check the
-                suggestions below.
-              </p>
+              <>
+                <div className="flex items-center justify-end">{addByEmailLink}</div>
+                <p className="text-sm text-joyna-ink-faint">
+                  Your network is empty. Add someone by email, or check the
+                  suggestions below.
+                </p>
+              </>
             ) : groups.length === 0 ? (
-              <p className="text-sm text-joyna-ink-faint">
-                No matches for &ldquo;{query}&rdquo;.
-              </p>
+              <>
+                <div className="flex items-center justify-end">{addByEmailLink}</div>
+                <p className="text-sm text-joyna-ink-faint">
+                  No matches for &ldquo;{query}&rdquo;.
+                </p>
+              </>
             ) : (
-              <NetworkGroups groups={groups} />
+              <NetworkGroups groups={groups} addByEmailSlot={addByEmailLink} />
             )}
           </div>
 
           {potentialConnections.length > 0 && (
             <div className="flex flex-col gap-3">
-              <h2 className="font-display text-base font-semibold text-joyna-ink">
+              <h3 className="text-xs font-semibold tracking-wide text-joyna-ink-faint uppercase">
                 People you may know
-              </h2>
+              </h3>
               <PotentialNetwork
                 potentialConnections={potentialConnections}
                 pendingUserId={pendingUserId}
