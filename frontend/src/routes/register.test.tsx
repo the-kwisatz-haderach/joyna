@@ -43,8 +43,8 @@ describe("Register", () => {
     const user = userEvent.setup()
     renderRegister()
 
-    await user.type(screen.getByLabelText(/name/i), "Grace Hopper")
-    await user.type(screen.getByLabelText(/email/i), "grace@joyna.dev")
+    await user.type(screen.getByLabelText(/name/i), "Katherine Johnson")
+    await user.type(screen.getByLabelText(/email/i), "katherine@joyna.dev")
     await user.type(screen.getByLabelText(/password/i), "password123")
     await user.click(screen.getByRole("button", { name: /create account/i }))
 
@@ -52,7 +52,7 @@ describe("Register", () => {
       expect(screen.getByText("Home")).toBeInTheDocument()
     })
     expect(localStorage.getItem("joyna.currentUser")).toContain(
-      "grace@joyna.dev",
+      "katherine@joyna.dev",
     )
   })
 
