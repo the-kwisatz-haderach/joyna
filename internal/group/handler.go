@@ -18,6 +18,24 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
+func (h *Handler) GetGroups(w http.ResponseWriter, r *http.Request) {
+	ownerID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	groups, err := h.service.ListGroups(r.Context(), ownerID)
+	if err != nil {
+		slog.Error("failed to list groups", "error", err)
+		http.Error(w, "failed to list groups", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(groups)
+}
+
 func (h *Handler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	ownerID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {

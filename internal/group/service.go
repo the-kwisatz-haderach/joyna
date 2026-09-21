@@ -5,6 +5,7 @@ import (
 )
 
 type repository interface {
+	ListGroups(ctx context.Context, ownerID string) ([]Group, error)
 	CreateGroup(ctx context.Context, group CreateGroupPayload, ownerID string) (Group, error)
 	UpdateGroup(ctx context.Context, groupUpdate UpdateGroupPayload, groupID, ownerID string) (Group, error)
 	DeleteGroup(ctx context.Context, groupID, ownerID string) error
@@ -16,6 +17,10 @@ type Service struct {
 
 func NewService(repo repository) *Service {
 	return &Service{repo: repo}
+}
+
+func (s *Service) ListGroups(ctx context.Context, ownerID string) ([]Group, error) {
+	return s.repo.ListGroups(ctx, ownerID)
 }
 
 func (s *Service) CreateGroup(ctx context.Context, group CreateGroupPayload, ownerID string) (Group, error) {

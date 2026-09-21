@@ -27,6 +27,27 @@ func TestGroupRepository(t *testing.T) {
 	repo := NewRepository(pool)
 	owner := authtest.CreateUser(t, pool)
 
+	t.Run("ListGroups", func(t *testing.T) {
+		listOwner := authtest.CreateUser(t, pool)
+		_, err := repo.CreateGroup(ctx, CreateGroupPayload{Name: "zebras"}, listOwner.Id)
+		require.NoError(t, err)
+		_, err = repo.CreateGroup(ctx, CreateGroupPayload{Name: "antelopes"}, listOwner.Id)
+		require.NoError(t, err)
+
+		groups, err := repo.ListGroups(ctx, listOwner.Id)
+		require.NoError(t, err)
+		require.Len(t, groups, 2)
+		require.Equal(t, "antelopes", groups[0].Name)
+		require.Equal(t, "zebras", groups[1].Name)
+	})
+
+	t.Run("ListGroups empty", func(t *testing.T) {
+		emptyOwner := authtest.CreateUser(t, pool)
+		groups, err := repo.ListGroups(ctx, emptyOwner.Id)
+		require.NoError(t, err)
+		require.Empty(t, groups)
+	})
+
 	t.Run("CreateGroup", func(t *testing.T) {
 		group, err := repo.CreateGroup(ctx, CreateGroupPayload{Name: "friends"}, owner.Id)
 		require.NoError(t, err)

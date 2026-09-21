@@ -17,6 +17,26 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
 }
 
+func (r *Repository) ListGroups(ctx context.Context, ownerID string) ([]Group, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT * FROM connection_groups WHERE owner_id = $1 ORDER BY name ASC`,
+		ownerID,
+	)
+	defer rows.Close()
+	if err != nil {
+		return nil, fmt.Errorf("listing connection groups: %w", err)
+	}
+
+	groups, err := pgx.CollectRows(rows, pgx.RowToStructByName[Group])
+	if err != nil {
+		return nil, fmt.Errorf("listing connection groups: %w", err)
+	}
+	if groups == nil {
+		groups = []Group{}
+	}
+	return groups, nil
+}
+
 func (r *Repository) CreateGroup(ctx context.Context, payload CreateGroupPayload, ownerID string) (Group, error) {
 	row, err := r.pool.Query(ctx,
 		`INSERT INTO connection_groups (owner_id, name)

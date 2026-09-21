@@ -392,6 +392,13 @@ export const handlers = [
     return new HttpResponse(null, { status: 204 })
   }),
 
+  http.get("/api/groups", () => {
+    const ownGroups = groups
+      .filter((group) => group.ownerId === currentUser.id)
+      .sort((a, b) => a.name.localeCompare(b.name))
+    return HttpResponse.json(ownGroups)
+  }),
+
   http.post("/api/groups", async ({ request }) => {
     const body = (await request.json()) as Partial<MockGroup>
     if (!body.name?.trim()) {
