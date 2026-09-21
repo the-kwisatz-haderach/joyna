@@ -117,4 +117,15 @@ describe('RootLayout', () => {
       bottomMenu.getByRole('link', { name: /create event/i }),
     ).toHaveAttribute('href', '/events/new')
   })
+
+  it('shows the bottom nav with an active but clickable Events link on the all events route', () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/events/all'])
+
+    const bottomMenu = within(screen.getByRole('navigation', { name: 'Primary' }))
+    const eventsLink = bottomMenu.getByRole('link', { name: /^events$/i })
+    expect(eventsLink).toHaveAttribute('href', '/events')
+    expect(eventsLink.className).toMatch(/bg-joyna-ink/)
+  })
 })
