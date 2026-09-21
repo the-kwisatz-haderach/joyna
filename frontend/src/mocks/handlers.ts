@@ -6,6 +6,7 @@ import {
   mockEventInvites,
   mockEvents,
   mockGroups,
+  mockNotifications,
   mockUsers,
   type MockConnection,
   type MockEvent,
@@ -19,6 +20,7 @@ let events = [...mockEvents]
 let eventInvites = [...mockEventInvites]
 let groups = [...mockGroups]
 let connections = [...mockConnections]
+let notifications = [...mockNotifications]
 const currentUser = mockUsers[0]
 
 function serializeConnection(connection: MockConnection) {
@@ -453,6 +455,22 @@ export const handlers = [
     }
     connections = [...connections, created]
     return HttpResponse.json(serializeConnection(created))
+  }),
+
+  // Mirrors GET /notifications: returns the pre-visit read state, then marks
+  // everything read as a side effect — the badge/unread count only reflects
+  // notifications raised since the last visit to this screen.
+  http.get("/api/notifications", () => {
+    const response = notifications.map((notification) => ({ ...notification }))
+    notifications = notifications.map((notification) =>
+      notification.isRead ? notification : { ...notification, isRead: true },
+    )
+    return HttpResponse.json(response)
+  }),
+
+  http.get("/api/notifications/unread-count", () => {
+    const count = notifications.filter((notification) => !notification.isRead).length
+    return HttpResponse.json({ count })
   }),
 
   http.patch("/api/network/:contactId", async ({ request, params }) => {

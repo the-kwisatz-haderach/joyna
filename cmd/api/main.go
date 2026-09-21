@@ -17,6 +17,7 @@ import (
 	"github.com/the-kwisatz-haderach/joyna/internal/event"
 	"github.com/the-kwisatz-haderach/joyna/internal/group"
 	"github.com/the-kwisatz-haderach/joyna/internal/network"
+	"github.com/the-kwisatz-haderach/joyna/internal/notification"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/config"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/db"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/logging"
@@ -49,8 +50,12 @@ func main() {
 	authService := auth.NewService(authRepo)
 	authHandler := auth.NewHandler(authService, sessionManager)
 
+	notificationRepo := notification.NewRepository(pool)
+	notificationService := notification.NewService(notificationRepo)
+	notificationHandler := notification.NewHandler(notificationService)
+
 	eventRepo := event.NewRepository(pool)
-	eventService := event.NewService(eventRepo)
+	eventService := event.NewService(eventRepo, notificationService)
 	eventHandler := event.NewHandler(eventService)
 
 	groupRepo := group.NewRepository(pool)
@@ -90,6 +95,10 @@ func main() {
 	mux.HandleFunc("PATCH /events/{id}/invite", authHandler.Middleware(eventHandler.RespondToEventInvite))
 	mux.HandleFunc("POST /events/invites", authHandler.Middleware(eventHandler.CreateEventInvite))
 	mux.HandleFunc("DELETE /events/{id}/invites/{userId}", authHandler.Middleware(eventHandler.RemoveEventInvite))
+
+	// Notification handlers
+	mux.HandleFunc("GET /notifications", authHandler.Middleware(notificationHandler.ListNotifications))
+	mux.HandleFunc("GET /notifications/unread-count", authHandler.Middleware(notificationHandler.GetUnreadCount))
 
 	// Group handlers
 	mux.HandleFunc("POST /groups", authHandler.Middleware(groupHandler.CreateGroup))

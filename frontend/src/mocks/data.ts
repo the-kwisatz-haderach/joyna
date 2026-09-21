@@ -358,3 +358,68 @@ export const mockConnections: MockConnection[] = [
     groupId: mockGroups[0].id,
   },
 ]
+
+export type MockNotificationType = 'event_invite' | 'invite_response' | 'event_updated'
+
+// Already shaped like the real GET /notifications response (eventName/
+// actorName resolved) rather than raw rows, since the mock handler doesn't
+// need to reimplement the backend's join.
+export type MockNotification = {
+  id: string
+  type: MockNotificationType
+  eventId?: string
+  eventName?: string
+  actorId?: string
+  actorName?: string
+  status?: 'accepted' | 'declined'
+  isRead: boolean
+  createdAt: string
+}
+
+function hoursAgo(hours: number): string {
+  return new Date(Date.now() - hours * 60 * 60 * 1000).toISOString()
+}
+
+// Notifications for Ada (mockUsers[0], the mock session's currentUser).
+export const mockNotifications: MockNotification[] = [
+  {
+    id: 'e1f2a3b4-1111-4a1a-8a1a-000000000001',
+    type: 'event_invite',
+    eventId: mockEvents[2].id, // Turing Award Dinner
+    eventName: mockEvents[2].name,
+    actorId: mockUsers[1].id,
+    actorName: mockUsers[1].name,
+    isRead: false,
+    createdAt: hoursAgo(2),
+  },
+  {
+    id: 'e1f2a3b4-1111-4a1a-8a1a-000000000002',
+    type: 'invite_response',
+    eventId: mockEvents[0].id, // Summer Rooftop Party
+    eventName: mockEvents[0].name,
+    actorId: mockUsers[2].id,
+    actorName: mockUsers[2].name,
+    status: 'accepted',
+    isRead: false,
+    createdAt: hoursAgo(5),
+  },
+  {
+    id: 'e1f2a3b4-1111-4a1a-8a1a-000000000003',
+    type: 'event_updated',
+    eventId: mockEvents[7].id, // Team Offsite
+    eventName: mockEvents[7].name,
+    isRead: true,
+    createdAt: daysFromNow(-1),
+  },
+  {
+    id: 'e1f2a3b4-1111-4a1a-8a1a-000000000004',
+    type: 'invite_response',
+    eventId: mockEvents[5].id, // Rooftop Movie Night
+    eventName: mockEvents[5].name,
+    actorId: mockUsers[1].id,
+    actorName: mockUsers[1].name,
+    status: 'declined',
+    isRead: true,
+    createdAt: daysFromNow(-3),
+  },
+]

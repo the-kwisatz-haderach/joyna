@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 )
 
@@ -13,6 +14,16 @@ var (
 	ErrUnauthorizedEventUpdate = errors.New("user must be owner of event to update it")
 	ErrRemoveNotAllowed        = errors.New("user not allowed to remove this guest")
 	ErrRsvpClosed              = errors.New("rsvp deadline has passed; only the host can update the guest list")
+)
+
+// Notification type strings. These must stay in sync with the equivalent
+// notification.Type* constants — kept as plain strings (rather than an
+// import of the notification package) so this package's notifier interface
+// stays satisfied by notification.Service without a cross-domain import.
+const (
+	notificationEventInvite    = "event_invite"
+	notificationInviteResponse = "invite_response"
+	notificationEventUpdated   = "event_updated"
 )
 
 // rsvpClosed reports whether ev's RSVP deadline has passed, after which only
@@ -35,12 +46,49 @@ type repository interface {
 	DeleteEventInvite(ctx context.Context, eventID, userID string) error
 }
 
-type Service struct {
-	repo repository
+// notifier is satisfied by notification.Service. It's optional: nil is a
+// valid value (e.g. in tests that don't care about notifications), in which
+// case notify becomes a no-op.
+type notifier interface {
+	Notify(ctx context.Context, userID, notificationType string, payload map[string]any) error
 }
 
-func NewService(repo repository) *Service {
-	return &Service{repo: repo}
+type Service struct {
+	repo     repository
+	notifier notifier
+}
+
+func NewService(repo repository, notifier notifier) *Service {
+	return &Service{repo: repo, notifier: notifier}
+}
+
+func (s *Service) notify(ctx context.Context, userID, notificationType string, payload map[string]any) {
+	if s.notifier == nil {
+		return
+	}
+	if err := s.notifier.Notify(ctx, userID, notificationType, payload); err != nil {
+		slog.Error("failed to create notification", "error", err, "type", notificationType, "userId", userID)
+	}
+}
+
+// notifyInvitees notifies every attendee of eventID except the actor
+// themselves (typically the owner, whose own edit doesn't need announcing to
+// them).
+func (s *Service) notifyInvitees(ctx context.Context, eventID string, notificationType string, payload map[string]any, excludeUserID string) {
+	if s.notifier == nil {
+		return
+	}
+	attendees, err := s.repo.ListEventAttendees(ctx, eventID)
+	if err != nil {
+		slog.Error("failed to list attendees for notification", "error", err, "eventId", eventID)
+		return
+	}
+	for _, attendee := range attendees {
+		if attendee.UserID == excludeUserID {
+			continue
+		}
+		s.notify(ctx, attendee.UserID, notificationType, payload)
+	}
 }
 
 func (s *Service) CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error) {
@@ -82,7 +130,11 @@ func (s *Service) UpdateEvent(ctx context.Context, eventUpdate UpdateEventPayloa
 		return Event{}, ErrInvalidRsvpDeadline
 	}
 
-	return s.repo.UpdateEvent(ctx, eventUpdate, eventID, ownerID)
+	updated, err := s.repo.UpdateEvent(ctx, eventUpdate, eventID, ownerID)
+	if err == nil {
+		s.notifyInvitees(ctx, eventID, notificationEventUpdated, map[string]any{"eventId": eventID}, ownerID)
+	}
+	return updated, err
 }
 
 func (s *Service) GetEvents(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]EventView, error) {
@@ -132,7 +184,15 @@ func (s *Service) RespondToEventInvite(ctx context.Context, eventID, userID stri
 	if rsvpClosed(ev) {
 		return EventInvite{}, ErrRsvpClosed
 	}
-	return s.repo.RespondToEventInvite(ctx, eventID, userID, status)
+	updated, err := s.repo.RespondToEventInvite(ctx, eventID, userID, status)
+	if err == nil {
+		s.notify(ctx, updated.InvitedBy, notificationInviteResponse, map[string]any{
+			"eventId": eventID,
+			"actorId": userID,
+			"status":  string(status),
+		})
+	}
+	return updated, err
 }
 
 func (s *Service) SendEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error) {
@@ -146,7 +206,12 @@ func (s *Service) SendEventInvite(ctx context.Context, payload CreateEventInvite
 
 	if event.OwnerId == invitedBy {
 		createdInvite, err := s.repo.CreateEventInvite(ctx, payload, invitedBy)
-		// TODO: Create notification(s)
+		if err == nil {
+			s.notify(ctx, payload.InvitedUserID, notificationEventInvite, map[string]any{
+				"eventId": payload.EventID,
+				"actorId": invitedBy,
+			})
+		}
 		return createdInvite, err
 	}
 
@@ -156,7 +221,12 @@ func (s *Service) SendEventInvite(ctx context.Context, payload CreateEventInvite
 
 	payload.SpreadAllowed = 0
 	createdInvite, err := s.repo.ForwardEventInvite(ctx, payload, invitedBy)
-	// TODO: Create notification(s)
+	if err == nil {
+		s.notify(ctx, payload.InvitedUserID, notificationEventInvite, map[string]any{
+			"eventId": payload.EventID,
+			"actorId": invitedBy,
+		})
+	}
 	return createdInvite, err
 }
 
