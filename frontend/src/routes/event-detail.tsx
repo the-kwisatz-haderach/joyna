@@ -414,7 +414,7 @@ function EventDetail() {
         </Button>
       ) : (
         <div className="flex flex-col gap-4">
-          <p className="text-center font-display text-base font-semibold text-joyna-ink">
+          <p className="text-center font-display text-sm font-semibold text-joyna-ink">
             Will you be attending?
           </p>
           <div className="flex gap-3">
@@ -428,7 +428,7 @@ function EventDetail() {
               className={
                 event.viewerInviteStatus === 'declined'
                   ? 'h-11 flex-1 rounded-control font-display text-sm bg-joyna-bubblegum text-joyna-bubblegum-dark hover:bg-joyna-bubblegum'
-                  : 'h-11 flex-1 rounded-control font-display text-sm text-joyna-ink-soft'
+                  : 'h-11 flex-1 rounded-control font-display text-sm bg-white text-joyna-ink-soft'
               }
             >
               No
@@ -443,7 +443,7 @@ function EventDetail() {
               className={
                 event.viewerInviteStatus === 'accepted'
                   ? 'h-11 flex-1 rounded-control font-display text-sm bg-joyna-mint text-white hover:bg-joyna-mint'
-                  : 'h-11 flex-1 rounded-control font-display text-sm text-joyna-ink-soft'
+                  : 'h-11 flex-1 rounded-control font-display text-sm bg-white text-joyna-ink-soft'
               }
             >
               Yes
