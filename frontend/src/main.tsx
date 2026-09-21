@@ -14,6 +14,15 @@ async function enableMocking() {
   return worker.start({ onUnhandledRequest: 'bypass' })
 }
 
+function registerServiceWorker() {
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator)) {
+    return
+  }
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+  })
+}
+
 enableMocking().then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
@@ -22,4 +31,5 @@ enableMocking().then(() => {
       </AuthProvider>
     </StrictMode>,
   )
+  registerServiceWorker()
 })
