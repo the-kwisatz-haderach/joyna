@@ -1,3 +1,7 @@
+import { Link } from 'react-router'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
+
 import { formatRelativeTime } from '@/lib/format-relative-time'
 import { cn } from '@/lib/utils'
 
@@ -39,8 +43,8 @@ function describeNotification(notification: AppNotification): string {
 }
 
 export function NotificationRow({ notification }: { notification: AppNotification }) {
-  return (
-    <div className="flex gap-3 py-4">
+  const content = (
+    <>
       <span
         aria-hidden="true"
         className={cn(
@@ -60,6 +64,21 @@ export function NotificationRow({ notification }: { notification: AppNotificatio
         <p className="mt-0.5 text-sm text-joyna-ink-soft">{describeNotification(notification)}</p>
         <p className="mt-1 text-xs text-joyna-ink-faint">{formatRelativeTime(notification.createdAt)}</p>
       </div>
-    </div>
+      {notification.eventId && (
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-full border border-joyna-border-strong text-joyna-ink-soft">
+          <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
+        </span>
+      )}
+    </>
   )
+
+  if (notification.eventId) {
+    return (
+      <Link to={`/events/${notification.eventId}`} className="flex items-center gap-3 py-4">
+        {content}
+      </Link>
+    )
+  }
+
+  return <div className="flex gap-3 py-4">{content}</div>
 }

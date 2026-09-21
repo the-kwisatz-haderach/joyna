@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
 import type { AppNotification } from '../../components/joyna/notification-item'
@@ -56,11 +57,19 @@ function mockNotificationsResponse(notifications: AppNotification[]) {
   server.use(http.get('/api/notifications', () => HttpResponse.json(notifications)))
 }
 
+function renderNotifications() {
+  return render(
+    <MemoryRouter>
+      <Notifications />
+    </MemoryRouter>,
+  )
+}
+
 describe('Notifications', () => {
   it('renders the all-caught-up empty state when there are none', async () => {
     mockNotificationsResponse([])
 
-    render(<Notifications />)
+    renderNotifications()
 
     expect(
       await screen.findByRole('heading', { name: /you.re all caught up/i }),
@@ -70,7 +79,7 @@ describe('Notifications', () => {
   it('lists a notification with its event, description and relative time', async () => {
     mockNotificationsResponse(SAMPLE_NOTIFICATIONS)
 
-    render(<Notifications />)
+    renderNotifications()
 
     expect(await screen.findByText('Turing Award Dinner')).toBeInTheDocument()
     expect(screen.getByText('Alan Turing invited you to an event')).toBeInTheDocument()
@@ -80,7 +89,7 @@ describe('Notifications', () => {
   it('differentiates read and unread notifications', async () => {
     mockNotificationsResponse(SAMPLE_NOTIFICATIONS)
 
-    render(<Notifications />)
+    renderNotifications()
     await screen.findByText('Turing Award Dinner')
 
     expect(screen.getByText('Turing Award Dinner').className).toMatch(/font-semibold/)
@@ -90,7 +99,7 @@ describe('Notifications', () => {
   it('describes a declined invite response', async () => {
     mockNotificationsResponse(SAMPLE_NOTIFICATIONS)
 
-    render(<Notifications />)
+    renderNotifications()
 
     expect(await screen.findByText("Alan Turing can't make it")).toBeInTheDocument()
   })
@@ -98,8 +107,23 @@ describe('Notifications', () => {
   it('describes an accepted invite response as joining the event', async () => {
     mockNotificationsResponse(SAMPLE_NOTIFICATIONS)
 
-    render(<Notifications />)
+    renderNotifications()
 
     expect(await screen.findByText('Margaret Hamilton joined the event')).toBeInTheDocument()
+  })
+
+  it('links each notification to its event', async () => {
+    mockNotificationsResponse(SAMPLE_NOTIFICATIONS)
+
+    renderNotifications()
+    await screen.findByText('Turing Award Dinner')
+
+    const links = screen.getAllByRole('link')
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      '/events/event-1',
+      '/events/event-2',
+      '/events/event-3',
+      '/events/event-4',
+    ])
   })
 })
