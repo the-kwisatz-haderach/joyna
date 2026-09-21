@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it } from 'vitest'
 
@@ -116,6 +116,28 @@ describe('RootLayout', () => {
     expect(
       bottomMenu.getByRole('link', { name: /create event/i }),
     ).toHaveAttribute('href', '/events/new')
+  })
+
+  it('shows an unread badge on the notifications icon when there are unread notifications', async () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/events'])
+
+    const topMenu = within(screen.getByRole('banner'))
+    expect(
+      await topMenu.findByRole('link', { name: /notifications \(unread\)/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('hides the unread badge while on the notifications screen', async () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/notifications'])
+
+    const topMenu = within(screen.getByRole('banner'))
+    await waitFor(() => {
+      expect(topMenu.getByRole('link', { name: /^notifications$/i })).toBeInTheDocument()
+    })
   })
 
   it('shows the bottom nav with an active but clickable Events link on the all events route', () => {

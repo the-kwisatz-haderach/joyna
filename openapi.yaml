@@ -15,6 +15,8 @@ tags:
     description: Event creation, management and invitations
   - name: Groups
     description: Grouping members of a user's network
+  - name: Notifications
+    description: In-app notifications about events happening in a user's network
   - name: Health
     description: Service liveness/readiness
 
@@ -346,6 +348,57 @@ paths:
             text/plain:
               schema:
                 type: string
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List the authenticated user's notifications
+      description: >
+        Returns notifications most-recent-first, with `isRead` reflecting each
+        notification's state as of just before this call. As a side effect,
+        any currently-unread notifications are then marked read — visiting
+        this endpoint is what flips them, so the badge/unread count only
+        reflects notifications raised since the last visit.
+      operationId: getNotifications
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      summary: Get the authenticated user's unread notification count
+      description: Used to render the badge on the notifications icon. Does not mark anything as read.
+      operationId: getUnreadNotificationCount
+      responses:
+        "200":
+          description: Unread notification count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnreadNotificationCount"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           description: Internal server error
           content:
@@ -721,6 +774,52 @@ components:
           type: string
         isFavorite:
           type: boolean
+
+    NotificationType:
+      type: string
+      enum: [event_invite, invite_response, event_updated]
+
+    Notification:
+      type: object
+      description: >
+        eventName/actorName are resolved server-side from eventId/actorId at
+        read time, so they always reflect the event/user's current name.
+        status is only present for invite_response notifications.
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/NotificationType"
+        eventId:
+          type: string
+          format: uuid
+          nullable: true
+        eventName:
+          type: string
+          nullable: true
+        actorId:
+          type: string
+          format: uuid
+          nullable: true
+        actorName:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/EventInviteStatus"
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, type, isRead, createdAt]
+
+    UnreadNotificationCount:
+      type: object
+      properties:
+        count:
+          type: integer
+      required: [count]
 
 security:
   - sessionCookie: []

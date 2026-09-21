@@ -1,3 +1,4 @@
+import {useEffect, useState} from 'react'
 import {Link, Outlet, useLocation} from 'react-router'
 import {HugeiconsIcon} from '@hugeicons/react'
 import {
@@ -9,6 +10,41 @@ import {
 import {cn} from '@/lib/utils'
 import {useHideOnScroll} from '@/hooks/use-hide-on-scroll'
 import {useAuth} from '../auth-context'
+
+// Refetched on every route change so the badge clears shortly after a visit
+// to /notifications (which marks everything read server-side) moves the
+// unread count back to 0.
+function useUnreadNotificationsCount(pathname: string): number {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadUnreadCount() {
+      try {
+        const response = await fetch('/api/notifications/unread-count', {
+          credentials: 'include',
+        })
+        if (!response.ok) {
+          return
+        }
+        const data = (await response.json()) as {count: number}
+        if (!cancelled) {
+          setCount(data.count)
+        }
+      } catch {
+        // Leave the previous count in place on network errors.
+      }
+    }
+
+    loadUnreadCount()
+    return () => {
+      cancelled = true
+    }
+  }, [pathname])
+
+  return count
+}
 
 function isPushedPath(pathname: string): boolean {
   return (
@@ -28,6 +64,8 @@ function TopMenu() {
   const {pathname} = useLocation()
   const pushed = isPushedPath(pathname)
   const hidden = useHideOnScroll()
+  const unreadCount = useUnreadNotificationsCount(pathname)
+  const showUnreadBadge = unreadCount > 0 && pathname !== '/notifications'
 
   return (
     <header
@@ -57,9 +95,9 @@ function TopMenu() {
       <nav aria-label="Account" className="flex items-center gap-2">
         <Link
           to="/notifications"
-          aria-label="Notifications"
+          aria-label={showUnreadBadge ? 'Notifications (unread)' : 'Notifications'}
           className={cn(
-            'flex h-10 w-10 items-center justify-center rounded-control border transition-colors',
+            'relative flex h-10 w-10 items-center justify-center rounded-control border transition-colors',
             pathname === '/notifications'
               ? 'border-joyna-ink bg-joyna-ink text-white'
               : 'border-joyna-border bg-white text-joyna-ink-soft hover:text-joyna-ink',
@@ -70,6 +108,12 @@ function TopMenu() {
             className="h-5 w-5"
             strokeWidth={2}
           />
+          {showUnreadBadge && (
+            <span
+              aria-hidden="true"
+              className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-joyna-coral ring-2 ring-joyna-cream"
+            />
+          )}
         </Link>
         <Link
           to="/profile"
