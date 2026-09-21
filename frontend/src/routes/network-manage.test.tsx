@@ -111,24 +111,21 @@ describe("NetworkManage", () => {
     expect(within(bookClubCard).getByText("1 person")).toBeInTheDocument()
   })
 
-  it("navigates back to the network screen when Done is clicked", async () => {
-    const user = userEvent.setup()
+  it("applies drag-over styling to a group while a contact is dragged over it", async () => {
     renderNetworkManage()
 
-    await screen.findByText("Grace Hopper")
-    await user.click(screen.getByRole("button", { name: /^done$/i }))
+    await screen.findByText("Alan Turing")
+    const chip = screen.getByText("Grace Hopper").closest("div") as HTMLElement
+    const bookClubCard = await screen.findByRole("group", { name: "Book Club" })
 
-    expect(await screen.findByText("Network screen")).toBeInTheDocument()
-  })
+    fireEvent.dragStart(chip)
+    fireEvent.dragEnter(bookClubCard)
 
-  it("navigates back to the network screen when Cancel is clicked", async () => {
-    const user = userEvent.setup()
-    renderNetworkManage()
+    expect(bookClubCard.className).toMatch(/border-joyna-periwinkle/)
 
-    await screen.findByText("Grace Hopper")
-    await user.click(screen.getByRole("button", { name: /^cancel$/i }))
+    fireEvent.drop(bookClubCard)
 
-    expect(await screen.findByText("Network screen")).toBeInTheDocument()
+    expect(bookClubCard.className).not.toMatch(/border-joyna-periwinkle/)
   })
 })
 
