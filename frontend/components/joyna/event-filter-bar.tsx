@@ -46,7 +46,7 @@ export function EventFilterBar({
     <div
       role="radiogroup"
       aria-label="Filter events"
-      className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1"
+      className="no-scrollbar -mx-5 flex gap-1.5 overflow-x-auto px-5 pb-1"
     >
       {FILTER_OPTIONS.map(({ key, label }) => {
         const active = filter === key
