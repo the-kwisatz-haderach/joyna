@@ -18,26 +18,14 @@ type NetworkGroupOption = {
   name: string
 }
 
-// There's no GET /groups listing endpoint (yet) — the set of groups the
-// caller has already created can be derived from the groups already attached
-// to their connections, which /api/network returns.
 async function fetchGroupOptions(): Promise<NetworkGroupOption[]> {
-  const response = await fetch("/api/network", { credentials: "include" })
+  const response = await fetch("/api/groups", { credentials: "include" })
   if (!response.ok) {
     return []
   }
-  const connections = (await response.json()) as {
-    groupId?: string
-    groupName?: string
-  }[]
-  const byId = new Map<string, string>()
-  for (const connection of connections) {
-    if (connection.groupId && connection.groupName) {
-      byId.set(connection.groupId, connection.groupName)
-    }
-  }
-  return [...byId.entries()]
-    .map(([id, name]) => ({ id, name }))
+  const groups = (await response.json()) as { id: string; name: string }[]
+  return groups
+    .map(({ id, name }) => ({ id, name }))
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
