@@ -373,6 +373,7 @@ export const mockConnections: MockConnection[] = [
 
 export type MockNotificationType =
   | 'event_invite'
+  | 'event_uninvite'
   | 'invite_response'
   | 'event_updated'
   | 'rsvp_deadline_reminder'
@@ -408,6 +409,16 @@ export const mockNotifications: MockNotification[] = [
     actorName: mockUsers[1].name,
     isRead: false,
     createdAt: hoursAgo(2),
+  },
+  {
+    id: 'e1f2a3b4-1111-4a1a-8a1a-000000000007',
+    type: 'event_uninvite',
+    eventId: mockEvents[3].id,
+    eventName: mockEvents[3].name,
+    actorId: mockUsers[2].id,
+    actorName: mockUsers[2].name,
+    isRead: false,
+    createdAt: hoursAgo(3),
   },
   {
     id: 'e1f2a3b4-1111-4a1a-8a1a-000000000002',

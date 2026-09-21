@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils'
 
 export type NotificationType =
   | 'event_invite'
+  | 'event_uninvite'
   | 'invite_response'
   | 'event_updated'
   | 'rsvp_deadline_reminder'
@@ -25,6 +26,8 @@ function describeNotification(notification: AppNotification): string {
   switch (notification.type) {
     case 'event_invite':
       return `${actor} invited you to an event`
+    case 'event_uninvite':
+      return `${actor} removed you from an event`
     case 'invite_response':
       return notification.status === 'declined'
         ? `${actor} can't make it`

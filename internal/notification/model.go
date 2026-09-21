@@ -11,6 +11,7 @@ type Type = string
 
 const (
 	TypeEventInvite          Type = "event_invite"
+	TypeEventUninvite        Type = "event_uninvite"
 	TypeInviteResponse       Type = "invite_response"
 	TypeEventUpdated         Type = "event_updated"
 	TypeRsvpDeadlineReminder Type = "rsvp_deadline_reminder"

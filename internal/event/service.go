@@ -23,6 +23,7 @@ var (
 // stays satisfied by notification.Service without a cross-domain import.
 const (
 	notificationEventInvite          = "event_invite"
+	notificationEventUninvite        = "event_uninvite"
 	notificationInviteResponse       = "invite_response"
 	notificationEventUpdated         = "event_updated"
 	notificationRsvpDeadlineReminder = "rsvp_deadline_reminder"
@@ -244,7 +245,14 @@ func (s *Service) RemoveEventInvite(ctx context.Context, eventID, removerID, tar
 		return err
 	}
 	if ev.OwnerId == removerID {
-		return s.repo.DeleteEventInvite(ctx, eventID, targetUserID)
+		err := s.repo.DeleteEventInvite(ctx, eventID, targetUserID)
+		if err == nil {
+			s.notify(ctx, targetUserID, notificationEventUninvite, map[string]any{
+				"eventId": eventID,
+				"actorId": removerID,
+			})
+		}
+		return err
 	}
 
 	if rsvpClosed(ev) {
@@ -258,7 +266,14 @@ func (s *Service) RemoveEventInvite(ctx context.Context, eventID, removerID, tar
 	if invite.InvitedBy != removerID {
 		return ErrRemoveNotAllowed
 	}
-	return s.repo.DeleteEventInvite(ctx, eventID, targetUserID)
+	err = s.repo.DeleteEventInvite(ctx, eventID, targetUserID)
+	if err == nil {
+		s.notify(ctx, targetUserID, notificationEventUninvite, map[string]any{
+			"eventId": eventID,
+			"actorId": removerID,
+		})
+	}
+	return err
 }
 
 // SendDailyReminders raises the two time-based reminder notifications for

@@ -34,6 +34,12 @@ describe('NotificationRow', () => {
     expect(screen.getByText('Alan Turing invited you to an event')).toBeInTheDocument()
   })
 
+  it('describes being removed from an event', () => {
+    render(<NotificationRow notification={makeNotification({ type: 'event_uninvite', actorName: 'Alan Turing' })} />)
+
+    expect(screen.getByText('Alan Turing removed you from an event')).toBeInTheDocument()
+  })
+
   it('describes an accepted invite response', () => {
     render(
       <NotificationRow

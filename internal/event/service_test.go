@@ -586,6 +586,66 @@ func TestRemoveEventInvite_EventNotFound(t *testing.T) {
 	require.ErrorIs(t, err, ErrEventNotFound)
 }
 
+func TestRemoveEventInvite_ByOwner_NotifiesRemovedGuest(t *testing.T) {
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+		deleteEventInviteFunc: func(ctx context.Context, eventID, userID string) error {
+			return nil
+		},
+	}
+	notifier := &fakeNotifier{}
+	service := NewService(repo, notifier)
+	err := service.RemoveEventInvite(context.Background(), "event-id", "owner-id", "guest-id")
+	require.NoError(t, err)
+	require.Equal(t, []notifyCall{{
+		userID:           "guest-id",
+		notificationType: notificationEventUninvite,
+		payload:          map[string]any{"eventId": "event-id", "actorId": "owner-id"},
+	}}, notifier.calls)
+}
+
+func TestRemoveEventInvite_ByOriginalInviter_NotifiesRemovedGuest(t *testing.T) {
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+		getEventInviteFunc: func(ctx context.Context, eventID, userID string) (EventInvite, error) {
+			return EventInvite{EventID: eventID, InvitedUserID: userID, InvitedBy: "inviter-id"}, nil
+		},
+		deleteEventInviteFunc: func(ctx context.Context, eventID, userID string) error {
+			return nil
+		},
+	}
+	notifier := &fakeNotifier{}
+	service := NewService(repo, notifier)
+	err := service.RemoveEventInvite(context.Background(), "event-id", "inviter-id", "guest-id")
+	require.NoError(t, err)
+	require.Equal(t, []notifyCall{{
+		userID:           "guest-id",
+		notificationType: notificationEventUninvite,
+		payload:          map[string]any{"eventId": "event-id", "actorId": "inviter-id"},
+	}}, notifier.calls)
+}
+
+func TestRemoveEventInvite_RepositoryError_DoesNotNotify(t *testing.T) {
+	repoErr := errors.New("boom")
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+		deleteEventInviteFunc: func(ctx context.Context, eventID, userID string) error {
+			return repoErr
+		},
+	}
+	notifier := &fakeNotifier{}
+	service := NewService(repo, notifier)
+	err := service.RemoveEventInvite(context.Background(), "event-id", "owner-id", "guest-id")
+	require.ErrorIs(t, err, repoErr)
+	require.Empty(t, notifier.calls)
+}
+
 func TestSendEventInvite_ByOwner_NotifiesInvitee(t *testing.T) {
 	repo := &fakeRepository{
 		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
