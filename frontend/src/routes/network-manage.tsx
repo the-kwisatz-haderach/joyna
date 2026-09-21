@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState, type DragEvent, type FormEvent } from "react"
-import { Link, useNavigate } from "react-router"
+import { Link } from "react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Cancel01Icon, PlusSignIcon } from "@hugeicons/core-free-icons"
 
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 import { GuestAvatar } from "../../components/joyna/guest-avatar"
-import { StickyActionBar } from "../../components/joyna/sticky-action-bar"
 
 type ManagedConnection = {
   contactId: string
@@ -38,12 +37,14 @@ function matchesFilter(name: string, query: string): boolean {
 function PersonChip({
   name,
   draggable,
+  isDragging,
   onDragStart,
   onDragEnd,
   onRemove,
 }: {
   name: string
   draggable?: boolean
+  isDragging?: boolean
   onDragStart?: (e: DragEvent<HTMLDivElement>) => void
   onDragEnd?: () => void
   onRemove?: () => void
@@ -53,7 +54,10 @@ function PersonChip({
       draggable={draggable}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className="flex shrink-0 items-center gap-1.5 rounded-full border border-joyna-border bg-white py-1 pr-1.5 pl-1 select-none"
+      className={cn(
+        "flex shrink-0 items-center gap-1.5 rounded-full border border-joyna-border bg-white py-1 pr-1.5 pl-1 select-none",
+        isDragging && "border-2 border-dashed border-joyna-periwinkle opacity-60",
+      )}
     >
       <GuestAvatar name={name} />
       <span className="text-xs font-semibold text-joyna-ink">{name}</span>
@@ -76,7 +80,6 @@ function PersonChip({
 }
 
 function NetworkManage() {
-  const navigate = useNavigate()
   const [connections, setConnections] = useState<ManagedConnection[]>([])
   const [groups, setGroups] = useState<ManagedGroup[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -85,6 +88,7 @@ function NetworkManage() {
   const [newGroupName, setNewGroupName] = useState("")
   const [isCreatingGroup, setIsCreatingGroup] = useState(false)
   const [draggedContactId, setDraggedContactId] = useState<string | null>(null)
+  const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -163,6 +167,7 @@ function NetworkManage() {
 
   function handleDragEnd() {
     setDraggedContactId(null)
+    setDragOverGroupId(null)
   }
 
   function handleDrop(groupId: string | undefined) {
@@ -172,11 +177,25 @@ function NetworkManage() {
         moveContactToGroup(draggedContactId, groupId)
       }
       setDraggedContactId(null)
+      setDragOverGroupId(null)
     }
   }
 
   function handleDragOver(e: DragEvent<HTMLDivElement>) {
     e.preventDefault()
+  }
+
+  function handleGroupDragEnter(groupId: string) {
+    return (e: DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      setDragOverGroupId(groupId)
+    }
+  }
+
+  function handleGroupDragLeave(e: DragEvent<HTMLDivElement>) {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setDragOverGroupId(null)
+    }
   }
 
   async function handleCreateGroup(e: FormEvent) {
@@ -266,6 +285,7 @@ function NetworkManage() {
                     key={contact.contactId}
                     name={contact.contactName}
                     draggable
+                    isDragging={draggedContactId === contact.contactId}
                     onDragStart={handleDragStart(contact.contactId)}
                     onDragEnd={handleDragEnd}
                   />
@@ -299,15 +319,21 @@ function NetworkManage() {
             </button>
           </form>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex max-h-[420px] flex-col gap-4 overflow-y-auto p-1 -m-1">
             {groupsWithMembers.map((group) => (
               <div
                 key={group.id}
                 role="group"
                 aria-label={group.name}
+                onDragEnter={handleGroupDragEnter(group.id)}
                 onDragOver={handleDragOver}
+                onDragLeave={handleGroupDragLeave}
                 onDrop={handleDrop(group.id)}
-                className="flex flex-col gap-3 rounded-card border border-joyna-border bg-white p-4"
+                className={cn(
+                  "flex flex-col gap-3 rounded-card border border-joyna-border bg-white p-4 transition-colors",
+                  dragOverGroupId === group.id &&
+                    "border-2 border-dashed border-joyna-periwinkle bg-joyna-periwinkle/5",
+                )}
               >
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="font-display text-sm font-semibold text-joyna-ink">
@@ -328,6 +354,7 @@ function NetworkManage() {
                         key={member.contactId}
                         name={member.contactName}
                         draggable
+                        isDragging={draggedContactId === member.contactId}
                         onDragStart={handleDragStart(member.contactId)}
                         onDragEnd={handleDragEnd}
                         onRemove={() => moveContactToGroup(member.contactId, undefined)}
@@ -340,22 +367,6 @@ function NetworkManage() {
           </div>
         </div>
       )}
-
-      <StickyActionBar className="sticky bottom-0 z-10 mt-2 -mx-5 px-5">
-        <Button
-          variant="secondary"
-          className="h-11 flex-1 rounded-control font-display text-sm"
-          onClick={() => navigate("/network")}
-        >
-          Cancel
-        </Button>
-        <Button
-          className="h-11 flex-1 rounded-control font-display text-sm"
-          onClick={() => navigate("/network")}
-        >
-          Done
-        </Button>
-      </StickyActionBar>
     </section>
   )
 }
