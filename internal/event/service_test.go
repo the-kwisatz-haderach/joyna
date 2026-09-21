@@ -264,6 +264,40 @@ func TestSendEventInvite_Forwarded(t *testing.T) {
 	require.Equal(t, forwardedInvite, invite)
 }
 
+func TestSendEventInvite_ByOwner_AfterRsvpClosed(t *testing.T) {
+	deadline := time.Now().Add(-time.Hour)
+	createdInvite := EventInvite{EventID: "event-id"}
+	var createCalled bool
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id", RsvpDeadline: &deadline}, nil
+		},
+		createEventInviteFunc: func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error) {
+			createCalled = true
+			return createdInvite, nil
+		},
+	}
+	service := NewService(repo)
+	payload := CreateEventInvitePayload{EventID: "event-id", InvitedUserID: "invited-id"}
+	invite, err := service.SendEventInvite(context.Background(), payload, "owner-id")
+	require.NoError(t, err)
+	require.True(t, createCalled)
+	require.Equal(t, createdInvite, invite)
+}
+
+func TestSendEventInvite_Forwarded_RsvpClosed(t *testing.T) {
+	deadline := time.Now().Add(-time.Hour)
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id", RsvpDeadline: &deadline}, nil
+		},
+	}
+	service := NewService(repo)
+	payload := CreateEventInvitePayload{EventID: "event-id", InvitedUserID: "invited-id"}
+	_, err := service.SendEventInvite(context.Background(), payload, "forwarding-user-id")
+	require.ErrorIs(t, err, ErrRsvpClosed)
+}
+
 func TestSendEventInvite_ForwardError(t *testing.T) {
 	repoErr := errors.New("boom")
 	repo := &fakeRepository{
@@ -372,6 +406,9 @@ func TestGetEventAttendees_NotInvited(t *testing.T) {
 func TestRespondToEventInvite(t *testing.T) {
 	updated := EventInvite{EventID: "event-id", InvitedUserID: "user-id", Status: InviteStateAccepted}
 	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
 		respondToEventInviteFunc: func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error) {
 			require.Equal(t, "event-id", eventID)
 			require.Equal(t, "user-id", userID)
@@ -394,6 +431,9 @@ func TestRespondToEventInvite_InvalidStatus(t *testing.T) {
 
 func TestRespondToEventInvite_NotFound(t *testing.T) {
 	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
 		respondToEventInviteFunc: func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error) {
 			return EventInvite{}, ErrInviteNotFound
 		},
@@ -401,6 +441,29 @@ func TestRespondToEventInvite_NotFound(t *testing.T) {
 	service := NewService(repo)
 	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateDeclined)
 	require.ErrorIs(t, err, ErrInviteNotFound)
+}
+
+func TestRespondToEventInvite_EventNotFound(t *testing.T) {
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{}, ErrEventNotFound
+		},
+	}
+	service := NewService(repo)
+	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateAccepted)
+	require.ErrorIs(t, err, ErrEventNotFound)
+}
+
+func TestRespondToEventInvite_RsvpClosed(t *testing.T) {
+	deadline := time.Now().Add(-time.Hour)
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id", RsvpDeadline: &deadline}, nil
+		},
+	}
+	service := NewService(repo)
+	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateAccepted)
+	require.ErrorIs(t, err, ErrRsvpClosed)
 }
 
 func TestRemoveEventInvite_ByOwner(t *testing.T) {
@@ -454,6 +517,36 @@ func TestRemoveEventInvite_NotAllowed(t *testing.T) {
 	service := NewService(repo)
 	err := service.RemoveEventInvite(context.Background(), "event-id", "not-the-inviter", "guest-id")
 	require.ErrorIs(t, err, ErrRemoveNotAllowed)
+}
+
+func TestRemoveEventInvite_ByOwner_AfterRsvpClosed(t *testing.T) {
+	deadline := time.Now().Add(-time.Hour)
+	var deleteCalled bool
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id", RsvpDeadline: &deadline}, nil
+		},
+		deleteEventInviteFunc: func(ctx context.Context, eventID, userID string) error {
+			deleteCalled = true
+			return nil
+		},
+	}
+	service := NewService(repo)
+	err := service.RemoveEventInvite(context.Background(), "event-id", "owner-id", "guest-id")
+	require.NoError(t, err)
+	require.True(t, deleteCalled)
+}
+
+func TestRemoveEventInvite_ByOriginalInviter_RsvpClosed(t *testing.T) {
+	deadline := time.Now().Add(-time.Hour)
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id", RsvpDeadline: &deadline}, nil
+		},
+	}
+	service := NewService(repo)
+	err := service.RemoveEventInvite(context.Background(), "event-id", "inviter-id", "guest-id")
+	require.ErrorIs(t, err, ErrRsvpClosed)
 }
 
 func TestRemoveEventInvite_EventNotFound(t *testing.T) {

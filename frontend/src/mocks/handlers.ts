@@ -55,6 +55,14 @@ function eventAttendees(eventId: string): Set<string> {
   return attendees
 }
 
+// Mirrors internal/event/service.go's rsvpClosed: once the deadline has
+// passed, only the event's owner may change the guest list.
+function isRsvpClosed(event: MockEvent): boolean {
+  return Boolean(
+    event.rsvpDeadline && new Date(event.rsvpDeadline).getTime() < Date.now(),
+  )
+}
+
 function listPotentialConnections(userId: string) {
   const myEventIds = new Set(
     events
@@ -288,6 +296,13 @@ export const handlers = [
     if (index === -1) {
       return new HttpResponse("invite not found", { status: 404 })
     }
+    const event = events.find((candidate) => candidate.id === params.id)
+    if (event && isRsvpClosed(event)) {
+      return new HttpResponse(
+        "rsvp deadline has passed; only the host can update the guest list",
+        { status: 403 },
+      )
+    }
     const body = (await request.json()) as { status?: "accepted" | "declined" }
     if (body.status !== "accepted" && body.status !== "declined") {
       return new HttpResponse("status must be 'accepted' or 'declined'", {
@@ -315,6 +330,13 @@ export const handlers = [
     if (!body.eventId || !events.some((event) => event.id === body.eventId)) {
       return new HttpResponse("event not found", { status: 404 })
     }
+    const event = events.find((candidate) => candidate.id === body.eventId)!
+    if (event.ownerId !== currentUser.id && isRsvpClosed(event)) {
+      return new HttpResponse(
+        "rsvp deadline has passed; only the host can update the guest list",
+        { status: 403 },
+      )
+    }
     const created: MockEventInvite = {
       eventId: body.eventId,
       invitedBy: currentUser.id,
@@ -338,6 +360,12 @@ export const handlers = [
     const event = events.find((candidate) => candidate.id === params.id)
     const invite = eventInvites[index]
     const isOwner = event?.ownerId === currentUser.id
+    if (!isOwner && event && isRsvpClosed(event)) {
+      return new HttpResponse(
+        "rsvp deadline has passed; only the host can update the guest list",
+        { status: 403 },
+      )
+    }
     if (!isOwner && invite.invitedBy !== currentUser.id) {
       return new HttpResponse("user not allowed to remove this guest", {
         status: 403,

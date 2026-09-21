@@ -12,7 +12,14 @@ var (
 	ErrInviteNotAllowed        = errors.New("user not allowed to invite (additional) users to event")
 	ErrUnauthorizedEventUpdate = errors.New("user must be owner of event to update it")
 	ErrRemoveNotAllowed        = errors.New("user not allowed to remove this guest")
+	ErrRsvpClosed              = errors.New("rsvp deadline has passed; only the host can update the guest list")
 )
+
+// rsvpClosed reports whether ev's RSVP deadline has passed, after which only
+// the event's owner may change the guest list (invite, remove, or respond).
+func rsvpClosed(ev Event) bool {
+	return ev.RsvpDeadline != nil && ev.RsvpDeadline.Before(time.Now())
+}
 
 type repository interface {
 	CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error)
@@ -118,6 +125,13 @@ func (s *Service) RespondToEventInvite(ctx context.Context, eventID, userID stri
 	if status != InviteStateAccepted && status != InviteStateDeclined {
 		return EventInvite{}, ErrInvalidInviteStatus
 	}
+	ev, err := s.repo.GetEvent(ctx, eventID)
+	if err != nil {
+		return EventInvite{}, err
+	}
+	if rsvpClosed(ev) {
+		return EventInvite{}, ErrRsvpClosed
+	}
 	return s.repo.RespondToEventInvite(ctx, eventID, userID, status)
 }
 
@@ -136,6 +150,10 @@ func (s *Service) SendEventInvite(ctx context.Context, payload CreateEventInvite
 		return createdInvite, err
 	}
 
+	if rsvpClosed(event) {
+		return EventInvite{}, ErrRsvpClosed
+	}
+
 	payload.SpreadAllowed = 0
 	createdInvite, err := s.repo.ForwardEventInvite(ctx, payload, invitedBy)
 	// TODO: Create notification(s)
@@ -152,6 +170,10 @@ func (s *Service) RemoveEventInvite(ctx context.Context, eventID, removerID, tar
 	}
 	if ev.OwnerId == removerID {
 		return s.repo.DeleteEventInvite(ctx, eventID, targetUserID)
+	}
+
+	if rsvpClosed(ev) {
+		return ErrRsvpClosed
 	}
 
 	invite, err := s.repo.GetEventInvite(ctx, eventID, targetUserID)

@@ -76,6 +76,29 @@ describe('EventDetail', () => {
     ).toBeInTheDocument()
   })
 
+  it('locks RSVP and the guest list for an invitee once the RSVP deadline has passed', async () => {
+    loginAsMockUser()
+    renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000014')
+
+    expect(
+      await screen.findByRole('heading', { name: /winter gala/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/rsvp closed/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/rsvp deadline has passed — your response is locked in/i),
+    ).toBeInTheDocument()
+
+    expect(screen.getByRole('button', { name: /^yes$/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^no$/i })).toBeDisabled()
+
+    expect(
+      screen.getByText(/the guest list is locked now that rsvps are closed/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /update guest list|add guests/i }),
+    ).not.toBeInTheDocument()
+  })
+
   it('shows a not-found message for an event the viewer cannot access', async () => {
     loginAsMockUser()
     renderEventDetail('00000000-0000-0000-0000-000000000000')

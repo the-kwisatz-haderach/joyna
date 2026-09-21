@@ -239,6 +239,20 @@ export const mockEvents: MockEvent[] = [
     type: 'party',
     defaultSpreadAllowed: 1,
   },
+  // RSVP deadline already passed, but the event itself is still upcoming —
+  // exercises the "RSVP closed"/locked guest list UI for an invitee.
+  {
+    id: 'c1a2b3c4-1111-4a1a-8a1a-000000000014',
+    ownerId: mockUsers[1].id,
+    name: 'Winter Gala',
+    description: 'Formal gala with dinner and dancing.',
+    createdAt: daysFromNow(-50),
+    date: daysFromNow(40),
+    location: 'Grand Ballroom, Cambridge',
+    rsvpDeadline: daysFromNow(-5),
+    type: 'party',
+    defaultSpreadAllowed: 2,
+  },
 ]
 
 export const mockEventInvites: MockEventInvite[] = [
@@ -305,6 +319,14 @@ export const mockEventInvites: MockEventInvite[] = [
     status: "accepted",
     spreadAllowed: 0,
     createdAt: daysFromNow(-29),
+  },
+  {
+    eventId: mockEvents[13].id, // Winter Gala — RSVP deadline has passed
+    invitedBy: mockUsers[1].id,
+    invitedUserId: mockUsers[0].id,
+    status: "accepted",
+    spreadAllowed: 2,
+    createdAt: daysFromNow(-45),
   },
 ]
 
