@@ -21,6 +21,9 @@ type fakeRepository struct {
 	createEventInviteFunc    func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 	forwardEventInviteFunc   func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 	deleteEventInviteFunc    func(ctx context.Context, eventID, userID string) error
+
+	listPendingInvitesWithRsvpDeadlineOnFunc func(ctx context.Context, day time.Time) ([]ReminderInvite, error)
+	listAcceptedInvitesWithEventOnFunc       func(ctx context.Context, day time.Time) ([]ReminderInvite, error)
 }
 
 func (f *fakeRepository) CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error) {
@@ -65,6 +68,14 @@ func (f *fakeRepository) ForwardEventInvite(ctx context.Context, payload CreateE
 
 func (f *fakeRepository) DeleteEventInvite(ctx context.Context, eventID, userID string) error {
 	return f.deleteEventInviteFunc(ctx, eventID, userID)
+}
+
+func (f *fakeRepository) ListPendingInvitesWithRsvpDeadlineOn(ctx context.Context, day time.Time) ([]ReminderInvite, error) {
+	return f.listPendingInvitesWithRsvpDeadlineOnFunc(ctx, day)
+}
+
+func (f *fakeRepository) ListAcceptedInvitesWithEventOn(ctx context.Context, day time.Time) ([]ReminderInvite, error) {
+	return f.listAcceptedInvitesWithEventOnFunc(ctx, day)
 }
 
 type notifyCall struct {
@@ -701,4 +712,62 @@ func TestUpdateEvent_NilNotifier_SkipsAttendeeLookup(t *testing.T) {
 	event, err := service.UpdateEvent(context.Background(), UpdateEventPayload{Name: &name}, "event-id", "owner-id")
 	require.NoError(t, err)
 	require.Equal(t, updated, event)
+}
+
+func TestSendDailyReminders_NotifiesBothKinds(t *testing.T) {
+	now := time.Now()
+	repo := &fakeRepository{
+		listPendingInvitesWithRsvpDeadlineOnFunc: func(ctx context.Context, day time.Time) ([]ReminderInvite, error) {
+			require.WithinDuration(t, now.AddDate(0, 0, 1), day, time.Second)
+			return []ReminderInvite{{EventID: "deadline-event", InvitedUserID: "pending-invitee"}}, nil
+		},
+		listAcceptedInvitesWithEventOnFunc: func(ctx context.Context, day time.Time) ([]ReminderInvite, error) {
+			require.WithinDuration(t, now, day, time.Second)
+			return []ReminderInvite{{EventID: "today-event", InvitedUserID: "accepted-invitee"}}, nil
+		},
+	}
+	notifier := &fakeNotifier{}
+	service := NewService(repo, notifier)
+
+	err := service.SendDailyReminders(context.Background(), now)
+	require.NoError(t, err)
+	require.Equal(t, []notifyCall{
+		{
+			userID:           "pending-invitee",
+			notificationType: notificationRsvpDeadlineReminder,
+			payload:          map[string]any{"eventId": "deadline-event"},
+		},
+		{
+			userID:           "accepted-invitee",
+			notificationType: notificationEventStartingToday,
+			payload:          map[string]any{"eventId": "today-event"},
+		},
+	}, notifier.calls)
+}
+
+func TestSendDailyReminders_RsvpDeadlineLookupError(t *testing.T) {
+	repoErr := errors.New("boom")
+	repo := &fakeRepository{
+		listPendingInvitesWithRsvpDeadlineOnFunc: func(ctx context.Context, day time.Time) ([]ReminderInvite, error) {
+			return nil, repoErr
+		},
+	}
+	service := NewService(repo, nil)
+	err := service.SendDailyReminders(context.Background(), time.Now())
+	require.ErrorIs(t, err, repoErr)
+}
+
+func TestSendDailyReminders_EventTodayLookupError(t *testing.T) {
+	repoErr := errors.New("boom")
+	repo := &fakeRepository{
+		listPendingInvitesWithRsvpDeadlineOnFunc: func(ctx context.Context, day time.Time) ([]ReminderInvite, error) {
+			return nil, nil
+		},
+		listAcceptedInvitesWithEventOnFunc: func(ctx context.Context, day time.Time) ([]ReminderInvite, error) {
+			return nil, repoErr
+		},
+	}
+	service := NewService(repo, nil)
+	err := service.SendDailyReminders(context.Background(), time.Now())
+	require.ErrorIs(t, err, repoErr)
 }

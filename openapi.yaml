@@ -985,7 +985,14 @@ components:
 
     NotificationType:
       type: string
-      enum: [event_invite, invite_response, event_updated]
+      enum:
+        [
+          event_invite,
+          invite_response,
+          event_updated,
+          rsvp_deadline_reminder,
+          event_starting_today,
+        ]
 
     Notification:
       type: object
@@ -993,6 +1000,8 @@ components:
         eventName/actorName are resolved server-side from eventId/actorId at
         read time, so they always reflect the event/user's current name.
         status is only present for invite_response notifications.
+        rsvp_deadline_reminder and event_starting_today are raised by a daily
+        scheduled job rather than a user action, so they have no actorId.
       properties:
         id:
           type: string

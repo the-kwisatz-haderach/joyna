@@ -1,7 +1,12 @@
 import { formatRelativeTime } from '@/lib/format-relative-time'
 import { cn } from '@/lib/utils'
 
-export type NotificationType = 'event_invite' | 'invite_response' | 'event_updated'
+export type NotificationType =
+  | 'event_invite'
+  | 'invite_response'
+  | 'event_updated'
+  | 'rsvp_deadline_reminder'
+  | 'event_starting_today'
 
 export type AppNotification = {
   id: string
@@ -26,6 +31,10 @@ function describeNotification(notification: AppNotification): string {
         : `${actor} joined the event`
     case 'event_updated':
       return 'Event details were updated'
+    case 'rsvp_deadline_reminder':
+      return 'RSVP deadline is tomorrow'
+    case 'event_starting_today':
+      return 'This event is happening today'
   }
 }
 

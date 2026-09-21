@@ -371,7 +371,12 @@ export const mockConnections: MockConnection[] = [
   },
 ]
 
-export type MockNotificationType = 'event_invite' | 'invite_response' | 'event_updated'
+export type MockNotificationType =
+  | 'event_invite'
+  | 'invite_response'
+  | 'event_updated'
+  | 'rsvp_deadline_reminder'
+  | 'event_starting_today'
 
 // Already shaped like the real GET /notifications response (eventName/
 // actorName resolved) rather than raw rows, since the mock handler doesn't
@@ -433,5 +438,23 @@ export const mockNotifications: MockNotification[] = [
     status: 'declined',
     isRead: true,
     createdAt: daysFromNow(-3),
+  },
+  // Time-based reminders are raised by the daily notifier job rather than a
+  // user action, so they have no actorId/actorName.
+  {
+    id: 'e1f2a3b4-1111-4a1a-8a1a-000000000005',
+    type: 'rsvp_deadline_reminder',
+    eventId: mockEvents[0].id, // Summer Rooftop Party
+    eventName: mockEvents[0].name,
+    isRead: false,
+    createdAt: hoursAgo(12),
+  },
+  {
+    id: 'e1f2a3b4-1111-4a1a-8a1a-000000000006',
+    type: 'event_starting_today',
+    eventId: mockEvents[6].id, // Book Club Meetup
+    eventName: mockEvents[6].name,
+    isRead: false,
+    createdAt: hoursAgo(1),
   },
 ]

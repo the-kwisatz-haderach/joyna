@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 )
@@ -21,9 +22,11 @@ var (
 // import of the notification package) so this package's notifier interface
 // stays satisfied by notification.Service without a cross-domain import.
 const (
-	notificationEventInvite    = "event_invite"
-	notificationInviteResponse = "invite_response"
-	notificationEventUpdated   = "event_updated"
+	notificationEventInvite          = "event_invite"
+	notificationInviteResponse       = "invite_response"
+	notificationEventUpdated         = "event_updated"
+	notificationRsvpDeadlineReminder = "rsvp_deadline_reminder"
+	notificationEventStartingToday   = "event_starting_today"
 )
 
 // rsvpClosed reports whether ev's RSVP deadline has passed, after which only
@@ -44,6 +47,8 @@ type repository interface {
 	CreateEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 	ForwardEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 	DeleteEventInvite(ctx context.Context, eventID, userID string) error
+	ListPendingInvitesWithRsvpDeadlineOn(ctx context.Context, day time.Time) ([]ReminderInvite, error)
+	ListAcceptedInvitesWithEventOn(ctx context.Context, day time.Time) ([]ReminderInvite, error)
 }
 
 // notifier is satisfied by notification.Service. It's optional: nil is a
@@ -254,4 +259,34 @@ func (s *Service) RemoveEventInvite(ctx context.Context, eventID, removerID, tar
 		return ErrRemoveNotAllowed
 	}
 	return s.repo.DeleteEventInvite(ctx, eventID, targetUserID)
+}
+
+// SendDailyReminders raises the two time-based reminder notifications for
+// the given day: an RSVP deadline reminder for pending invitees whose
+// event's deadline falls the day after now, and an event-starting-today
+// reminder for accepted invitees whose event falls on now's calendar day.
+// It's meant to be invoked once a day by an external scheduler (e.g. a k8s
+// CronJob), rather than a ticker owned by the API process — the repository
+// queries it drives are idempotent (they exclude invites that already have
+// a matching notification), so calling it more than once for the same day,
+// or from more than one job run at once, never double-sends.
+func (s *Service) SendDailyReminders(ctx context.Context, now time.Time) error {
+	tomorrow := now.AddDate(0, 0, 1)
+	deadlineInvites, err := s.repo.ListPendingInvitesWithRsvpDeadlineOn(ctx, tomorrow)
+	if err != nil {
+		return fmt.Errorf("listing invites with upcoming rsvp deadline: %w", err)
+	}
+	for _, invite := range deadlineInvites {
+		s.notify(ctx, invite.InvitedUserID, notificationRsvpDeadlineReminder, map[string]any{"eventId": invite.EventID})
+	}
+
+	todayInvites, err := s.repo.ListAcceptedInvitesWithEventOn(ctx, now)
+	if err != nil {
+		return fmt.Errorf("listing invites with event today: %w", err)
+	}
+	for _, invite := range todayInvites {
+		s.notify(ctx, invite.InvitedUserID, notificationEventStartingToday, map[string]any{"eventId": invite.EventID})
+	}
+
+	return nil
 }
