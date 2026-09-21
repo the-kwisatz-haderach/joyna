@@ -47,22 +47,35 @@ function useUnreadNotificationsCount(pathname: string): number {
 }
 
 function isPushedPath(pathname: string): boolean {
-  return (
+  return Boolean(getBackTarget(pathname))
+}
+
+// Pushed screens show a "‹ <label>" back link (to <to>) instead of a static
+// title, and hide the bottom nav — see isPushedPath/showBottomMenu below.
+function getBackTarget(pathname: string): { to: string; label: string } | null {
+  if (
     pathname === '/events/new' ||
     /^\/events\/[^/]+\/edit$/.test(pathname) ||
     (pathname !== '/events/all' && /^\/events\/[^/]+$/.test(pathname))
-  )
+  ) {
+    return { to: '/events', label: 'Events' }
+  }
+  if (pathname === '/network/add') {
+    return { to: '/network', label: 'Network' }
+  }
+  return null
 }
 
 function getScreenTitle(pathname: string): string {
   if (pathname === '/notifications') return 'Notifications'
   if (pathname === '/profile') return 'Profile'
+  if (pathname === '/network') return 'Network'
   return 'Events'
 }
 
 function TopMenu() {
   const {pathname} = useLocation()
-  const pushed = isPushedPath(pathname)
+  const backTarget = getBackTarget(pathname)
   const hidden = useHideOnScroll()
   const unreadCount = useUnreadNotificationsCount(pathname)
   const showUnreadBadge = unreadCount > 0 && pathname !== '/notifications'
@@ -74,9 +87,9 @@ function TopMenu() {
         hidden ? '-translate-y-full' : 'translate-y-0',
       )}
     >
-      {pushed ? (
+      {backTarget ? (
         <Link
-          to="/events"
+          to={backTarget.to}
           className="-ml-3 flex items-center gap-0.5 rounded-full py-1.5 pr-2.5 pl-1.5 font-display text-lg font-semibold text-joyna-ink transition-colors hover:bg-joyna-border"
         >
           <HugeiconsIcon
@@ -85,7 +98,7 @@ function TopMenu() {
             className="h-5 w-5"
             strokeWidth={2}
           />
-          Events
+          {backTarget.label}
         </Link>
       ) : (
         <span className="font-display text-lg font-semibold text-joyna-ink">
@@ -174,6 +187,16 @@ function BottomMenu() {
         >
           + New
         </Link>
+      )}
+      {networkActive && (
+        // Dummy for now — will navigate to the network management screen once
+        // that's built out separately.
+        <button
+          type="button"
+          className="flex h-11 shrink-0 items-center justify-center rounded-full bg-joyna-coral px-5 font-display text-sm font-semibold text-white transition-transform active:scale-95"
+        >
+          Manage
+        </button>
       )}
     </nav>
   )

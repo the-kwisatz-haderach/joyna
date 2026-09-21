@@ -26,10 +26,24 @@ const connectionSelect = `
 		c.is_favorite,
 		c.connection_group_id AS group_id,
 		g.name AS group_name,
-		g.is_favorite AS group_is_favorite
+		g.is_favorite AS group_is_favorite,
+		COALESCE(events_together.count, 0) AS events_together_count
 	FROM %s c
 	JOIN users u ON u.id = c.contact_id
 	LEFT JOIN connection_groups g ON g.id = c.connection_group_id
+	LEFT JOIN LATERAL (
+		SELECT COUNT(DISTINCT owner_events.event_id) AS count
+		FROM (
+			SELECT id AS event_id FROM events WHERE owner_id = c.user_id
+			UNION
+			SELECT event_id FROM event_invites WHERE invited_user_id = c.user_id AND status <> 'declined'
+		) owner_events
+		JOIN (
+			SELECT id AS event_id FROM events WHERE owner_id = c.contact_id
+			UNION
+			SELECT event_id FROM event_invites WHERE invited_user_id = c.contact_id AND status <> 'declined'
+		) contact_events ON contact_events.event_id = owner_events.event_id
+	) events_together ON true
 `
 
 func (r *Repository) ListConnections(ctx context.Context, ownerID string) ([]Connection, error) {
@@ -89,6 +103,25 @@ func (r *Repository) ListPotentialConnections(ctx context.Context, ownerID strin
 		potential = []PotentialConnection{}
 	}
 	return potential, nil
+}
+
+// FindUserByEmail looks up any registered user by an exact, case-sensitive
+// email match — used by the "add by email" flow, which needs to search the
+// whole user directory rather than just the caller's existing connections.
+func (r *Repository) FindUserByEmail(ctx context.Context, email string) (EmailLookupResult, error) {
+	row := r.pool.QueryRow(ctx,
+		`SELECT id AS user_id, name, email FROM users WHERE email = $1`,
+		email,
+	)
+
+	var result EmailLookupResult
+	if err := row.Scan(&result.UserID, &result.Name, &result.Email); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return EmailLookupResult{}, ErrUserNotFound
+		}
+		return EmailLookupResult{}, fmt.Errorf("finding user by email: %w", err)
+	}
+	return result, nil
 }
 
 func (r *Repository) CreateConnection(ctx context.Context, payload CreateConnectionPayload, ownerID string) (Connection, error) {

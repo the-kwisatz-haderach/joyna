@@ -9,6 +9,15 @@ GET {{baseUrl}}/network
 ### List potential network (users who attended shared events, not yet connected)
 GET {{baseUrl}}/network/potential
 
+### Look up a user by exact email match (backs the "add by email" screen)
+GET {{baseUrl}}/network/lookup?email=someone@example.com
+
+### Look up a user by email — not found, expect 404
+GET {{baseUrl}}/network/lookup?email=no-such-user@example.com
+
+### Look up a user by email — missing query param, expect 400
+GET {{baseUrl}}/network/lookup
+
 ### Add a contact to your network
 # @name createConnection
 POST {{baseUrl}}/network

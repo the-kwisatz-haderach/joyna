@@ -91,6 +91,30 @@ func (h *Handler) CreateConnection(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(created)
 }
 
+func (h *Handler) LookupUserByEmail(w http.ResponseWriter, r *http.Request) {
+	if _, ok := auth.UserIDFromContext(r.Context()); !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	result, err := h.service.FindUserByEmail(r.Context(), r.URL.Query().Get("email"))
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrEmailRequired):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, ErrUserNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			slog.Error("failed to look up user by email", "error", err)
+			http.Error(w, "failed to look up user by email", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
 func (h *Handler) UpdateConnection(w http.ResponseWriter, r *http.Request) {
 	contactID := r.PathValue("contactId")
 	if err := uuid.Validate(contactID); err != nil {

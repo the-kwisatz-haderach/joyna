@@ -73,6 +73,12 @@ export const mockUsers: MockUser[] = [
     email: "hedy@joyna.dev",
     joinedAt: "2026-03-18T09:00:00Z",
   },
+  {
+    id: "b6e2b6d0-8f1a-4e3a-9c2d-555555555555",
+    name: "Grace Hopper",
+    email: "grace@joyna.dev",
+    joinedAt: "2026-04-02T09:00:00Z",
+  },
 ]
 
 // Event/RSVP dates are offsets from "now" (rather than fixed calendar dates)
@@ -356,6 +362,12 @@ export const mockConnections: MockConnection[] = [
     createdAt: "2026-02-20T09:00:00Z",
     isFavorite: true,
     groupId: mockGroups[0].id,
+  },
+  {
+    userId: mockUsers[0].id,
+    contactId: mockUsers[4].id,
+    createdAt: "2026-04-10T09:00:00Z",
+    isFavorite: false,
   },
 ]
 

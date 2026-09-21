@@ -5,7 +5,7 @@ info:
     API for creating, viewing, updating and sharing events within a user's network.
     Events can be forwarded by invited users to their own networks, and users can
     organize members of their network into groups.
-  version: "1.0.0"
+  version: '1.0.0'
 servers:
   - url: /
 tags:
@@ -17,6 +17,8 @@ tags:
     description: Grouping members of a user's network
   - name: Notifications
     description: In-app notifications about events happening in a user's network
+  - name: Network
+    description: Viewing, searching and growing a user's network of contacts
   - name: Health
     description: Service liveness/readiness
 
@@ -28,7 +30,7 @@ paths:
       operationId: getHealth
       security: []
       responses:
-        "200":
+        '200':
           description: Service is alive
 
   /ready:
@@ -39,9 +41,9 @@ paths:
       operationId: getReady
       security: []
       responses:
-        "200":
+        '200':
           description: Service is ready
-        "503":
+        '503':
           description: Service is not ready (e.g. database unreachable)
 
   /auth/register:
@@ -55,9 +57,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/RegisterUserPayload"
+              $ref: '#/components/schemas/RegisterUserPayload'
       responses:
-        "200":
+        '200':
           description: User registered and session established
           headers:
             Set-Cookie:
@@ -67,20 +69,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
-        "400":
+                $ref: '#/components/schemas/User'
+        '400':
           description: Invalid request body or validation error
           content:
             text/plain:
               schema:
                 type: string
-        "409":
+        '409':
           description: A user already exists with this email
           content:
             text/plain:
               schema:
                 type: string
-        "500":
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -98,9 +100,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/LoginRequest"
+              $ref: '#/components/schemas/LoginRequest'
       responses:
-        "200":
+        '200':
           description: Login successful, session established
           headers:
             Set-Cookie:
@@ -110,20 +112,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
-        "400":
+                $ref: '#/components/schemas/User'
+        '400':
           description: Invalid request body
           content:
             text/plain:
               schema:
                 type: string
-        "401":
+        '401':
           description: Invalid credentials
           content:
             text/plain:
               schema:
                 type: string
-        "500":
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -137,9 +139,9 @@ paths:
       operationId: logoutUser
       security: []
       responses:
-        "204":
+        '204':
           description: Logged out successfully
-        "500":
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -155,33 +157,33 @@ paths:
         - name: sort
           in: query
           schema:
-            $ref: "#/components/schemas/EventSortField"
+            $ref: '#/components/schemas/EventSortField'
         - name: order
           in: query
           schema:
-            $ref: "#/components/schemas/SortOrder"
+            $ref: '#/components/schemas/SortOrder'
         - name: scope
           in: query
           schema:
-            $ref: "#/components/schemas/EventListScope"
+            $ref: '#/components/schemas/EventListScope'
       responses:
-        "200":
+        '200':
           description: List of events
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Event"
-        "400":
+                  $ref: '#/components/schemas/Event'
+        '400':
           description: Invalid query parameter
           content:
             text/plain:
               schema:
                 type: string
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -196,15 +198,15 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateEventPayload"
+              $ref: '#/components/schemas/CreateEventPayload'
       responses:
-        "200":
+        '200':
           description: Event created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Event"
-        "400":
+                $ref: '#/components/schemas/Event'
+        '400':
           description: >
             Invalid request body, or validation error (empty name, negative spread,
             past event date, owner not found, invalid rsvp deadline, invalid event type)
@@ -212,9 +214,9 @@ paths:
             text/plain:
               schema:
                 type: string
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -228,21 +230,21 @@ paths:
       description: Only the event owner may update the event. Omitted fields are left unchanged.
       operationId: updateEvent
       parameters:
-        - $ref: "#/components/parameters/EventId"
+        - $ref: '#/components/parameters/EventId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateEventPayload"
+              $ref: '#/components/schemas/UpdateEventPayload'
       responses:
-        "200":
+        '200':
           description: Event updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Event"
-        "400":
+                $ref: '#/components/schemas/Event'
+        '400':
           description: >
             Invalid request body/id, or validation error (negative spread, past event
             date, invalid rsvp deadline, owner not found)
@@ -250,21 +252,21 @@ paths:
             text/plain:
               schema:
                 type: string
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
           description: User is not the owner of the event
           content:
             text/plain:
               schema:
                 type: string
-        "404":
+        '404':
           description: Event not found
           content:
             text/plain:
               schema:
                 type: string
-        "500":
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -275,25 +277,25 @@ paths:
       summary: Delete an event
       operationId: deleteEvent
       parameters:
-        - $ref: "#/components/parameters/EventId"
+        - $ref: '#/components/parameters/EventId'
       responses:
-        "204":
+        '204':
           description: Event deleted
-        "400":
+        '400':
           description: Invalid id
           content:
             text/plain:
               schema:
                 type: string
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
           description: Event not found
           content:
             text/plain:
               schema:
                 type: string
-        "500":
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -314,41 +316,41 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateEventInvitePayload"
+              $ref: '#/components/schemas/CreateEventInvitePayload'
       responses:
-        "200":
+        '200':
           description: Invite created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/EventInvite"
-        "400":
+                $ref: '#/components/schemas/EventInvite'
+        '400':
           description: Invalid request body, invalid eventId/invitedUserId, or negative spread
           content:
             text/plain:
               schema:
                 type: string
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
           description: User is not allowed to invite (additional) users to this event
           content:
             text/plain:
               schema:
                 type: string
-        "404":
+        '404':
           description: Event not found
           content:
             text/plain:
               schema:
                 type: string
-        "409":
+        '409':
           description: User has already been invited
           content:
             text/plain:
               schema:
                 type: string
-        "500":
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -367,17 +369,17 @@ paths:
         reflects notifications raised since the last visit.
       operationId: getNotifications
       responses:
-        "200":
+        '200':
           description: List of notifications
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Notification"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
+                  $ref: '#/components/schemas/Notification'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -391,15 +393,15 @@ paths:
       description: Used to render the badge on the notifications icon. Does not mark anything as read.
       operationId: getUnreadNotificationCount
       responses:
-        "200":
+        '200':
           description: Unread notification count
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UnreadNotificationCount"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
+                $ref: '#/components/schemas/UnreadNotificationCount'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -416,23 +418,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateGroupPayload"
+              $ref: '#/components/schemas/CreateGroupPayload'
       responses:
-        "200":
+        '200':
           description: Group created
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Group"
-        "400":
+                $ref: '#/components/schemas/Group'
+        '400':
           description: Invalid request body, or empty group name
           content:
             text/plain:
               schema:
                 type: string
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -446,41 +448,41 @@ paths:
       description: Only the group owner may update the group. Omitted fields are left unchanged.
       operationId: updateGroup
       parameters:
-        - $ref: "#/components/parameters/GroupId"
+        - $ref: '#/components/parameters/GroupId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateGroupPayload"
+              $ref: '#/components/schemas/UpdateGroupPayload'
       responses:
-        "200":
+        '200':
           description: Group updated
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Group"
-        "400":
+                $ref: '#/components/schemas/Group'
+        '400':
           description: Invalid request body/id, or empty group name
           content:
             text/plain:
               schema:
                 type: string
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
           description: Group not found
           content:
             text/plain:
               schema:
                 type: string
-        "409":
+        '409':
           description: A group with this name already exists
           content:
             text/plain:
               schema:
                 type: string
-        "500":
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -491,25 +493,213 @@ paths:
       summary: Delete a group
       operationId: deleteGroup
       parameters:
-        - $ref: "#/components/parameters/GroupId"
+        - $ref: '#/components/parameters/GroupId'
       responses:
-        "204":
+        '204':
           description: Group deleted
-        "400":
+        '400':
           description: Invalid id
           content:
             text/plain:
               schema:
                 type: string
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
           description: Group not found
           content:
             text/plain:
               schema:
                 type: string
-        "500":
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /network:
+    get:
+      tags: [Network]
+      summary: List the caller's network
+      description: >
+        Returns every contact the caller has added, each annotated with the group
+        it belongs to (contacts without a group belong to the default
+        "Acquaintances" bucket in the UI) and how many events the caller and that
+        contact have both attended.
+      operationId: listConnections
+      responses:
+        '200':
+          description: The caller's connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Connection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+    post:
+      tags: [Network]
+      summary: Add a contact to the caller's network
+      operationId: createConnection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConnectionPayload'
+      responses:
+        '200':
+          description: Connection created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Connection'
+        '400':
+          description: Invalid request body/ids, or attempting to add yourself
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Contact or group not found
+          content:
+            text/plain:
+              schema:
+                type: string
+        '409':
+          description: This contact is already in the caller's network
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /network/potential:
+    get:
+      tags: [Network]
+      summary: List potential connections
+      description: >
+        Users who attended an event the caller also attended (as owner or
+        invitee) and who aren't in the caller's network yet, sorted by number of
+        shared events descending.
+      operationId: listPotentialConnections
+      responses:
+        '200':
+          description: Potential connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PotentialConnection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /network/lookup:
+    get:
+      tags: [Network]
+      summary: Find a user by exact email match
+      description: >
+        Backs the "add by email" screen: looks up any registered user (not just
+        existing contacts) by an exact email match, so the caller can add them to
+        their network. A 404 means no account exists with that email, at which
+        point the client offers to invite them to Joyna instead.
+      operationId: lookupUserByEmail
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: A user was found with this email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailLookupResult'
+        '400':
+          description: Missing email query parameter
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No user exists with this email
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /network/{contactId}:
+    patch:
+      tags: [Network]
+      summary: Update a connection
+      description: >
+        Partially updates a connection (its group and/or favorite status). Omitted
+        fields are left unchanged; `groupId` set to an empty string clears the
+        group back to the default "Acquaintances" bucket.
+      operationId: updateConnection
+      parameters:
+        - $ref: '#/components/parameters/ContactId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConnectionPayload'
+      responses:
+        '200':
+          description: Connection updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Connection'
+        '400':
+          description: Invalid request body/id
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Connection or group not found
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
           description: Internal server error
           content:
             text/plain:
@@ -527,6 +717,13 @@ components:
         format: uuid
     GroupId:
       name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ContactId:
+      name: contactId
       in: path
       required: true
       schema:
@@ -648,13 +845,23 @@ components:
           format: date-time
           nullable: true
         type:
-          $ref: "#/components/schemas/EventType"
+          $ref: '#/components/schemas/EventType'
         defaultSpreadAllowed:
           type: integer
         mood:
-          $ref: "#/components/schemas/Mood"
+          $ref: '#/components/schemas/Mood'
       required:
-        [id, ownerId, name, description, createdAt, date, location, type, defaultSpreadAllowed]
+        [
+          id,
+          ownerId,
+          name,
+          description,
+          createdAt,
+          date,
+          location,
+          type,
+          defaultSpreadAllowed,
+        ]
 
     CreateEventPayload:
       type: object
@@ -673,12 +880,12 @@ components:
           format: date-time
           nullable: true
         type:
-          $ref: "#/components/schemas/EventType"
+          $ref: '#/components/schemas/EventType'
         defaultSpreadAllowed:
           type: integer
           minimum: 0
         mood:
-          $ref: "#/components/schemas/Mood"
+          $ref: '#/components/schemas/Mood'
       required: [name, description, date, location, type, defaultSpreadAllowed]
 
     UpdateEventPayload:
@@ -699,12 +906,12 @@ components:
           format: date-time
           nullable: true
         type:
-          $ref: "#/components/schemas/EventType"
+          $ref: '#/components/schemas/EventType'
         defaultSpreadAllowed:
           type: integer
           minimum: 0
         mood:
-          $ref: "#/components/schemas/Mood"
+          $ref: '#/components/schemas/Mood'
 
     EventInvite:
       type: object
@@ -719,13 +926,14 @@ components:
           type: string
           format: uuid
         status:
-          $ref: "#/components/schemas/EventInviteStatus"
+          $ref: '#/components/schemas/EventInviteStatus'
         spreadAllowed:
           type: integer
         createdAt:
           type: string
           format: date-time
-      required: [eventId, invitedBy, invitedUserId, status, spreadAllowed, createdAt]
+      required:
+        [eventId, invitedBy, invitedUserId, status, spreadAllowed, createdAt]
 
     CreateEventInvitePayload:
       type: object
@@ -790,7 +998,7 @@ components:
           type: string
           format: uuid
         type:
-          $ref: "#/components/schemas/NotificationType"
+          $ref: '#/components/schemas/NotificationType'
         eventId:
           type: string
           format: uuid
@@ -806,7 +1014,7 @@ components:
           type: string
           nullable: true
         status:
-          $ref: "#/components/schemas/EventInviteStatus"
+          $ref: '#/components/schemas/EventInviteStatus'
         isRead:
           type: boolean
         createdAt:
@@ -820,6 +1028,94 @@ components:
         count:
           type: integer
       required: [count]
+    Connection:
+      type: object
+      properties:
+        contactId:
+          type: string
+          format: uuid
+        contactName:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        isFavorite:
+          type: boolean
+        groupId:
+          type: string
+          format: uuid
+          nullable: true
+        groupName:
+          type: string
+          nullable: true
+        groupIsFavorite:
+          type: boolean
+          nullable: true
+        eventsTogetherCount:
+          type: integer
+          description: Number of events the caller and this contact have both attended.
+      required:
+        [
+          contactId,
+          contactName,
+          contactEmail,
+          createdAt,
+          isFavorite,
+          eventsTogetherCount,
+        ]
+
+    CreateConnectionPayload:
+      type: object
+      properties:
+        contactId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+      required: [contactId]
+
+    UpdateConnectionPayload:
+      type: object
+      description: >
+        All fields are optional; omitted fields are left unchanged. Setting
+        groupId to an empty string clears the group back to "Acquaintances".
+      properties:
+        groupId:
+          type: string
+        isFavorite:
+          type: boolean
+
+    PotentialConnection:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        sharedEventCount:
+          type: integer
+      required: [userId, name, email, sharedEventCount]
+
+    EmailLookupResult:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+      required: [userId, name, email]
 
 security:
   - sessionCookie: []

@@ -8,14 +8,24 @@ import (
 )
 
 type Connection struct {
-	ContactID       string    `json:"contactId" db:"contact_id"`
-	ContactName     string    `json:"contactName" db:"contact_name"`
-	ContactEmail    string    `json:"contactEmail" db:"contact_email"`
-	CreatedAt       time.Time `json:"createdAt" db:"created_at"`
-	IsFavorite      bool      `json:"isFavorite" db:"is_favorite"`
-	GroupID         *string   `json:"groupId,omitempty" db:"group_id"`
-	GroupName       *string   `json:"groupName,omitempty" db:"group_name"`
-	GroupIsFavorite *bool     `json:"groupIsFavorite,omitempty" db:"group_is_favorite"`
+	ContactID           string    `json:"contactId" db:"contact_id"`
+	ContactName         string    `json:"contactName" db:"contact_name"`
+	ContactEmail        string    `json:"contactEmail" db:"contact_email"`
+	CreatedAt           time.Time `json:"createdAt" db:"created_at"`
+	IsFavorite          bool      `json:"isFavorite" db:"is_favorite"`
+	GroupID             *string   `json:"groupId,omitempty" db:"group_id"`
+	GroupName           *string   `json:"groupName,omitempty" db:"group_name"`
+	GroupIsFavorite     *bool     `json:"groupIsFavorite,omitempty" db:"group_is_favorite"`
+	EventsTogetherCount int       `json:"eventsTogetherCount" db:"events_together_count"`
+}
+
+// EmailLookupResult is a user found via an exact-match email search, used by
+// the "add by email" flow to decide whether to offer "add to network" (found)
+// or "invite to Joyna" (not found, surfaced as ErrUserNotFound).
+type EmailLookupResult struct {
+	UserID string `json:"userId" db:"user_id"`
+	Name   string `json:"name" db:"name"`
+	Email  string `json:"email" db:"email"`
 }
 
 // PotentialConnection is a user who attended an event the requesting user
@@ -36,6 +46,7 @@ var (
 	ErrInvalidContactID = errors.New("contactId isn't valid")
 	ErrInvalidGroupID   = errors.New("groupId isn't valid")
 	ErrSelfConnection   = errors.New("can't add yourself to your network")
+	ErrEmailRequired    = errors.New("email is required")
 )
 
 func (p CreateConnectionPayload) Validate() error {
