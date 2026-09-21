@@ -87,10 +87,10 @@ describe('RootLayout', () => {
     renderRootLayout(['/events/c1a2b3c4-1111-4a1a-8a1a-000000000001'])
 
     const topMenu = within(screen.getByRole('banner'))
-    expect(topMenu.getByRole('link', { name: /events/i })).toHaveAttribute(
-      'href',
-      '/events',
-    )
+    const backLink = topMenu.getByRole('link', { name: /events/i })
+    expect(backLink).toHaveAttribute('href', '/events')
+    expect(backLink.querySelector('svg')).toBeInTheDocument()
+    expect(backLink).not.toHaveTextContent('<')
     expect(
       screen.queryByRole('navigation', { name: 'Primary' }),
     ).not.toBeInTheDocument()
