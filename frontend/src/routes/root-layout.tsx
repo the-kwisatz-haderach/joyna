@@ -1,6 +1,10 @@
 import {Link, Outlet, useLocation} from 'react-router'
 import {HugeiconsIcon} from '@hugeicons/react'
-import {Notification03Icon, UserCircleIcon} from '@hugeicons/core-free-icons'
+import {
+  ArrowLeft01Icon,
+  Notification03Icon,
+  UserCircleIcon,
+} from '@hugeicons/core-free-icons'
 
 import {cn} from '@/lib/utils'
 import {useHideOnScroll} from '@/hooks/use-hide-on-scroll'
@@ -37,7 +41,13 @@ function TopMenu() {
           to="/events"
           className="-ml-1.5 flex items-center gap-2 rounded-full py-1.5 pr-2.5 pl-1.5 font-display text-lg font-semibold text-joyna-ink transition-colors hover:bg-joyna-border"
         >
-          <span aria-hidden="true">&lt;</span> Events
+          <HugeiconsIcon
+            icon={ArrowLeft01Icon}
+            aria-hidden="true"
+            className="h-5 w-5"
+            strokeWidth={2}
+          />
+          Events
         </Link>
       ) : (
         <span className="font-display text-lg font-semibold text-joyna-ink">
