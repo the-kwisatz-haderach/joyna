@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 )
@@ -21,9 +22,11 @@ var (
 // import of the notification package) so this package's notifier interface
 // stays satisfied by notification.Service without a cross-domain import.
 const (
-	notificationEventInvite    = "event_invite"
-	notificationInviteResponse = "invite_response"
-	notificationEventUpdated   = "event_updated"
+	notificationEventInvite          = "event_invite"
+	notificationInviteResponse       = "invite_response"
+	notificationEventUpdated         = "event_updated"
+	notificationRsvpDeadlineReminder = "rsvp_deadline_reminder"
+	notificationEventStartingToday   = "event_starting_today"
 )
 
 // rsvpClosed reports whether ev's RSVP deadline has passed, after which only
@@ -44,6 +47,8 @@ type repository interface {
 	CreateEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 	ForwardEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 	DeleteEventInvite(ctx context.Context, eventID, userID string) error
+	ListPendingInvitesWithUnnotifiedRsvpDeadline(ctx context.Context, deadline time.Time, notificationType string) ([]EventInvite, error)
+	ListAcceptedInvitesForUnnotifiedEventsOn(ctx context.Context, date time.Time, notificationType string) ([]EventInvite, error)
 }
 
 // notifier is satisfied by notification.Service. It's optional: nil is a
@@ -254,4 +259,30 @@ func (s *Service) RemoveEventInvite(ctx context.Context, eventID, removerID, tar
 		return ErrRemoveNotAllowed
 	}
 	return s.repo.DeleteEventInvite(ctx, eventID, targetUserID)
+}
+
+// SendDailyReminders notifies invitees of the two time-based reminders: an
+// RSVP deadline expiring tomorrow, and an accepted event happening today.
+// It's meant to be driven once a day by an external scheduler (see
+// cmd/api/main.go) rather than any HTTP endpoint, and is safe to call more
+// than once a day — the underlying queries only return invites that haven't
+// already been notified for that reminder.
+func (s *Service) SendDailyReminders(ctx context.Context, now time.Time) error {
+	deadlineInvites, err := s.repo.ListPendingInvitesWithUnnotifiedRsvpDeadline(ctx, now.AddDate(0, 0, 1), notificationRsvpDeadlineReminder)
+	if err != nil {
+		return fmt.Errorf("listing rsvp deadline reminders: %w", err)
+	}
+	for _, invite := range deadlineInvites {
+		s.notify(ctx, invite.InvitedUserID, notificationRsvpDeadlineReminder, map[string]any{"eventId": invite.EventID})
+	}
+
+	todayInvites, err := s.repo.ListAcceptedInvitesForUnnotifiedEventsOn(ctx, now, notificationEventStartingToday)
+	if err != nil {
+		return fmt.Errorf("listing event-starting-today reminders: %w", err)
+	}
+	for _, invite := range todayInvites {
+		s.notify(ctx, invite.InvitedUserID, notificationEventStartingToday, map[string]any{"eventId": invite.EventID})
+	}
+
+	return nil
 }

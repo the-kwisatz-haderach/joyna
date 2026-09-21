@@ -359,7 +359,12 @@ export const mockConnections: MockConnection[] = [
   },
 ]
 
-export type MockNotificationType = 'event_invite' | 'invite_response' | 'event_updated'
+export type MockNotificationType =
+  | 'event_invite'
+  | 'invite_response'
+  | 'event_updated'
+  | 'rsvp_deadline_reminder'
+  | 'event_starting_today'
 
 // Already shaped like the real GET /notifications response (eventName/
 // actorName resolved) rather than raw rows, since the mock handler doesn't
@@ -421,5 +426,21 @@ export const mockNotifications: MockNotification[] = [
     status: 'declined',
     isRead: true,
     createdAt: daysFromNow(-3),
+  },
+  {
+    id: 'e1f2a3b4-1111-4a1a-8a1a-000000000005',
+    type: 'rsvp_deadline_reminder',
+    eventId: mockEvents[0].id, // Summer Rooftop Party
+    eventName: mockEvents[0].name,
+    isRead: false,
+    createdAt: hoursAgo(1),
+  },
+  {
+    id: 'e1f2a3b4-1111-4a1a-8a1a-000000000006',
+    type: 'event_starting_today',
+    eventId: mockEvents[7].id, // Team Offsite
+    eventName: mockEvents[7].name,
+    isRead: false,
+    createdAt: hoursAgo(0.5),
   },
 ]

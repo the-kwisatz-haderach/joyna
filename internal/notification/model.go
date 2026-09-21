@@ -10,9 +10,11 @@ import "time"
 type Type = string
 
 const (
-	TypeEventInvite    Type = "event_invite"
-	TypeInviteResponse Type = "invite_response"
-	TypeEventUpdated   Type = "event_updated"
+	TypeEventInvite          Type = "event_invite"
+	TypeInviteResponse       Type = "invite_response"
+	TypeEventUpdated         Type = "event_updated"
+	TypeRsvpDeadlineReminder Type = "rsvp_deadline_reminder"
+	TypeEventStartingToday   Type = "event_starting_today"
 )
 
 // Notification is a user-facing feed item. EventName/ActorName are resolved

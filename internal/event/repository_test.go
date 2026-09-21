@@ -173,4 +173,74 @@ func TestEventRepository(t *testing.T) {
 		require.NotNil(t, byID[invitedEvent.ID].ViewerInviteStatus)
 		require.Equal(t, InviteStateAccepted, *byID[invitedEvent.ID].ViewerInviteStatus)
 	})
+
+	t.Run("ListPendingInvitesWithUnnotifiedRsvpDeadline", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		pending := authtest.CreateUser(t, pool)
+		accepted := authtest.CreateUser(t, pool)
+		alreadyNotified := authtest.CreateUser(t, pool)
+
+		tomorrow := time.Now().Add(24 * time.Hour)
+		ev, err := repo.CreateEvent(ctx, CreateEventPayload{
+			Type:         "dinner",
+			Date:         tomorrow.Add(48 * time.Hour),
+			RsvpDeadline: &tomorrow,
+		}, owner.Id)
+		require.NoError(t, err)
+
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: pending.Id}, owner.Id)
+		require.NoError(t, err)
+
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: accepted.Id}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.RespondToEventInvite(ctx, ev.ID, accepted.Id, InviteStateAccepted)
+		require.NoError(t, err)
+
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: alreadyNotified.Id}, owner.Id)
+		require.NoError(t, err)
+		_, err = pool.Exec(ctx,
+			`INSERT INTO notifications (user_id, type, payload) VALUES ($1, 'rsvp_deadline_reminder', $2)`,
+			alreadyNotified.Id, map[string]any{"eventId": ev.ID},
+		)
+		require.NoError(t, err)
+
+		invites, err := repo.ListPendingInvitesWithUnnotifiedRsvpDeadline(ctx, tomorrow, "rsvp_deadline_reminder")
+		require.NoError(t, err)
+		require.Len(t, invites, 1)
+		require.Equal(t, pending.Id, invites[0].InvitedUserID)
+	})
+
+	t.Run("ListAcceptedInvitesForUnnotifiedEventsOn", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		accepted := authtest.CreateUser(t, pool)
+		pending := authtest.CreateUser(t, pool)
+		alreadyNotified := authtest.CreateUser(t, pool)
+
+		today := time.Now().Add(2 * time.Hour)
+		ev, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: today}, owner.Id)
+		require.NoError(t, err)
+
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: accepted.Id}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.RespondToEventInvite(ctx, ev.ID, accepted.Id, InviteStateAccepted)
+		require.NoError(t, err)
+
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: pending.Id}, owner.Id)
+		require.NoError(t, err)
+
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: alreadyNotified.Id}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.RespondToEventInvite(ctx, ev.ID, alreadyNotified.Id, InviteStateAccepted)
+		require.NoError(t, err)
+		_, err = pool.Exec(ctx,
+			`INSERT INTO notifications (user_id, type, payload) VALUES ($1, 'event_starting_today', $2)`,
+			alreadyNotified.Id, map[string]any{"eventId": ev.ID},
+		)
+		require.NoError(t, err)
+
+		invites, err := repo.ListAcceptedInvitesForUnnotifiedEventsOn(ctx, today, "event_starting_today")
+		require.NoError(t, err)
+		require.Len(t, invites, 1)
+		require.Equal(t, accepted.Id, invites[0].InvitedUserID)
+	})
 }

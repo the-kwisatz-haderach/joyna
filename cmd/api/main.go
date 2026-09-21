@@ -116,6 +116,9 @@ func main() {
 		Handler: sessionManager.LoadAndSave(mux),
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	go func() {
 		slog.Info("starting server", "port", cfg.AppPort)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -123,13 +126,39 @@ func main() {
 		}
 	}()
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	go runDailyReminderScheduler(ctx, eventService)
+
 	<-ctx.Done()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		slog.Error("graceful shutdown failed", "error", err)
+	}
+}
+
+// runDailyReminderScheduler calls eventService.SendDailyReminders once a day
+// at 08:00 server time, until ctx is cancelled. There's only ever one API
+// replica (see joyna-app/templates/api-deployment.yaml), so an in-process
+// ticker is enough here without risking duplicate sends across instances;
+// the reminder queries themselves are also idempotent regardless.
+func runDailyReminderScheduler(ctx context.Context, eventService *event.Service) {
+	const reminderHour = 8
+
+	for {
+		now := time.Now()
+		next := time.Date(now.Year(), now.Month(), now.Day(), reminderHour, 0, 0, 0, now.Location())
+		if !next.After(now) {
+			next = next.AddDate(0, 0, 1)
+		}
+
+		select {
+		case <-time.After(time.Until(next)):
+			if err := eventService.SendDailyReminders(ctx, time.Now()); err != nil {
+				slog.Error("failed to send daily reminders", "error", err)
+			}
+		case <-ctx.Done():
+			return
+		}
 	}
 }

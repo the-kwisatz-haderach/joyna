@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -326,4 +327,65 @@ func (r *Repository) ForwardEventInvite(ctx context.Context, payload CreateEvent
 	}
 
 	return created, nil
+}
+
+// ListPendingInvitesWithUnnotifiedRsvpDeadline returns still-pending invites
+// whose event's RSVP deadline falls on deadline's calendar date, excluding
+// any invite whose invitee has already received a notificationType
+// notification for that event — so a daily scheduler calling this more than
+// once (or on a restart) never double-notifies.
+func (r *Repository) ListPendingInvitesWithUnnotifiedRsvpDeadline(ctx context.Context, deadline time.Time, notificationType string) ([]EventInvite, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT ei.* FROM event_invites ei
+		JOIN events e ON e.id = ei.event_id
+		WHERE ei.status = 'pending'
+		AND e.rsvp_deadline::date = $1::date
+		AND NOT EXISTS (
+			SELECT 1 FROM notifications n
+			WHERE n.user_id = ei.invited_user_id
+			AND n.type = $2
+			AND n.payload ->> 'eventId' = ei.event_id::text
+		)`,
+		deadline, notificationType,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("listing rsvp deadline invites: %w", err)
+	}
+	defer rows.Close()
+
+	invites, err := pgx.CollectRows(rows, pgx.RowToStructByName[EventInvite])
+	if err != nil {
+		return nil, fmt.Errorf("listing rsvp deadline invites: %w", err)
+	}
+	return invites, nil
+}
+
+// ListAcceptedInvitesForUnnotifiedEventsOn returns accepted invites whose
+// event takes place on date's calendar date, excluding any invite whose
+// invitee has already received a notificationType notification for that
+// event (see ListPendingInvitesWithUnnotifiedRsvpDeadline for why).
+func (r *Repository) ListAcceptedInvitesForUnnotifiedEventsOn(ctx context.Context, date time.Time, notificationType string) ([]EventInvite, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT ei.* FROM event_invites ei
+		JOIN events e ON e.id = ei.event_id
+		WHERE ei.status = 'accepted'
+		AND e.date::date = $1::date
+		AND NOT EXISTS (
+			SELECT 1 FROM notifications n
+			WHERE n.user_id = ei.invited_user_id
+			AND n.type = $2
+			AND n.payload ->> 'eventId' = ei.event_id::text
+		)`,
+		date, notificationType,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("listing event-today invites: %w", err)
+	}
+	defer rows.Close()
+
+	invites, err := pgx.CollectRows(rows, pgx.RowToStructByName[EventInvite])
+	if err != nil {
+		return nil, fmt.Errorf("listing event-today invites: %w", err)
+	}
+	return invites, nil
 }
