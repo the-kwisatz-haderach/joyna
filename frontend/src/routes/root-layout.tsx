@@ -39,7 +39,7 @@ function TopMenu() {
       {pushed ? (
         <Link
           to="/events"
-          className="-ml-1.5 flex items-center gap-2 rounded-full py-1.5 pr-2.5 pl-1.5 font-display text-lg font-semibold text-joyna-ink transition-colors hover:bg-joyna-border"
+          className="-ml-3 flex items-center gap-0.5 rounded-full py-1.5 pr-2.5 pl-1.5 font-display text-lg font-semibold text-joyna-ink transition-colors hover:bg-joyna-border"
         >
           <HugeiconsIcon
             icon={ArrowLeft01Icon}
