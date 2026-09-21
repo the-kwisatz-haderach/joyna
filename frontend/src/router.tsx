@@ -11,6 +11,7 @@ import EditEvent from './routes/edit-event'
 import RequireAuth from './routes/require-auth'
 import RequireGuest from './routes/require-guest'
 import Network from './routes/network'
+import NetworkAdd from './routes/network-add'
 import Notifications from './routes/notifications'
 import Profile from './routes/profile'
 
@@ -72,6 +73,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <Network />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'network/add',
+        element: (
+          <RequireAuth>
+            <NetworkAdd />
           </RequireAuth>
         ),
       },

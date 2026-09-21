@@ -1,9 +1,9 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
-import { afterEach, describe, expect, it } from 'vitest'
+import {render, screen, waitFor, within} from '@testing-library/react'
+import {MemoryRouter} from 'react-router'
+import {afterEach, describe, expect, it} from 'vitest'
 
-import { AuthProvider } from '../auth-context'
-import { mockUsers } from '../mocks/data'
+import {AuthProvider} from '../auth-context'
+import {mockUsers} from '../mocks/data'
 import RootLayout from './root-layout'
 
 function renderRootLayout(initialEntries: string[] = ['/']) {
@@ -38,7 +38,7 @@ describe('RootLayout', () => {
 
     expect(screen.queryByRole('banner')).not.toBeInTheDocument()
     expect(
-      screen.queryByRole('navigation', { name: 'Primary' }),
+      screen.queryByRole('navigation', {name: 'Primary'}),
     ).not.toBeInTheDocument()
   })
 
@@ -49,26 +49,26 @@ describe('RootLayout', () => {
 
     const topMenu = within(screen.getByRole('banner'))
     expect(topMenu.getByText('Events')).toBeInTheDocument()
-    expect(topMenu.getByRole('link', { name: /notifications/i })).toHaveAttribute(
+    expect(topMenu.getByRole('link', {name: /notifications/i})).toHaveAttribute(
       'href',
       '/notifications',
     )
-    expect(topMenu.getByRole('link', { name: /^profile$/i })).toHaveAttribute(
+    expect(topMenu.getByRole('link', {name: /^profile$/i})).toHaveAttribute(
       'href',
       '/profile',
     )
 
-    const bottomMenu = within(screen.getByRole('navigation', { name: 'Primary' }))
-    expect(bottomMenu.getByRole('link', { name: /^events$/i })).toHaveAttribute(
+    const bottomMenu = within(screen.getByRole('navigation', {name: 'Primary'}))
+    expect(bottomMenu.getByRole('link', {name: /^events$/i})).toHaveAttribute(
       'href',
       '/events',
     )
-    expect(bottomMenu.getByRole('link', { name: /^network$/i })).toHaveAttribute(
+    expect(bottomMenu.getByRole('link', {name: /^network$/i})).toHaveAttribute(
       'href',
       '/network',
     )
     expect(
-      bottomMenu.getByRole('link', { name: /create event/i }),
+      bottomMenu.getByRole('link', {name: /create event/i}),
     ).toHaveAttribute('href', '/events/new')
   })
 
@@ -87,12 +87,12 @@ describe('RootLayout', () => {
     renderRootLayout(['/events/c1a2b3c4-1111-4a1a-8a1a-000000000001'])
 
     const topMenu = within(screen.getByRole('banner'))
-    const backLink = topMenu.getByRole('link', { name: /events/i })
+    const backLink = topMenu.getByRole('link', {name: /events/i})
     expect(backLink).toHaveAttribute('href', '/events')
     expect(backLink.querySelector('svg')).toBeInTheDocument()
     expect(backLink).not.toHaveTextContent('<')
     expect(
-      screen.queryByRole('navigation', { name: 'Primary' }),
+      screen.queryByRole('navigation', {name: 'Primary'}),
     ).not.toBeInTheDocument()
   })
 
@@ -101,9 +101,9 @@ describe('RootLayout', () => {
 
     renderRootLayout(['/network'])
 
-    const bottomMenu = within(screen.getByRole('navigation', { name: 'Primary' }))
+    const bottomMenu = within(screen.getByRole('navigation', {name: 'Primary'}))
     expect(
-      bottomMenu.queryByRole('link', { name: /create event/i }),
+      bottomMenu.queryByRole('link', {name: /create event/i}),
     ).not.toBeInTheDocument()
   })
 
@@ -112,9 +112,9 @@ describe('RootLayout', () => {
 
     renderRootLayout(['/'])
 
-    const bottomMenu = within(screen.getByRole('navigation', { name: 'Primary' }))
+    const bottomMenu = within(screen.getByRole('navigation', {name: 'Primary'}))
     expect(
-      bottomMenu.getByRole('link', { name: /create event/i }),
+      bottomMenu.getByRole('link', {name: /create event/i}),
     ).toHaveAttribute('href', '/events/new')
   })
 
@@ -125,7 +125,7 @@ describe('RootLayout', () => {
 
     const topMenu = within(screen.getByRole('banner'))
     expect(
-      await topMenu.findByRole('link', { name: /notifications \(unread\)/i }),
+      await topMenu.findByRole('link', {name: /notifications \(unread\)/i}),
     ).toBeInTheDocument()
   })
 
@@ -136,8 +136,34 @@ describe('RootLayout', () => {
 
     const topMenu = within(screen.getByRole('banner'))
     await waitFor(() => {
-      expect(topMenu.getByRole('link', { name: /^notifications$/i })).toBeInTheDocument()
+      expect(
+        topMenu.getByRole('link', {name: /^notifications$/i}),
+      ).toBeInTheDocument()
     })
+  })
+
+  it('shows a dummy Manage button on the network route', () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/network'])
+
+    const bottomMenu = within(screen.getByRole('navigation', {name: 'Primary'}))
+    expect(
+      bottomMenu.getByRole('button', {name: /manage/i}),
+    ).toBeInTheDocument()
+  })
+
+  it('shows a "Network" back link and hides the bottom nav on the add-by-email route', () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/network/add'])
+
+    const topMenu = within(screen.getByRole('banner'))
+    const backLink = topMenu.getByRole('link', {name: /network/i})
+    expect(backLink).toHaveAttribute('href', '/network')
+    expect(
+      screen.queryByRole('navigation', {name: 'Primary'}),
+    ).not.toBeInTheDocument()
   })
 
   it('shows the bottom nav with an active but clickable Events link on the all events route', () => {
@@ -145,8 +171,8 @@ describe('RootLayout', () => {
 
     renderRootLayout(['/events/all'])
 
-    const bottomMenu = within(screen.getByRole('navigation', { name: 'Primary' }))
-    const eventsLink = bottomMenu.getByRole('link', { name: /^events$/i })
+    const bottomMenu = within(screen.getByRole('navigation', {name: 'Primary'}))
+    const eventsLink = bottomMenu.getByRole('link', {name: /^events$/i})
     expect(eventsLink).toHaveAttribute('href', '/events')
     expect(eventsLink.className).toMatch(/bg-joyna-ink/)
   })

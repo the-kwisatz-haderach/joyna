@@ -1,12 +1,16 @@
 package network
 
-import "context"
+import (
+	"context"
+	"strings"
+)
 
 type repository interface {
 	ListConnections(ctx context.Context, ownerID string) ([]Connection, error)
 	ListPotentialConnections(ctx context.Context, ownerID string) ([]PotentialConnection, error)
 	CreateConnection(ctx context.Context, payload CreateConnectionPayload, ownerID string) (Connection, error)
 	UpdateConnection(ctx context.Context, payload UpdateConnectionPayload, contactID, ownerID string) (Connection, error)
+	FindUserByEmail(ctx context.Context, email string) (EmailLookupResult, error)
 }
 
 type Service struct {
@@ -34,4 +38,12 @@ func (s *Service) CreateConnection(ctx context.Context, payload CreateConnection
 
 func (s *Service) UpdateConnection(ctx context.Context, payload UpdateConnectionPayload, contactID, ownerID string) (Connection, error) {
 	return s.repo.UpdateConnection(ctx, payload, contactID, ownerID)
+}
+
+func (s *Service) FindUserByEmail(ctx context.Context, email string) (EmailLookupResult, error) {
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return EmailLookupResult{}, ErrEmailRequired
+	}
+	return s.repo.FindUserByEmail(ctx, email)
 }

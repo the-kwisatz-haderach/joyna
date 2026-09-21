@@ -115,6 +115,50 @@ func TestNetworkRepository(t *testing.T) {
 		require.ErrorIs(t, err, ErrConnectionNotFound)
 	})
 
+	t.Run("ListConnections includes events together count", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		contact := authtest.CreateUser(t, pool)
+		stranger := authtest.CreateUser(t, pool)
+
+		_, err := repo.CreateConnection(ctx, CreateConnectionPayload{ContactID: contact.Id}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.CreateConnection(ctx, CreateConnectionPayload{ContactID: stranger.Id}, owner.Id)
+		require.NoError(t, err)
+
+		ownedEvent, err := eventRepo.CreateEvent(ctx, event.CreateEventPayload{Type: "dinner"}, owner.Id)
+		require.NoError(t, err)
+		_, err = eventRepo.CreateEventInvite(ctx, event.CreateEventInvitePayload{EventID: ownedEvent.ID, InvitedUserID: contact.Id}, owner.Id)
+		require.NoError(t, err)
+
+		contactsEvent, err := eventRepo.CreateEvent(ctx, event.CreateEventPayload{Type: "dinner"}, contact.Id)
+		require.NoError(t, err)
+		_, err = eventRepo.CreateEventInvite(ctx, event.CreateEventInvitePayload{EventID: contactsEvent.ID, InvitedUserID: owner.Id}, contact.Id)
+		require.NoError(t, err)
+
+		connections, err := repo.ListConnections(ctx, owner.Id)
+		require.NoError(t, err)
+
+		counts := make(map[string]int)
+		for _, c := range connections {
+			counts[c.ContactID] = c.EventsTogetherCount
+		}
+		require.Equal(t, 2, counts[contact.Id])
+		require.Equal(t, 0, counts[stranger.Id])
+	})
+
+	t.Run("FindUserByEmail", func(t *testing.T) {
+		user := authtest.CreateUser(t, pool)
+
+		found, err := repo.FindUserByEmail(ctx, user.Email)
+		require.NoError(t, err)
+		require.Equal(t, user.Id, found.UserID)
+		require.Equal(t, user.Name, found.Name)
+		require.Equal(t, user.Email, found.Email)
+
+		_, err = repo.FindUserByEmail(ctx, "no-such-user@example.com")
+		require.ErrorIs(t, err, ErrUserNotFound)
+	})
+
 	t.Run("ListPotentialConnections", func(t *testing.T) {
 		owner := authtest.CreateUser(t, pool)
 		attendee := authtest.CreateUser(t, pool)

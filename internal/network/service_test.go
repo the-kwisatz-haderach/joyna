@@ -13,6 +13,7 @@ type fakeRepository struct {
 	listPotentialConnectionsFunc func(ctx context.Context, ownerID string) ([]PotentialConnection, error)
 	createConnectionFunc         func(ctx context.Context, payload CreateConnectionPayload, ownerID string) (Connection, error)
 	updateConnectionFunc         func(ctx context.Context, payload UpdateConnectionPayload, contactID, ownerID string) (Connection, error)
+	findUserByEmailFunc          func(ctx context.Context, email string) (EmailLookupResult, error)
 }
 
 func (f *fakeRepository) ListConnections(ctx context.Context, ownerID string) ([]Connection, error) {
@@ -29,6 +30,10 @@ func (f *fakeRepository) CreateConnection(ctx context.Context, payload CreateCon
 
 func (f *fakeRepository) UpdateConnection(ctx context.Context, payload UpdateConnectionPayload, contactID, ownerID string) (Connection, error) {
 	return f.updateConnectionFunc(ctx, payload, contactID, ownerID)
+}
+
+func (f *fakeRepository) FindUserByEmail(ctx context.Context, email string) (EmailLookupResult, error) {
+	return f.findUserByEmailFunc(ctx, email)
 }
 
 func TestListConnections(t *testing.T) {
@@ -117,4 +122,36 @@ func TestUpdateConnection_NotFound(t *testing.T) {
 	service := NewService(repo)
 	_, err := service.UpdateConnection(context.Background(), UpdateConnectionPayload{}, "contact-id", "owner-id")
 	require.ErrorIs(t, err, ErrConnectionNotFound)
+}
+
+func TestFindUserByEmail(t *testing.T) {
+	want := EmailLookupResult{UserID: "user-id", Name: "Priya Shah", Email: "priya@example.com"}
+	repo := &fakeRepository{
+		findUserByEmailFunc: func(ctx context.Context, email string) (EmailLookupResult, error) {
+			require.Equal(t, "priya@example.com", email)
+			return want, nil
+		},
+	}
+	service := NewService(repo)
+	got, err := service.FindUserByEmail(context.Background(), "  priya@example.com  ")
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestFindUserByEmail_EmptyEmail(t *testing.T) {
+	repo := &fakeRepository{}
+	service := NewService(repo)
+	_, err := service.FindUserByEmail(context.Background(), "   ")
+	require.ErrorIs(t, err, ErrEmailRequired)
+}
+
+func TestFindUserByEmail_NotFound(t *testing.T) {
+	repo := &fakeRepository{
+		findUserByEmailFunc: func(ctx context.Context, email string) (EmailLookupResult, error) {
+			return EmailLookupResult{}, ErrUserNotFound
+		},
+	}
+	service := NewService(repo)
+	_, err := service.FindUserByEmail(context.Background(), "missing@example.com")
+	require.ErrorIs(t, err, ErrUserNotFound)
 }

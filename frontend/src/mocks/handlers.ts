@@ -37,7 +37,22 @@ function serializeConnection(connection: MockConnection) {
     groupId: group?.id,
     groupName: group?.name,
     groupIsFavorite: group?.isFavorite,
+    eventsTogetherCount: eventsTogetherCount(connection.userId, connection.contactId),
   }
+}
+
+// Mirrors internal/network's LATERAL join: how many events both users attended
+// (as owner or non-declined invitee), counted once even if it also shows up
+// via listPotentialConnections' shared-event logic.
+function eventsTogetherCount(userId: string, contactId: string): number {
+  let count = 0
+  for (const evt of events) {
+    const attendees = eventAttendees(evt.id)
+    if (attendees.has(userId) && attendees.has(contactId)) {
+      count += 1
+    }
+  }
+  return count
 }
 
 // Attendees of an event: its owner, plus anyone invited whose invite hasn't
@@ -422,6 +437,18 @@ export const handlers = [
 
   http.get("/api/network/potential", () => {
     return HttpResponse.json(listPotentialConnections(currentUser.id))
+  }),
+
+  http.get("/api/network/lookup", ({ request }) => {
+    const email = new URL(request.url).searchParams.get("email")?.trim()
+    if (!email) {
+      return new HttpResponse("email is required", { status: 400 })
+    }
+    const user = mockUsers.find((candidate) => candidate.email === email)
+    if (!user) {
+      return new HttpResponse("user not found", { status: 404 })
+    }
+    return HttpResponse.json({ userId: user.id, name: user.name, email: user.email })
   }),
 
   http.post("/api/network", async ({ request }) => {

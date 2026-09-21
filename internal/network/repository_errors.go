@@ -11,6 +11,7 @@ var (
 	ErrConnectionAlreadyExists = errors.New("connection already exists")
 	ErrContactNotFound         = errors.New("contact not found")
 	ErrGroupNotFound           = errors.New("connection group not found")
+	ErrUserNotFound            = errors.New("user not found")
 )
 
 const (

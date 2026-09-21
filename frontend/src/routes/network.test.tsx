@@ -32,25 +32,37 @@ describe("Network", () => {
     localStorage.clear()
   })
 
-  it("shows the current network grouped, with a favorite indicator", async () => {
+  it("shows the current network grouped, with a favorite indicator and events-together counts", async () => {
     renderNetwork()
-
-    expect(
-      await screen.findByRole("heading", { name: /current network/i }),
-    ).toBeInTheDocument()
 
     const groupHeading = await screen.findByRole("heading", {
       name: /close friends/i,
     })
-    expect(groupHeading).toBeInTheDocument()
     expect(within(groupHeading).getByLabelText("favorite")).toBeInTheDocument()
     expect(screen.getByText("Alan Turing")).toBeInTheDocument()
+    expect(screen.getByText("4 events together")).toBeInTheDocument()
+
+    expect(
+      await screen.findByRole("heading", { name: /acquaintances/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByText("Grace Hopper")).toBeInTheDocument()
+    expect(screen.getByText("0 events together")).toBeInTheDocument()
+  })
+
+  it("links to the add-by-email screen", async () => {
+    renderNetwork()
+
+    const addLink = await screen.findByRole("link", { name: /add by email/i })
+    expect(addLink).toHaveAttribute("href", "/network/add")
   })
 
   it("shows the potential network with shared event counts", async () => {
     renderNetwork()
 
-    expect(await screen.findByText("Margaret Hamilton")).toBeInTheDocument()
+    expect(
+      await screen.findByRole("heading", { name: /people you may know/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByText("Margaret Hamilton")).toBeInTheDocument()
     expect(screen.getByText("Hedy Lamarr")).toBeInTheDocument()
     expect(screen.getAllByRole("button", { name: /add/i }).length).toBeGreaterThan(0)
   })
@@ -64,10 +76,32 @@ describe("Network", () => {
     ) as HTMLElement
     await user.click(within(potentialItem).getByRole("button", { name: /add/i }))
 
-    await screen.findByRole("heading", { name: /acquaintances/i })
-
-    // She should now appear exactly once — grouped into the current network —
-    // instead of showing up in both the current and potential sections.
+    // She joins the existing "Acquaintances" group rather than spawning a
+    // second one, and disappears from the potential-network suggestions —
+    // leaving exactly one occurrence of her name on the page.
     expect(await screen.findAllByText("Margaret Hamilton")).toHaveLength(1)
+    expect(screen.getAllByRole("heading", { name: /acquaintances/i })).toHaveLength(1)
+  })
+
+  it("filters contacts by name", async () => {
+    const user = userEvent.setup()
+    renderNetwork()
+
+    await screen.findByText("Alan Turing")
+    await user.type(screen.getByLabelText(/search your network/i), "Grace")
+
+    expect(screen.getByText("Grace Hopper")).toBeInTheDocument()
+    expect(screen.queryByText("Alan Turing")).not.toBeInTheDocument()
+  })
+
+  it("filters by group name, keeping every contact in a matching group", async () => {
+    const user = userEvent.setup()
+    renderNetwork()
+
+    await screen.findByText("Alan Turing")
+    await user.type(screen.getByLabelText(/search your network/i), "Close Friends")
+
+    expect(screen.getByText("Alan Turing")).toBeInTheDocument()
+    expect(screen.queryByText("Grace Hopper")).not.toBeInTheDocument()
   })
 })

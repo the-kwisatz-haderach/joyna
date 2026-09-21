@@ -108,6 +108,7 @@ func main() {
 	// Network handlers
 	mux.HandleFunc("GET /network", authHandler.Middleware(networkHandler.GetConnections))
 	mux.HandleFunc("GET /network/potential", authHandler.Middleware(networkHandler.GetPotentialConnections))
+	mux.HandleFunc("GET /network/lookup", authHandler.Middleware(networkHandler.LookupUserByEmail))
 	mux.HandleFunc("POST /network", authHandler.Middleware(networkHandler.CreateConnection))
 	mux.HandleFunc("PATCH /network/{contactId}", authHandler.Middleware(networkHandler.UpdateConnection))
 
