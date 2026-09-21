@@ -459,24 +459,26 @@ function EventDetail() {
               <label className="text-sm text-joyna-ink" htmlFor="decline-note">
                 Let the host know why (optional)
               </label>
-              <Textarea
-                id="decline-note"
-                value={declineNote}
-                onChange={(e) => {
-                  setDeclineNote(e.target.value)
-                  setNoteSaved(false)
-                }}
-                rows={3}
-                className="rounded-field"
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                className="h-10 self-end rounded-control font-display text-sm"
-                onClick={() => setNoteSaved(true)}
-              >
-                {noteSaved ? 'Saved' : 'Save note'}
-              </Button>
+              <div className="relative">
+                <Textarea
+                  id="decline-note"
+                  value={declineNote}
+                  onChange={(e) => {
+                    setDeclineNote(e.target.value)
+                    setNoteSaved(false)
+                  }}
+                  rows={4}
+                  className="rounded-field pb-14"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="absolute right-3 bottom-3 h-10 rounded-control font-display text-sm"
+                  onClick={() => setNoteSaved(true)}
+                >
+                  {noteSaved ? 'Saved' : 'Save note'}
+                </Button>
+              </div>
             </div>
           )}
         </div>

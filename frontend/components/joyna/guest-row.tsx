@@ -6,6 +6,7 @@ import {
   Tick02Icon,
 } from '@hugeicons/core-free-icons'
 import {GuestAvatar} from './guest-avatar'
+import {HostBadge} from './host-badge'
 import {cn} from '@/lib/utils'
 
 export type GuestStatus = 'going' | 'pending' | 'not_attending'
@@ -134,7 +135,15 @@ export function GuestRow({
         </div>
       ) : (
         <>
-          <span className={guest.isHost ? '' : 'flex-1'}>{guest.name}</span>
+          <span
+            className={cn(
+              'flex items-center gap-1.5',
+              !guest.isHost && 'flex-1',
+            )}
+          >
+            {guest.name}
+            {guest.isHost && <HostBadge />}
+          </span>
           {trailing}
         </>
       )}
