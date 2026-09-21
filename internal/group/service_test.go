@@ -9,9 +9,14 @@ import (
 )
 
 type fakeRepository struct {
+	listGroupsFunc  func(ctx context.Context, ownerID string) ([]Group, error)
 	createGroupFunc func(ctx context.Context, group CreateGroupPayload, ownerID string) (Group, error)
 	updateGroupFunc func(ctx context.Context, groupUpdate UpdateGroupPayload, groupID, ownerID string) (Group, error)
 	deleteGroupFunc func(ctx context.Context, groupID, ownerID string) error
+}
+
+func (f *fakeRepository) ListGroups(ctx context.Context, ownerID string) ([]Group, error) {
+	return f.listGroupsFunc(ctx, ownerID)
 }
 
 func (f *fakeRepository) CreateGroup(ctx context.Context, group CreateGroupPayload, ownerID string) (Group, error) {
@@ -24,6 +29,32 @@ func (f *fakeRepository) UpdateGroup(ctx context.Context, groupUpdate UpdateGrou
 
 func (f *fakeRepository) DeleteGroup(ctx context.Context, groupID, ownerID string) error {
 	return f.deleteGroupFunc(ctx, groupID, ownerID)
+}
+
+func TestListGroups(t *testing.T) {
+	groups := []Group{{ID: "group-id", Name: "friends"}}
+	var repo = &fakeRepository{
+		listGroupsFunc: func(ctx context.Context, ownerID string) ([]Group, error) {
+			require.Equal(t, "owner-id", ownerID)
+			return groups, nil
+		},
+	}
+	service := NewService(repo)
+	got, err := service.ListGroups(context.Background(), "owner-id")
+	require.NoError(t, err)
+	require.Equal(t, groups, got)
+}
+
+func TestListGroups_RepositoryError(t *testing.T) {
+	repoErr := errors.New("boom")
+	var repo = &fakeRepository{
+		listGroupsFunc: func(ctx context.Context, ownerID string) ([]Group, error) {
+			return nil, repoErr
+		},
+	}
+	service := NewService(repo)
+	_, err := service.ListGroups(context.Background(), "owner-id")
+	require.ErrorIs(t, err, repoErr)
 }
 
 func TestCreateGroup(t *testing.T) {

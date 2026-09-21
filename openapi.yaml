@@ -409,6 +409,31 @@ paths:
                 type: string
 
   /groups:
+    get:
+      tags: [Groups]
+      summary: List the caller's groups
+      description: >
+        Returns every group the caller owns, including groups with no members
+        yet — unlike deriving groups from GET /network, this surfaces a group
+        immediately after creation.
+      operationId: listGroups
+      responses:
+        '200':
+          description: The caller's groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
     post:
       tags: [Groups]
       summary: Create a new group

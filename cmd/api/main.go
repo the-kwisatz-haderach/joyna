@@ -101,6 +101,7 @@ func main() {
 	mux.HandleFunc("GET /notifications/unread-count", authHandler.Middleware(notificationHandler.GetUnreadCount))
 
 	// Group handlers
+	mux.HandleFunc("GET /groups", authHandler.Middleware(groupHandler.ListGroups))
 	mux.HandleFunc("POST /groups", authHandler.Middleware(groupHandler.CreateGroup))
 	mux.HandleFunc("PATCH /groups/{id}", authHandler.Middleware(groupHandler.UpdateGroup))
 	mux.HandleFunc("DELETE /groups/{id}", authHandler.Middleware(groupHandler.DeleteGroup))

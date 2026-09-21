@@ -142,21 +142,34 @@ describe('RootLayout', () => {
     })
   })
 
-  it('shows a dummy Manage button on the network route', () => {
+  it('shows a Manage link to the manage-network route on the network route', () => {
     loginAsMockUser()
 
     renderRootLayout(['/network'])
 
     const bottomMenu = within(screen.getByRole('navigation', {name: 'Primary'}))
     expect(
-      bottomMenu.getByRole('button', {name: /manage/i}),
-    ).toBeInTheDocument()
+      bottomMenu.getByRole('link', {name: /manage/i}),
+    ).toHaveAttribute('href', '/network/manage')
   })
 
   it('shows a "Network" back link and hides the bottom nav on the add-by-email route', () => {
     loginAsMockUser()
 
     renderRootLayout(['/network/add'])
+
+    const topMenu = within(screen.getByRole('banner'))
+    const backLink = topMenu.getByRole('link', {name: /network/i})
+    expect(backLink).toHaveAttribute('href', '/network')
+    expect(
+      screen.queryByRole('navigation', {name: 'Primary'}),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows a "Network" back link and hides the bottom nav on the manage-network route', () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/network/manage'])
 
     const topMenu = within(screen.getByRole('banner'))
     const backLink = topMenu.getByRole('link', {name: /network/i})

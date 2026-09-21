@@ -60,7 +60,7 @@ function getBackTarget(pathname: string): { to: string; label: string } | null {
   ) {
     return { to: '/events', label: 'Events' }
   }
-  if (pathname === '/network/add') {
+  if (pathname === '/network/add' || pathname === '/network/manage') {
     return { to: '/network', label: 'Network' }
   }
   return null
@@ -189,14 +189,13 @@ function BottomMenu() {
         </Link>
       )}
       {networkActive && (
-        // Dummy for now — will navigate to the network management screen once
-        // that's built out separately.
-        <button
-          type="button"
+        <Link
+          to="/network/manage"
+          aria-label="Manage network"
           className="flex h-11 shrink-0 items-center justify-center rounded-full bg-joyna-coral px-5 font-display text-sm font-semibold text-white transition-transform active:scale-95"
         >
           Manage
-        </button>
+        </Link>
       )}
     </nav>
   )
