@@ -10,6 +10,7 @@ type repository interface {
 	ListPotentialConnections(ctx context.Context, ownerID string) ([]PotentialConnection, error)
 	CreateConnection(ctx context.Context, payload CreateConnectionPayload, ownerID string) (Connection, error)
 	UpdateConnection(ctx context.Context, payload UpdateConnectionPayload, contactID, ownerID string) (Connection, error)
+	DeleteConnection(ctx context.Context, contactID, ownerID string) error
 	FindUserByEmail(ctx context.Context, email string) (EmailLookupResult, error)
 }
 
@@ -38,6 +39,10 @@ func (s *Service) CreateConnection(ctx context.Context, payload CreateConnection
 
 func (s *Service) UpdateConnection(ctx context.Context, payload UpdateConnectionPayload, contactID, ownerID string) (Connection, error) {
 	return s.repo.UpdateConnection(ctx, payload, contactID, ownerID)
+}
+
+func (s *Service) DeleteConnection(ctx context.Context, contactID, ownerID string) error {
+	return s.repo.DeleteConnection(ctx, contactID, ownerID)
 }
 
 func (s *Service) FindUserByEmail(ctx context.Context, email string) (EmailLookupResult, error) {

@@ -108,18 +108,23 @@ function groupConnections(connections: NetworkConnection[]) {
 
 function ContactRow({ contact }: { contact: NetworkConnection }) {
   return (
-    <li className="flex items-center justify-between gap-3 py-2">
-      <div className="flex min-w-0 items-center gap-3">
-        <GuestAvatar name={contact.contactName} />
-        <span className="flex items-center gap-1.5 truncate font-display text-sm font-semibold text-joyna-ink">
-          {contact.contactName}
-          {contact.isFavorite && <FavoriteBadge />}
-        </span>
-      </div>
-      <div className="flex shrink-0 items-center gap-1.5 text-xs text-joyna-ink-faint">
-        {eventsTogetherLabel(contact.eventsTogetherCount)}
-        <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
-      </div>
+    <li>
+      <Link
+        to={`/network/${contact.contactId}`}
+        className="flex items-center justify-between gap-3 py-2"
+      >
+        <div className="flex min-w-0 items-center gap-3">
+          <GuestAvatar name={contact.contactName} />
+          <span className="flex items-center gap-1.5 truncate font-display text-sm font-semibold text-joyna-ink">
+            {contact.contactName}
+            {contact.isFavorite && <FavoriteBadge />}
+          </span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5 text-xs text-joyna-ink-faint">
+          {eventsTogetherLabel(contact.eventsTogetherCount)}
+          <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
+        </div>
+      </Link>
     </li>
   )
 }

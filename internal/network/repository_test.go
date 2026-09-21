@@ -194,4 +194,26 @@ func TestNetworkRepository(t *testing.T) {
 		require.NotContains(t, ids, alreadyConnected.Id)
 		require.NotContains(t, ids, stranger.Id)
 	})
+
+	t.Run("DeleteConnection", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		contact := authtest.CreateUser(t, pool)
+
+		_, err := repo.CreateConnection(ctx, CreateConnectionPayload{ContactID: contact.Id}, owner.Id)
+		require.NoError(t, err)
+
+		err = repo.DeleteConnection(ctx, contact.Id, owner.Id)
+		require.NoError(t, err)
+
+		connections, err := repo.ListConnections(ctx, owner.Id)
+		require.NoError(t, err)
+		require.Empty(t, connections)
+	})
+
+	t.Run("DeleteConnection not found", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+
+		err := repo.DeleteConnection(ctx, uuid.NewString(), owner.Id)
+		require.ErrorIs(t, err, ErrConnectionNotFound)
+	})
 }

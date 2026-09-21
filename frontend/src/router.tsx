@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router'
+import {createBrowserRouter} from 'react-router'
 
 import RootLayout from './routes/root-layout'
 import Login from './routes/login'
@@ -13,6 +13,7 @@ import RequireGuest from './routes/require-guest'
 import Network from './routes/network'
 import NetworkAdd from './routes/network-add'
 import NetworkManage from './routes/network-manage'
+import NetworkProfile from './routes/network-profile'
 import Notifications from './routes/notifications'
 import Profile from './routes/profile'
 
@@ -90,6 +91,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <NetworkManage />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'network/:contactId',
+        element: (
+          <RequireAuth>
+            <NetworkProfile />
           </RequireAuth>
         ),
       },

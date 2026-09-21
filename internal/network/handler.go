@@ -155,3 +155,29 @@ func (h *Handler) UpdateConnection(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(updated)
 }
+
+func (h *Handler) DeleteConnection(w http.ResponseWriter, r *http.Request) {
+	contactID := r.PathValue("contactId")
+	if err := uuid.Validate(contactID); err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	ownerID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := h.service.DeleteConnection(r.Context(), contactID, ownerID); err != nil {
+		if errors.Is(err, ErrConnectionNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		slog.Error("failed to delete connection", "error", err)
+		http.Error(w, "failed to delete connection", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

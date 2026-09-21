@@ -182,3 +182,17 @@ func (r *Repository) UpdateConnection(ctx context.Context, payload UpdateConnect
 	}
 	return updated, nil
 }
+
+func (r *Repository) DeleteConnection(ctx context.Context, contactID, ownerID string) error {
+	tag, err := r.pool.Exec(ctx,
+		`DELETE FROM connections WHERE user_id = $1 AND contact_id = $2`,
+		ownerID, contactID,
+	)
+	if err != nil {
+		return fmt.Errorf("deleting connection: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrConnectionNotFound
+	}
+	return nil
+}

@@ -52,16 +52,16 @@ function isPushedPath(pathname: string): boolean {
 
 // Pushed screens show a "‹ <label>" back link (to <to>) instead of a static
 // title, and hide the bottom nav — see isPushedPath/showBottomMenu below.
-function getBackTarget(pathname: string): { to: string; label: string } | null {
+function getBackTarget(pathname: string): {to: string; label: string} | null {
   if (
     pathname === '/events/new' ||
     /^\/events\/[^/]+\/edit$/.test(pathname) ||
     (pathname !== '/events/all' && /^\/events\/[^/]+$/.test(pathname))
   ) {
-    return { to: '/events', label: 'Events' }
+    return {to: '/events', label: 'Events'}
   }
-  if (pathname === '/network/add' || pathname === '/network/manage') {
-    return { to: '/network', label: 'Network' }
+  if (pathname === '/network/add' || /^\/network\/[^/]+$/.test(pathname)) {
+    return {to: '/network', label: 'Network'}
   }
   return null
 }
@@ -108,7 +108,9 @@ function TopMenu() {
       <nav aria-label="Account" className="flex items-center gap-2">
         <Link
           to="/notifications"
-          aria-label={showUnreadBadge ? 'Notifications (unread)' : 'Notifications'}
+          aria-label={
+            showUnreadBadge ? 'Notifications (unread)' : 'Notifications'
+          }
           className={cn(
             'relative flex h-10 w-10 items-center justify-center rounded-control border transition-colors',
             pathname === '/notifications'
@@ -151,7 +153,8 @@ function TopMenu() {
 
 function BottomMenu() {
   const {pathname} = useLocation()
-  const eventsActive = pathname === '/' || pathname === '/events' || pathname === '/events/all'
+  const eventsActive =
+    pathname === '/' || pathname === '/events' || pathname === '/events/all'
   const networkActive = pathname === '/network'
 
   return (

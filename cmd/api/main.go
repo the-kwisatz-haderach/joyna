@@ -112,6 +112,7 @@ func main() {
 	mux.HandleFunc("GET /network/lookup", authHandler.Middleware(networkHandler.LookupUserByEmail))
 	mux.HandleFunc("POST /network", authHandler.Middleware(networkHandler.CreateConnection))
 	mux.HandleFunc("PATCH /network/{contactId}", authHandler.Middleware(networkHandler.UpdateConnection))
+	mux.HandleFunc("DELETE /network/{contactId}", authHandler.Middleware(networkHandler.DeleteConnection))
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.AppPort),
