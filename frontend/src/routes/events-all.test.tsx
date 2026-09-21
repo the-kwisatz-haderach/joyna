@@ -60,10 +60,15 @@ describe('AllEvents', () => {
   })
 
   it('fades past events', async () => {
+    const user = userEvent.setup()
     loginAsMockUser()
     renderAllEvents()
 
-    // "Coffee Catchup" is 20 days in the past but still lands on page 1.
+    // "Coffee Catchup" is 20 days in the past; search for it directly since
+    // its page position shifts as fixtures are added/removed.
+    await screen.findByRole('heading', { name: /all events/i })
+    await user.type(screen.getByLabelText(/search events/i), 'coffee catchup')
+
     const link = await screen.findByRole('link', { name: /coffee catchup/i })
     expect(link.className).toMatch(/opacity-60/)
   })
