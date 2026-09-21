@@ -13,6 +13,7 @@ type fakeRepository struct {
 	listPotentialConnectionsFunc func(ctx context.Context, ownerID string) ([]PotentialConnection, error)
 	createConnectionFunc         func(ctx context.Context, payload CreateConnectionPayload, ownerID string) (Connection, error)
 	updateConnectionFunc         func(ctx context.Context, payload UpdateConnectionPayload, contactID, ownerID string) (Connection, error)
+	deleteConnectionFunc         func(ctx context.Context, contactID, ownerID string) error
 	findUserByEmailFunc          func(ctx context.Context, email string) (EmailLookupResult, error)
 }
 
@@ -30,6 +31,10 @@ func (f *fakeRepository) CreateConnection(ctx context.Context, payload CreateCon
 
 func (f *fakeRepository) UpdateConnection(ctx context.Context, payload UpdateConnectionPayload, contactID, ownerID string) (Connection, error) {
 	return f.updateConnectionFunc(ctx, payload, contactID, ownerID)
+}
+
+func (f *fakeRepository) DeleteConnection(ctx context.Context, contactID, ownerID string) error {
+	return f.deleteConnectionFunc(ctx, contactID, ownerID)
 }
 
 func (f *fakeRepository) FindUserByEmail(ctx context.Context, email string) (EmailLookupResult, error) {
@@ -121,6 +126,30 @@ func TestUpdateConnection_NotFound(t *testing.T) {
 	}
 	service := NewService(repo)
 	_, err := service.UpdateConnection(context.Background(), UpdateConnectionPayload{}, "contact-id", "owner-id")
+	require.ErrorIs(t, err, ErrConnectionNotFound)
+}
+
+func TestDeleteConnection(t *testing.T) {
+	repo := &fakeRepository{
+		deleteConnectionFunc: func(ctx context.Context, contactID, ownerID string) error {
+			require.Equal(t, "contact-id", contactID)
+			require.Equal(t, "owner-id", ownerID)
+			return nil
+		},
+	}
+	service := NewService(repo)
+	err := service.DeleteConnection(context.Background(), "contact-id", "owner-id")
+	require.NoError(t, err)
+}
+
+func TestDeleteConnection_NotFound(t *testing.T) {
+	repo := &fakeRepository{
+		deleteConnectionFunc: func(ctx context.Context, contactID, ownerID string) error {
+			return ErrConnectionNotFound
+		},
+	}
+	service := NewService(repo)
+	err := service.DeleteConnection(context.Background(), "contact-id", "owner-id")
 	require.ErrorIs(t, err, ErrConnectionNotFound)
 }
 

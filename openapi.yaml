@@ -726,6 +726,35 @@ paths:
             text/plain:
               schema:
                 type: string
+    delete:
+      tags: [Network]
+      summary: Remove a contact from the caller's network
+      operationId: deleteConnection
+      parameters:
+        - $ref: '#/components/parameters/ContactId'
+      responses:
+        '204':
+          description: Connection removed
+        '400':
+          description: Invalid id
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Connection not found
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
 
 components:
   parameters:

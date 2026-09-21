@@ -68,3 +68,12 @@ Content-Type: application/json
 {
   "isFavorite": true
 }
+
+### Remove a contact from your network
+DELETE {{baseUrl}}/network/00000000-0000-0000-0000-000000000000
+
+### Remove a contact from your network — invalid id, expect 400
+DELETE {{baseUrl}}/network/not-a-uuid
+
+### Remove a contact from your network — not connected, expect 404
+DELETE {{baseUrl}}/network/00000000-0000-0000-0000-000000000001

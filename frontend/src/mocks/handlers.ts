@@ -530,4 +530,17 @@ export const handlers = [
     connections[index] = updated
     return HttpResponse.json(serializeConnection(updated))
   }),
+
+  http.delete("/api/network/:contactId", ({ params }) => {
+    const index = connections.findIndex(
+      (connection) =>
+        connection.userId === currentUser.id &&
+        connection.contactId === params.contactId,
+    )
+    if (index === -1) {
+      return new HttpResponse("connection not found", { status: 404 })
+    }
+    connections = connections.filter((_, i) => i !== index)
+    return new HttpResponse(null, { status: 204 })
+  }),
 ]
