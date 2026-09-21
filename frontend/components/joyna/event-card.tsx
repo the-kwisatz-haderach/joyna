@@ -5,6 +5,7 @@ import { format, isSameYear } from 'date-fns'
 
 import { cn } from '@/lib/utils'
 import { Pill } from './pill'
+import { HostBadge } from './host-badge'
 
 export type EventInviteStatus = 'pending' | 'accepted' | 'declined'
 
@@ -38,20 +39,6 @@ export function formatRsvpDeadline(rsvpDeadline?: string): string | null {
   return `RSVP in ${diffDays} day${diffDays === 1 ? '' : 's'}`
 }
 
-function HostBadge() {
-  return (
-    <span
-      role="img"
-      aria-label="Hosting"
-      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-joyna-sunflower text-joyna-sunflower-dark"
-    >
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M3 8l4.5 3.2L12 4l4.5 7.2L21 8l-2 10H5L3 8z" />
-      </svg>
-    </span>
-  )
-}
-
 function AcceptedBadge() {
   return (
     <span
@@ -80,7 +67,7 @@ export function EventCard({ event, dimmed }: { event: EventListItem; dimmed?: bo
         <span className="flex items-center gap-1.5 font-display text-sm font-semibold text-joyna-ink">
           <span className="truncate">{event.name}</span>
           {event.isOwner ? (
-            <HostBadge />
+            <HostBadge label="Hosting" />
           ) : event.viewerInviteStatus === 'accepted' ? (
             <AcceptedBadge />
           ) : null}
