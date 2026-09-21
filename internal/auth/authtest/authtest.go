@@ -14,7 +14,7 @@ func CreateUser(t *testing.T, pool *pgxpool.Pool) auth.User {
 	t.Helper()
 
 	repo := auth.NewRepository(pool)
-	user, err := repo.CreateUser(context.Background(), "Test User", uuid.NewString()+"@test.dev", "hashed-password")
+	user, err := repo.CreateUser(context.Background(), "Test User", uuid.NewString()+"@test.dev", "hashed-password", nil)
 	require.NoError(t, err)
 
 	return user

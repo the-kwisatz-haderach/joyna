@@ -143,6 +143,7 @@ export const handlers = [
       name?: string
       email?: string
       password?: string
+      address?: string
     }
     if (!body.name?.trim() || !body.email?.trim() || !body.password?.trim()) {
       return new HttpResponse("invalid request body", { status: 400 })
@@ -153,11 +154,13 @@ export const handlers = [
         status: 409,
       })
     }
+    const address = body.address?.trim()
     return HttpResponse.json({
       id: crypto.randomUUID(),
       name: body.name.trim(),
       email,
       joinedAt: new Date().toISOString(),
+      ...(address ? { address } : {}),
     })
   }),
 

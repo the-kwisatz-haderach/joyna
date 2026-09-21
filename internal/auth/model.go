@@ -18,6 +18,7 @@ type User struct {
 	Email             string    `json:"email" db:"email"`
 	JoinedAt          time.Time `json:"joinedAt" db:"joined_at"`
 	ProfilePictureKey *string   `json:"profilePictureKey,omitempty" db:"profile_picture_key"`
+	Address           *string   `json:"address,omitempty" db:"address"`
 }
 
 type LoginRequest struct {
@@ -26,15 +27,24 @@ type LoginRequest struct {
 }
 
 type RegisterUserPayload struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Name     string  `json:"name"`
+	Email    string  `json:"email"`
+	Password string  `json:"password"`
+	Address  *string `json:"address,omitempty"`
 }
 
 func (p *RegisterUserPayload) Sanitize() {
 	p.Name = strings.TrimSpace(p.Name)
 	p.Email = strings.ToLower(strings.TrimSpace(p.Email))
 	p.Password = strings.TrimSpace(p.Password)
+	if p.Address != nil {
+		trimmed := strings.TrimSpace(*p.Address)
+		if trimmed == "" {
+			p.Address = nil
+		} else {
+			p.Address = &trimmed
+		}
+	}
 }
 
 func (p RegisterUserPayload) Validate() error {

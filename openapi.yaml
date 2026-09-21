@@ -816,6 +816,12 @@ components:
         profilePictureKey:
           type: string
           nullable: true
+        address:
+          type: string
+          nullable: true
+          description: >
+            Optional postal address for the user, used to simplify event creation
+            by pre-filling the event location.
       required: [id, name, email, joinedAt]
 
     RegisterUserPayload:
@@ -829,6 +835,12 @@ components:
         password:
           type: string
           format: password
+        address:
+          type: string
+          nullable: true
+          description: >
+            Optional postal address, used to simplify event creation by pre-filling
+            the event location.
       required: [name, email, password]
 
     LoginRequest:

@@ -29,21 +29,31 @@ func TestAuthRepository(t *testing.T) {
 		var profilePcKey *string
 		name := "Test User"
 		email := "test@test.dev"
-		user, err := repo.CreateUser(context.Background(), name, email, "hashed-password")
+		user, err := repo.CreateUser(context.Background(), name, email, "hashed-password", nil)
 		require.NoError(t, err)
 		require.NoError(t, uuid.Validate(user.Id))
 		require.False(t, user.JoinedAt.IsZero())
 		require.Equal(t, profilePcKey, user.ProfilePictureKey)
 		require.Equal(t, name, user.Name)
 		require.Equal(t, email, user.Email)
+		require.Nil(t, user.Address)
+	})
+
+	t.Run("CreateUser with address", func(t *testing.T) {
+		name := "Addressed User"
+		email := "addressed_test@test.dev"
+		address := "123 Main St"
+		user, err := repo.CreateUser(context.Background(), name, email, "hashed-password", &address)
+		require.NoError(t, err)
+		require.Equal(t, &address, user.Address)
 	})
 
 	t.Run("CreateUser conflict for same email", func(t *testing.T) {
 		name := "Other User"
 		email := "other_test@test.dev"
-		_, err := repo.CreateUser(context.Background(), name, email, "hashed-password")
+		_, err := repo.CreateUser(context.Background(), name, email, "hashed-password", nil)
 		require.NoError(t, err)
-		_, err = repo.CreateUser(context.Background(), name, email, "hashed-password")
+		_, err = repo.CreateUser(context.Background(), name, email, "hashed-password", nil)
 		require.ErrorIs(t, err, ErrUserAlreadyExists)
 	})
 
@@ -51,7 +61,8 @@ func TestAuthRepository(t *testing.T) {
 		name := "Test User"
 		email := "new_test@test.dev"
 		passHash := "hashed-password"
-		created, err := repo.CreateUser(context.Background(), name, email, passHash)
+		address := "456 Side St"
+		created, err := repo.CreateUser(context.Background(), name, email, passHash, &address)
 		require.NoError(t, err)
 		user, userPassHash, err := repo.GetUserByEmail(ctx, email)
 		require.NoError(t, err)
@@ -59,6 +70,7 @@ func TestAuthRepository(t *testing.T) {
 		require.Equal(t, created.Name, user.Name)
 		require.Equal(t, created.JoinedAt, user.JoinedAt)
 		require.Equal(t, created.Id, user.Id)
+		require.Equal(t, &address, user.Address)
 		require.Equal(t, userPassHash, passHash)
 	})
 }
