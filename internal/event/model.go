@@ -53,6 +53,14 @@ type Attendee struct {
 	InvitedBy string            `json:"invitedBy,omitempty" db:"invited_by"`
 }
 
+// ReminderInvite is the minimal shape needed to raise a daily reminder
+// notification for an invitee — just enough to notify without pulling in
+// the rest of the event/invite row.
+type ReminderInvite struct {
+	EventID       string `db:"event_id"`
+	InvitedUserID string `db:"invited_user_id"`
+}
+
 type RespondToEventInvitePayload struct {
 	Status EventInviteStatus `json:"status"`
 }

@@ -59,4 +59,20 @@ describe('NotificationRow', () => {
 
     expect(screen.getByText('Event details were updated')).toBeInTheDocument()
   })
+
+  it('describes an rsvp deadline reminder without needing an actor', () => {
+    render(
+      <NotificationRow notification={makeNotification({ type: 'rsvp_deadline_reminder', actorName: undefined })} />,
+    )
+
+    expect(screen.getByText('RSVP deadline is tomorrow')).toBeInTheDocument()
+  })
+
+  it('describes an event starting today without needing an actor', () => {
+    render(
+      <NotificationRow notification={makeNotification({ type: 'event_starting_today', actorName: undefined })} />,
+    )
+
+    expect(screen.getByText('This event is happening today')).toBeInTheDocument()
+  })
 })

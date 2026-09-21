@@ -1,7 +1,8 @@
-# Build context for Dockerfile (api) and Dockerfile.migrate, both of which use
-# the repo root as context. The api build needs go.mod/go.sum, cmd/ and
-# internal/; the migrate build needs only migrations/. Everything else is
-# excluded to keep the context small and to keep secrets out of it.
+# Build context for Dockerfile (api), Dockerfile.notifier and
+# Dockerfile.migrate, all of which use the repo root as context. The api and
+# notifier builds need go.mod/go.sum, cmd/ and internal/; the migrate build
+# needs only migrations/. Everything else is excluded to keep the context
+# small and to keep secrets out of it.
 
 # VCS and CI
 .git
@@ -33,7 +34,9 @@ requests
 # Dockerfiles themselves are not needed inside the context
 Dockerfile
 Dockerfile.migrate
+Dockerfile.notifier
 
-# Build output from `make build-api`
+# Build output from `make build-api` / `make build-notifier`
 main
 api
+notifier

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -250,6 +251,76 @@ func (r *Repository) DeleteEventInvite(ctx context.Context, eventID, userID stri
 		return ErrInviteNotFound
 	}
 	return nil
+}
+
+// ListPendingInvitesWithRsvpDeadlineOn returns every pending invite whose
+// event's RSVP deadline falls on day's calendar date, excluding invites that
+// already have a matching rsvp_deadline_reminder notification — so calling
+// this more than once for the same day never double-notifies an invitee.
+func (r *Repository) ListPendingInvitesWithRsvpDeadlineOn(ctx context.Context, day time.Time) ([]ReminderInvite, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT ei.event_id, ei.invited_user_id
+		FROM event_invites ei
+		JOIN events e ON e.id = ei.event_id
+		WHERE ei.status = $1
+			AND e.rsvp_deadline IS NOT NULL
+			AND e.rsvp_deadline::date = $2::date
+			AND NOT EXISTS (
+				SELECT 1 FROM notifications n
+				WHERE n.user_id = ei.invited_user_id
+					AND n.type = $3
+					AND n.payload ->> 'eventId' = ei.event_id::text
+			)`,
+		InviteStatePending, day, notificationRsvpDeadlineReminder,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("listing invites with rsvp deadline on day: %w", err)
+	}
+	defer rows.Close()
+
+	invites, err := pgx.CollectRows(rows, pgx.RowToStructByName[ReminderInvite])
+	if err != nil {
+		return nil, fmt.Errorf("listing invites with rsvp deadline on day: %w", err)
+	}
+	if invites == nil {
+		invites = []ReminderInvite{}
+	}
+
+	return invites, nil
+}
+
+// ListAcceptedInvitesWithEventOn returns every accepted invite whose event
+// falls on day's calendar date, excluding invites that already have a
+// matching event_starting_today notification.
+func (r *Repository) ListAcceptedInvitesWithEventOn(ctx context.Context, day time.Time) ([]ReminderInvite, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT ei.event_id, ei.invited_user_id
+		FROM event_invites ei
+		JOIN events e ON e.id = ei.event_id
+		WHERE ei.status = $1
+			AND e.date::date = $2::date
+			AND NOT EXISTS (
+				SELECT 1 FROM notifications n
+				WHERE n.user_id = ei.invited_user_id
+					AND n.type = $3
+					AND n.payload ->> 'eventId' = ei.event_id::text
+			)`,
+		InviteStateAccepted, day, notificationEventStartingToday,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("listing invites with event on day: %w", err)
+	}
+	defer rows.Close()
+
+	invites, err := pgx.CollectRows(rows, pgx.RowToStructByName[ReminderInvite])
+	if err != nil {
+		return nil, fmt.Errorf("listing invites with event on day: %w", err)
+	}
+	if invites == nil {
+		invites = []ReminderInvite{}
+	}
+
+	return invites, nil
 }
 
 func (r *Repository) CreateEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error) {

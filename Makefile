@@ -19,7 +19,8 @@ HELM_VALUES_SECRET := -f $(CHART_DIR)/values.secret.yaml
 HELM_VALUES_FRONTEND := --set frontend.image.tag=$(TAG)
 HELM_VALUES_API := --set api.image.tag=$(TAG)
 HELM_VALUES_MIGRATE := --set migrate.image.tag=$(TAG)
-HELM_VALUES_FULL := $(HELM_VALUES_SECRET) $(HELM_VALUES_API) $(HELM_VALUES_MIGRATE) $(HELM_VALUES_FRONTEND)
+HELM_VALUES_NOTIFIER := --set notifier.image.tag=$(TAG)
+HELM_VALUES_FULL := $(HELM_VALUES_SECRET) $(HELM_VALUES_API) $(HELM_VALUES_MIGRATE) $(HELM_VALUES_NOTIFIER) $(HELM_VALUES_FRONTEND)
 
 # Creates new db migration following correct sequence.
 .PHONY: migrate-create
@@ -64,6 +65,14 @@ build-api:
 run-api:
 	go run ./cmd/api/main.go
 
+.PHONY: build-notifier
+build-notifier:
+	go build ./cmd/notifier/main.go
+
+.PHONY: run-notifier
+run-notifier:
+	go run ./cmd/notifier/main.go
+
 .PHONY: push-api-image
 push-api-image:
 	docker build -f Dockerfile -t $(REPO)/api:$(TAG) . && docker push $(REPO)/api:$(TAG)
@@ -71,6 +80,10 @@ push-api-image:
 .PHONY: push-migrations-image
 push-migrations-image:
 	docker build -f Dockerfile.migrate -t $(REPO)/migrate:$(TAG) . && docker push $(REPO)/migrate:$(TAG)
+
+.PHONY: push-notifier-image
+push-notifier-image:
+	docker build -f Dockerfile.notifier -t $(REPO)/notifier:$(TAG) . && docker push $(REPO)/notifier:$(TAG)
 
 .PHONY: push-frontend-image
 push-frontend-image:
@@ -116,6 +129,13 @@ helm-upgrade-migrate:
 	helm upgrade --reuse-values --install $(RELEASE) $(CHART_DIR) \
 		--namespace $(NAMESPACE) --create-namespace \
 		$(HELM_VALUES_SECRET) $(HELM_VALUES_MIGRATE) --set migrate.enabled=true \
+		--wait --timeout 5m
+
+.PHONY: helm-upgrade-notifier
+helm-upgrade-notifier:
+	helm upgrade --reuse-values --install $(RELEASE) $(CHART_DIR) \
+		--namespace $(NAMESPACE) --create-namespace \
+		$(HELM_VALUES_SECRET) $(HELM_VALUES_NOTIFIER) --set migrate.enabled=false \
 		--wait --timeout 5m
 
 .PHONY: helm-undeploy

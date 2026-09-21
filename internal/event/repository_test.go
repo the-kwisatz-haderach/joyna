@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/the-kwisatz-haderach/joyna/internal/auth/authtest"
+	"github.com/the-kwisatz-haderach/joyna/internal/notification"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/dbtest"
 )
 
@@ -172,5 +173,81 @@ func TestEventRepository(t *testing.T) {
 		require.False(t, byID[invitedEvent.ID].IsOwner)
 		require.NotNil(t, byID[invitedEvent.ID].ViewerInviteStatus)
 		require.Equal(t, InviteStateAccepted, *byID[invitedEvent.ID].ViewerInviteStatus)
+	})
+
+	t.Run("ListPendingInvitesWithRsvpDeadlineOn excludes already-notified invites", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		invitee := authtest.CreateUser(t, pool)
+		alreadyNotified := authtest.CreateUser(t, pool)
+		deadline := time.Now().Add(24 * time.Hour)
+
+		ev, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: deadline.Add(24 * time.Hour), RsvpDeadline: &deadline}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: invitee.Id}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: alreadyNotified.Id}, owner.Id)
+		require.NoError(t, err)
+
+		notificationRepo := notification.NewRepository(pool)
+		require.NoError(t, notificationRepo.Create(ctx, alreadyNotified.Id, notification.TypeRsvpDeadlineReminder, map[string]any{"eventId": ev.ID}))
+
+		invites, err := repo.ListPendingInvitesWithRsvpDeadlineOn(ctx, deadline)
+		require.NoError(t, err)
+		require.Equal(t, []ReminderInvite{{EventID: ev.ID, InvitedUserID: invitee.Id}}, invites)
+
+		// A declined invite isn't pending, so it's excluded even with a matching deadline.
+		declinedInvitee := authtest.CreateUser(t, pool)
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: declinedInvitee.Id}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.RespondToEventInvite(ctx, ev.ID, declinedInvitee.Id, InviteStateDeclined)
+		require.NoError(t, err)
+
+		invites, err = repo.ListPendingInvitesWithRsvpDeadlineOn(ctx, deadline)
+		require.NoError(t, err)
+		require.Equal(t, []ReminderInvite{{EventID: ev.ID, InvitedUserID: invitee.Id}}, invites)
+
+		// A day with no matching deadline returns nothing.
+		invites, err = repo.ListPendingInvitesWithRsvpDeadlineOn(ctx, deadline.AddDate(0, 0, 5))
+		require.NoError(t, err)
+		require.Empty(t, invites)
+	})
+
+	t.Run("ListAcceptedInvitesWithEventOn excludes already-notified invites", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		invitee := authtest.CreateUser(t, pool)
+		alreadyNotified := authtest.CreateUser(t, pool)
+		eventDate := time.Now().Add(24 * time.Hour)
+
+		ev, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: eventDate}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: invitee.Id}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.RespondToEventInvite(ctx, ev.ID, invitee.Id, InviteStateAccepted)
+		require.NoError(t, err)
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: alreadyNotified.Id}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.RespondToEventInvite(ctx, ev.ID, alreadyNotified.Id, InviteStateAccepted)
+		require.NoError(t, err)
+
+		notificationRepo := notification.NewRepository(pool)
+		require.NoError(t, notificationRepo.Create(ctx, alreadyNotified.Id, notification.TypeEventStartingToday, map[string]any{"eventId": ev.ID}))
+
+		invites, err := repo.ListAcceptedInvitesWithEventOn(ctx, eventDate)
+		require.NoError(t, err)
+		require.Equal(t, []ReminderInvite{{EventID: ev.ID, InvitedUserID: invitee.Id}}, invites)
+
+		// A pending invite isn't accepted, so it's excluded even on the event's date.
+		pendingInvitee := authtest.CreateUser(t, pool)
+		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: pendingInvitee.Id}, owner.Id)
+		require.NoError(t, err)
+
+		invites, err = repo.ListAcceptedInvitesWithEventOn(ctx, eventDate)
+		require.NoError(t, err)
+		require.Equal(t, []ReminderInvite{{EventID: ev.ID, InvitedUserID: invitee.Id}}, invites)
+
+		// A day that doesn't match the event's date returns nothing.
+		invites, err = repo.ListAcceptedInvitesWithEventOn(ctx, eventDate.AddDate(0, 0, 5))
+		require.NoError(t, err)
+		require.Empty(t, invites)
 	})
 }
