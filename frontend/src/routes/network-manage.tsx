@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useState, type DragEvent, type FormEvent } from "react"
 import { Link } from "react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Cancel01Icon, PlusSignIcon } from "@hugeicons/core-free-icons"
+import { Cancel01Icon, Delete02Icon, PlusSignIcon } from "@hugeicons/core-free-icons"
 
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { GuestAvatar } from "../../components/joyna/guest-avatar"
@@ -32,6 +41,20 @@ function matchesFilter(name: string, query: string): boolean {
     return true
   }
   return name.toLowerCase().includes(query.trim().toLowerCase())
+}
+
+function joinNames(names: string[]): string {
+  if (names.length <= 1) {
+    return names.join("")
+  }
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`
+}
+
+function describeGroupDeletion(memberNames: string[]): string {
+  if (memberNames.length === 0) {
+    return "This can't be undone."
+  }
+  return `${joinNames(memberNames)} will move to Acquaintances. This can't be undone.`
 }
 
 function PersonChip({
@@ -89,6 +112,8 @@ function NetworkManage() {
   const [isCreatingGroup, setIsCreatingGroup] = useState(false)
   const [draggedContactId, setDraggedContactId] = useState<string | null>(null)
   const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null)
+  const [groupPendingDeletion, setGroupPendingDeletion] = useState<ManagedGroup | null>(null)
+  const [isDeletingGroup, setIsDeletingGroup] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -226,6 +251,37 @@ function NetworkManage() {
     }
   }
 
+  async function handleDeleteGroup(group: ManagedGroup) {
+    setIsDeletingGroup(true)
+    setError(null)
+    try {
+      const response = await fetch(`/api/groups/${group.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
+      if (!response.ok) {
+        throw new Error("failed to delete group")
+      }
+      setGroups((current) => current.filter((candidate) => candidate.id !== group.id))
+      setConnections((current) =>
+        current.map((connection) =>
+          connection.groupId === group.id ? { ...connection, groupId: undefined } : connection,
+        ),
+      )
+      setGroupPendingDeletion(null)
+    } catch {
+      setError("Couldn't delete that group. Please try again.")
+    } finally {
+      setIsDeletingGroup(false)
+    }
+  }
+
+  const membersOfGroupPendingDeletion = groupPendingDeletion
+    ? connections
+        .filter((connection) => connection.groupId === groupPendingDeletion.id)
+        .map((connection) => connection.contactName)
+    : []
+
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-6 px-5 py-6">
       <div className="flex flex-col gap-1.5">
@@ -339,9 +395,23 @@ function NetworkManage() {
                   <h3 className="font-display text-sm font-semibold text-joyna-ink">
                     {group.name}
                   </h3>
-                  <span className="text-xs text-joyna-ink-faint">
-                    {group.members.length} {group.members.length === 1 ? "person" : "people"}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-joyna-ink-faint">
+                      {group.members.length} {group.members.length === 1 ? "person" : "people"}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`Delete ${group.name}`}
+                      onClick={() => setGroupPendingDeletion(group)}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-joyna-red/10 transition-transform active:scale-90"
+                    >
+                      <HugeiconsIcon
+                        icon={Delete02Icon}
+                        className="h-3.5 w-3.5 text-joyna-red"
+                        strokeWidth={2}
+                      />
+                    </button>
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {group.members.length === 0 ? (
@@ -367,6 +437,42 @@ function NetworkManage() {
           </div>
         </div>
       )}
+
+      <Dialog
+        open={groupPendingDeletion !== null}
+        onOpenChange={(open) => !open && setGroupPendingDeletion(null)}
+      >
+        <DialogContent className="max-w-[280px] rounded-2xl text-center font-body">
+          <DialogHeader className="items-center">
+            <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-joyna-red/10">
+              <HugeiconsIcon icon={Delete02Icon} className="h-5 w-5 text-joyna-red" strokeWidth={2} />
+            </div>
+            <DialogTitle className="font-display text-[15px]">
+              Delete &ldquo;{groupPendingDeletion?.name}&rdquo;?
+            </DialogTitle>
+            <DialogDescription className="text-[12.5px] leading-relaxed">
+              {describeGroupDeletion(membersOfGroupPendingDeletion)}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button
+              variant="destructive"
+              className="h-11 w-full rounded-control font-display text-sm"
+              disabled={isDeletingGroup}
+              onClick={() => groupPendingDeletion && handleDeleteGroup(groupPendingDeletion)}
+            >
+              {isDeletingGroup ? "Deleting…" : "Delete group"}
+            </Button>
+            <Button
+              variant="secondary"
+              className="h-11 w-full rounded-control font-display text-sm"
+              onClick={() => setGroupPendingDeletion(null)}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }
