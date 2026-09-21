@@ -14,7 +14,7 @@ function isPushedPath(pathname: string): boolean {
   return (
     pathname === '/events/new' ||
     /^\/events\/[^/]+\/edit$/.test(pathname) ||
-    /^\/events\/[^/]+$/.test(pathname)
+    (pathname !== '/events/all' && /^\/events\/[^/]+$/.test(pathname))
   )
 }
 
@@ -94,7 +94,7 @@ function TopMenu() {
 
 function BottomMenu() {
   const {pathname} = useLocation()
-  const eventsActive = pathname === '/' || pathname === '/events'
+  const eventsActive = pathname === '/' || pathname === '/events' || pathname === '/events/all'
   const networkActive = pathname === '/network'
 
   return (
