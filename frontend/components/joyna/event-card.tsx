@@ -1,11 +1,11 @@
-import { Link } from 'react-router'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
-import { format, isSameYear } from 'date-fns'
+import {Link} from 'react-router'
+import {HugeiconsIcon} from '@hugeicons/react'
+import {ArrowRight01Icon} from '@hugeicons/core-free-icons'
+import {format, isSameYear} from 'date-fns'
 
-import { cn } from '@/lib/utils'
-import { Pill } from './pill'
-import { HostBadge } from './host-badge'
+import {cn} from '@/lib/utils'
+import {Pill} from './pill'
+import {HostBadge} from './host-badge'
 
 export type EventInviteStatus = 'pending' | 'accepted' | 'declined'
 
@@ -23,7 +23,9 @@ export type EventListItem = {
 
 export function formatEventDate(date: string): string {
   const parsed = new Date(date)
-  return isSameYear(parsed, Date.now()) ? format(parsed, 'd MMM') : format(parsed, 'd MMM, yyyy')
+  return isSameYear(parsed, Date.now())
+    ? format(parsed, 'd MMM')
+    : format(parsed, 'd MMM, yyyy')
 }
 
 export function formatRsvpDeadline(rsvpDeadline?: string): string | null {
@@ -39,7 +41,9 @@ export function formatRsvpDeadline(rsvpDeadline?: string): string | null {
   return `RSVP in ${diffDays} day${diffDays === 1 ? '' : 's'}`
 }
 
-function eventCardTone(event: Pick<EventListItem, 'isOwner' | 'viewerInviteStatus'>): string {
+function eventCardTone(
+  event: Pick<EventListItem, 'isOwner' | 'viewerInviteStatus'>,
+): string {
   if (event.isOwner) {
     return 'border-joyna-sunflower bg-joyna-sunflower/10'
   }
@@ -52,7 +56,13 @@ function eventCardTone(event: Pick<EventListItem, 'isOwner' | 'viewerInviteStatu
   return 'border-joyna-border bg-white'
 }
 
-export function EventCard({ event, dimmed }: { event: EventListItem; dimmed?: boolean }) {
+export function EventCard({
+  event,
+  dimmed,
+}: {
+  event: EventListItem
+  dimmed?: boolean
+}) {
   const rsvpLabel = formatRsvpDeadline(event.rsvpDeadline)
 
   return (
@@ -70,24 +80,30 @@ export function EventCard({ event, dimmed }: { event: EventListItem; dimmed?: bo
           {event.isOwner ? <HostBadge label="Hosting" /> : null}
         </span>
         <div className="flex items-center gap-1.5 text-xs">
-          <span className="text-joyna-ink-soft">{formatEventDate(event.date)}</span>
-          {rsvpLabel ? (
+          <span className="text-joyna-ink-soft min-w-fit">
+            {formatEventDate(event.date)}
+          </span>
+          {event.location && (
             <>
               <span className="text-joyna-ink-faint">·</span>
-              <Pill tone="sunflower">{rsvpLabel}</Pill>
+              <span className="truncate text-joyna-ink-faint">
+                {event.location}
+              </span>
             </>
-          ) : (
-            event.location && (
-              <>
-                <span className="text-joyna-ink-faint">·</span>
-                <span className="truncate text-joyna-ink-faint">{event.location}</span>
-              </>
-            )
           )}
         </div>
+        {rsvpLabel && (
+          <Pill className="w-fit" tone="sunflower">
+            {rsvpLabel}
+          </Pill>
+        )}
       </div>
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-joyna-border-strong text-joyna-ink-soft">
-        <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
+        <HugeiconsIcon
+          icon={ArrowRight01Icon}
+          className="h-4 w-4"
+          strokeWidth={2}
+        />
       </span>
     </Link>
   )
