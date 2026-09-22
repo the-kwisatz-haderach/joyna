@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Location01Icon, Cancel01Icon } from '@hugeicons/core-free-icons'
+import { Cancel01Icon } from '@hugeicons/core-free-icons'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { MoodPicker } from '../../components/joyna/mood-picker'
+import { LocationField, type LocationCoordinates } from '../../components/joyna/location-field'
 
 type RsvpUnit = 'day' | 'week' | 'month'
 
@@ -53,6 +54,8 @@ type EventDetailData = {
   rsvpDeadline?: string
   isOwner: boolean
   mood?: string
+  latitude?: number
+  longitude?: number
 }
 
 function EditEvent() {
@@ -68,6 +71,7 @@ function EditEvent() {
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [time, setTime] = useState('18:00')
   const [location, setLocation] = useState('')
+  const [coordinates, setCoordinates] = useState<LocationCoordinates | null>(null)
   const [hasRsvpDeadline, setHasRsvpDeadline] = useState(false)
   const [rsvpAmount, setRsvpAmount] = useState(1)
   const [rsvpUnit, setRsvpUnit] = useState<RsvpUnit>('day')
@@ -90,6 +94,11 @@ function EditEvent() {
       setDate(eventDate)
       setTime(toTimeString(eventDate))
       setLocation(event.location)
+      setCoordinates(
+        event.latitude != null && event.longitude != null
+          ? { lat: event.latitude, lng: event.longitude }
+          : null,
+      )
       setDescription(event.description)
       setMoodId(event.mood ?? '')
       if (event.rsvpDeadline) {
@@ -138,6 +147,8 @@ function EditEvent() {
           description,
           rsvpDeadline: rsvpDeadline?.toISOString(),
           mood: moodId || undefined,
+          latitude: coordinates?.lat,
+          longitude: coordinates?.lng,
         }),
       })
       if (!response.ok) {
@@ -247,24 +258,12 @@ function EditEvent() {
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-joyna-ink-soft">Location</span>
-          <Input
-            placeholder="Search for a place…"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="h-10 rounded-xl bg-white"
-          />
-          <div className="flex h-28 items-center justify-center rounded-card border border-dashed border-joyna-border-strong bg-joyna-border/40 text-joyna-ink-faint">
-            Map preview
-          </div>
-          {location && (
-            <div className="flex items-center gap-1.5 text-xs text-joyna-ink-soft">
-              <HugeiconsIcon icon={Location01Icon} className="h-3.5 w-3.5" strokeWidth={2} />
-              {location}
-            </div>
-          )}
-        </div>
+        <LocationField
+          value={location}
+          onChange={setLocation}
+          coordinates={coordinates}
+          onCoordinatesChange={setCoordinates}
+        />
 
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-joyna-ink-soft">Mood</span>

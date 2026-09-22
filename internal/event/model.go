@@ -21,6 +21,8 @@ type Event struct {
 	Type                 EventType  `json:"type" db:"type"`
 	DefaultSpreadAllowed int        `json:"defaultSpreadAllowed" db:"default_spread_allowed"`
 	Mood                 *Mood      `json:"mood,omitempty" db:"mood"`
+	Latitude             *float64   `json:"latitude,omitempty" db:"latitude"`
+	Longitude            *float64   `json:"longitude,omitempty" db:"longitude"`
 }
 
 type EventInvite struct {
@@ -97,6 +99,8 @@ type CreateEventPayload struct {
 	Type                 EventType  `json:"type"`
 	DefaultSpreadAllowed int        `json:"defaultSpreadAllowed"`
 	Mood                 *Mood      `json:"mood,omitempty"`
+	Latitude             *float64   `json:"latitude,omitempty"`
+	Longitude            *float64   `json:"longitude,omitempty"`
 }
 
 var (
@@ -160,6 +164,8 @@ type UpdateEventPayload struct {
 	Type                 *EventType `json:"type,omitempty"`
 	DefaultSpreadAllowed *int       `json:"defaultSpreadAllowed,omitempty"`
 	Mood                 *Mood      `json:"mood,omitempty"`
+	Latitude             *float64   `json:"latitude,omitempty"`
+	Longitude            *float64   `json:"longitude,omitempty"`
 }
 
 func (p UpdateEventPayload) Validate() error {

@@ -9,3 +9,6 @@ data:
   APP_PORT: {{.Values.api.port | quote}}
   POSTGRES_USER: {{.Values.postgres.user}}
   POSTGRES_DB: {{.Values.postgres.database}}
+  SMTP_PORT: {{.Values.mail.smtpPort | quote}}
+  SMTP_FROM: {{.Values.mail.smtpFrom | quote}}
+  FRONTEND_URL: {{ required "frontendURL is required" .Values.frontendURL | quote}}

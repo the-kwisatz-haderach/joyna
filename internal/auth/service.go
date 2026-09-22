@@ -16,12 +16,21 @@ type repository interface {
 	UpdateUser(ctx context.Context, userUpdate UpdateUserPayload, userID string) (User, error)
 }
 
-type Service struct {
-	repo repository
+// inviteResolver is satisfied structurally by *network.Service (no import of
+// the network package needed) so a freshly registered user gets connected to
+// whoever invited their email address, mirroring internal/event's `notifier`
+// interface pattern. Optional: nil is a valid no-op resolver.
+type inviteResolver interface {
+	ResolvePendingInvites(ctx context.Context, userID, email string) error
 }
 
-func NewService(repo repository) *Service {
-	return &Service{repo: repo}
+type Service struct {
+	repo     repository
+	resolver inviteResolver
+}
+
+func NewService(repo repository, resolver inviteResolver) *Service {
+	return &Service{repo: repo, resolver: resolver}
 }
 
 func (s *Service) Register(ctx context.Context, name, email, password string, address *string) (User, error) {
@@ -31,7 +40,20 @@ func (s *Service) Register(ctx context.Context, name, email, password string, ad
 		return User{}, err
 	}
 
-	return s.repo.CreateUser(ctx, name, email, string(hash), address)
+	user, err := s.repo.CreateUser(ctx, name, email, string(hash), address)
+	if err != nil {
+		return User{}, err
+	}
+
+	if s.resolver != nil {
+		if err := s.resolver.ResolvePendingInvites(ctx, user.Id, user.Email); err != nil {
+			// A failed auto-connect must not fail registration — the
+			// account already exists at this point.
+			slog.Error("failed to resolve pending network invites", "error", err, "userId", user.Id)
+		}
+	}
+
+	return user, nil
 }
 
 func (s *Service) UpdateUser(ctx context.Context, userUpdate UpdateUserPayload, userID string) (User, error) {

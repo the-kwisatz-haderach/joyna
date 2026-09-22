@@ -115,6 +115,37 @@ func (h *Handler) LookupUserByEmail(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
+func (h *Handler) InviteByEmail(w http.ResponseWriter, r *http.Request) {
+	inviterID, ok := auth.UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var payload InviteByEmailPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	invite, err := h.service.InviteByEmail(r.Context(), inviterID, payload.Email)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrEmailRequired):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, ErrEmailAlreadyRegistered):
+			http.Error(w, err.Error(), http.StatusConflict)
+		default:
+			slog.Error("failed to invite user by email", "error", err)
+			http.Error(w, "failed to send invite", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(invite)
+}
+
 func (h *Handler) UpdateConnection(w http.ResponseWriter, r *http.Request) {
 	contactID := r.PathValue("contactId")
 	if err := uuid.Validate(contactID); err != nil {

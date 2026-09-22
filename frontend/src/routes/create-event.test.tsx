@@ -15,13 +15,15 @@ function EventDetailStub() {
 
 function renderCreateEvent() {
   return render(
-    <MemoryRouter initialEntries={['/events/new']}>
-      <Routes>
-        <Route path="/events" element={<div>Events</div>} />
-        <Route path="/events/new" element={<CreateEvent />} />
-        <Route path="/events/:id" element={<EventDetailStub />} />
-      </Routes>
-    </MemoryRouter>,
+    <AuthProvider>
+      <MemoryRouter initialEntries={['/events/new']}>
+        <Routes>
+          <Route path="/events" element={<div>Events</div>} />
+          <Route path="/events/new" element={<CreateEvent />} />
+          <Route path="/events/:id" element={<EventDetailStub />} />
+        </Routes>
+      </MemoryRouter>
+    </AuthProvider>,
   )
 }
 
@@ -147,4 +149,23 @@ describe('CreateEvent', () => {
 
     expect(await screen.findByText(/chill mood/i)).toBeInTheDocument()
   }, 15000)
+
+  it('pre-fills the location from the profile address, but stays editable', () => {
+    localStorage.setItem(
+      'joyna.currentUser',
+      JSON.stringify({
+        id: mockUsers[0].id,
+        name: mockUsers[0].name,
+        email: mockUsers[0].email,
+        joinedAt: mockUsers[0].joinedAt,
+        address: '221B Baker Street',
+      }),
+    )
+
+    renderCreateEvent()
+
+    expect(screen.getByPlaceholderText(/search for a place/i)).toHaveValue(
+      '221B Baker Street',
+    )
+  })
 })

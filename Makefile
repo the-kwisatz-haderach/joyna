@@ -87,7 +87,10 @@ push-notifier-image:
 
 .PHONY: push-frontend-image
 push-frontend-image:
-	docker build -f frontend/Dockerfile -t $(REPO)/frontend:$(TAG) frontend && docker push $(REPO)/frontend:$(TAG)
+	docker build -f frontend/Dockerfile \
+		--build-arg VITE_GOOGLE_MAPS_API_KEY=$(GOOGLE_MAPS_API_KEY) \
+		--build-arg VITE_GOOGLE_MAPS_MAP_ID=$(GOOGLE_MAPS_MAP_ID) \
+		-t $(REPO)/frontend:$(TAG) frontend && docker push $(REPO)/frontend:$(TAG)
 
 .PHONY: helm-lint
 helm-lint:

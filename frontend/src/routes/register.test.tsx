@@ -6,10 +6,10 @@ import { afterEach, describe, expect, it } from "vitest"
 import { AuthProvider } from "../auth-context"
 import Register from "./register"
 
-function renderRegister() {
+function renderRegister(initialEntry = "/register") {
   return render(
     <AuthProvider>
-      <MemoryRouter initialEntries={["/register"]}>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <Routes>
           <Route path="/" element={<div>Home</div>} />
           <Route path="/register" element={<Register />} />
@@ -48,6 +48,12 @@ describe("Register", () => {
       "href",
       "/login",
     )
+  })
+
+  it("prefills the email field from an ?email= query param", () => {
+    renderRegister("/register?email=invited%40example.com")
+
+    expect(screen.getByLabelText(/email/i)).toHaveValue("invited@example.com")
   })
 
   it("registers the user without an address when left blank", async () => {

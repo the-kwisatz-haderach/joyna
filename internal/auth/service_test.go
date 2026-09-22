@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -26,6 +27,14 @@ func (f *fakeRepository) UpdateUser(ctx context.Context, userUpdate UpdateUserPa
 	return f.updateUserFunc(ctx, userUpdate, userID)
 }
 
+type fakeInviteResolver struct {
+	resolvePendingInvitesFunc func(ctx context.Context, userID, email string) error
+}
+
+func (f *fakeInviteResolver) ResolvePendingInvites(ctx context.Context, userID, email string) error {
+	return f.resolvePendingInvitesFunc(ctx, userID, email)
+}
+
 func TestRegister(t *testing.T) {
 	createdUser := User{
 		Name:  "hello",
@@ -36,7 +45,47 @@ func TestRegister(t *testing.T) {
 			return createdUser, nil
 		},
 	}
-	service := NewService(repo)
+	service := NewService(repo, nil)
+	user, err := service.Register(context.Background(), "name", "email", "pass", nil)
+	require.NoError(t, err)
+	require.Equal(t, createdUser, user)
+}
+
+func TestRegister_ResolvesPendingInvites(t *testing.T) {
+	createdUser := User{Id: "user-1", Name: "hello", Email: "world"}
+	var resolveCalled bool
+	repo := &fakeRepository{
+		createUserFunc: func(ctx context.Context, name, email, passwordHash string, address *string) (User, error) {
+			return createdUser, nil
+		},
+	}
+	resolver := &fakeInviteResolver{
+		resolvePendingInvitesFunc: func(ctx context.Context, userID, email string) error {
+			resolveCalled = true
+			require.Equal(t, "user-1", userID)
+			require.Equal(t, "world", email)
+			return nil
+		},
+	}
+	service := NewService(repo, resolver)
+	_, err := service.Register(context.Background(), "name", "email", "pass", nil)
+	require.NoError(t, err)
+	require.True(t, resolveCalled)
+}
+
+func TestRegister_SucceedsWhenResolvingPendingInvitesFails(t *testing.T) {
+	createdUser := User{Id: "user-1", Name: "hello", Email: "world"}
+	repo := &fakeRepository{
+		createUserFunc: func(ctx context.Context, name, email, passwordHash string, address *string) (User, error) {
+			return createdUser, nil
+		},
+	}
+	resolver := &fakeInviteResolver{
+		resolvePendingInvitesFunc: func(ctx context.Context, userID, email string) error {
+			return errors.New("boom")
+		},
+	}
+	service := NewService(repo, resolver)
 	user, err := service.Register(context.Background(), "name", "email", "pass", nil)
 	require.NoError(t, err)
 	require.Equal(t, createdUser, user)
@@ -56,7 +105,7 @@ func TestAuthenticate_Valid(t *testing.T) {
 			return storedUser, string(correctHash), nil
 		},
 	}
-	service := NewService(repo)
+	service := NewService(repo, nil)
 	user, err := service.Authenticate(context.Background(), "email", password)
 	require.NoError(t, err)
 	require.Equal(t, storedUser, user)
@@ -76,7 +125,7 @@ func TestAuthenticate_InvalidPassword(t *testing.T) {
 			return storedUser, string(correctHash), nil
 		},
 	}
-	service := NewService(repo)
+	service := NewService(repo, nil)
 	user, err := service.Authenticate(context.Background(), "email", "invalid_pass")
 	require.ErrorIs(t, err, ErrInvalidCredentials)
 	require.Equal(t, User{}, user)
@@ -92,7 +141,7 @@ func TestUpdateUser(t *testing.T) {
 			return updatedUser, nil
 		},
 	}
-	service := NewService(repo)
+	service := NewService(repo, nil)
 	name := "New Name"
 	user, err := service.UpdateUser(context.Background(), UpdateUserPayload{Name: &name}, "user-1")
 	require.NoError(t, err)
@@ -105,7 +154,7 @@ func TestUpdateUser_NotFound(t *testing.T) {
 			return User{}, ErrUserNotFound
 		},
 	}
-	service := NewService(repo)
+	service := NewService(repo, nil)
 	_, err := service.UpdateUser(context.Background(), UpdateUserPayload{}, "missing-user")
 	require.ErrorIs(t, err, ErrUserNotFound)
 }
@@ -120,7 +169,7 @@ func TestAuthenticate_UserNotFound(t *testing.T) {
 			return User{}, string(correctHash), ErrUserNotFound
 		},
 	}
-	service := NewService(repo)
+	service := NewService(repo, nil)
 	_, err = service.Authenticate(context.Background(), "email", password)
 	require.ErrorIs(t, err, ErrInvalidCredentials)
 }

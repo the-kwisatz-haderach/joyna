@@ -1,13 +1,15 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { Location01Icon, Cancel01Icon } from '@hugeicons/core-free-icons'
+import { Cancel01Icon } from '@hugeicons/core-free-icons'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Calendar } from '@/components/ui/calendar'
 import { MoodPicker } from '../../components/joyna/mood-picker'
+import { LocationField, type LocationCoordinates } from '../../components/joyna/location-field'
+import { useAuth } from '../auth-context'
 
 type RsvpUnit = 'day' | 'week' | 'month'
 
@@ -42,13 +44,18 @@ type CreatedEvent = {
 
 function CreateEvent() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [name, setName] = useState('')
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [time, setTime] = useState('18:00')
-  const [location, setLocation] = useState('')
+  // Pre-fills from the profile's saved address, per the copy on the
+  // register form ("used to pre-fill the location when you create
+  // events") — still fully editable, matches free-typing behavior.
+  const [location, setLocation] = useState(user?.address ?? '')
+  const [coordinates, setCoordinates] = useState<LocationCoordinates | null>(null)
   const [hasRsvpDeadline, setHasRsvpDeadline] = useState(false)
   const [rsvpAmount, setRsvpAmount] = useState(1)
   const [rsvpUnit, setRsvpUnit] = useState<RsvpUnit>('day')
@@ -91,6 +98,8 @@ function CreateEvent() {
           rsvpDeadline: rsvpDeadline?.toISOString(),
           defaultSpreadAllowed: 0,
           mood: moodId || undefined,
+          latitude: coordinates?.lat,
+          longitude: coordinates?.lng,
         }),
       })
 
@@ -198,24 +207,12 @@ function CreateEvent() {
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-joyna-ink-soft">Location</span>
-          <Input
-            placeholder="Search for a place…"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="h-10 rounded-xl bg-white"
-          />
-          <div className="flex h-28 items-center justify-center rounded-card border border-dashed border-joyna-border-strong bg-joyna-border/40 text-joyna-ink-faint">
-            Map preview
-          </div>
-          {location && (
-            <div className="flex items-center gap-1.5 text-xs text-joyna-ink-soft">
-              <HugeiconsIcon icon={Location01Icon} className="h-3.5 w-3.5" strokeWidth={2} />
-              {location}
-            </div>
-          )}
-        </div>
+        <LocationField
+          value={location}
+          onChange={setLocation}
+          coordinates={coordinates}
+          onCoordinatesChange={setCoordinates}
+        />
 
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-joyna-ink-soft">Mood</span>

@@ -21,6 +21,7 @@ import (
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/config"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/db"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/logging"
+	"github.com/the-kwisatz-haderach/joyna/internal/platform/mail"
 )
 
 func main() {
@@ -46,8 +47,14 @@ func main() {
 
 	sessionManager.Lifetime = 24 * time.Hour
 
+	mailer := mail.NewSMTPMailer(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPFrom)
+
+	networkRepo := network.NewRepository(pool)
+	networkService := network.NewService(networkRepo, mailer, cfg.FrontendURL)
+	networkHandler := network.NewHandler(networkService)
+
 	authRepo := auth.NewRepository(pool)
-	authService := auth.NewService(authRepo)
+	authService := auth.NewService(authRepo, networkService)
 	authHandler := auth.NewHandler(authService, sessionManager)
 
 	notificationRepo := notification.NewRepository(pool)
@@ -61,10 +68,6 @@ func main() {
 	groupRepo := group.NewRepository(pool)
 	groupService := group.NewService(groupRepo)
 	groupHandler := group.NewHandler(groupService)
-
-	networkRepo := network.NewRepository(pool)
-	networkService := network.NewService(networkRepo)
-	networkHandler := network.NewHandler(networkService)
 
 	mux := http.NewServeMux()
 
@@ -111,6 +114,7 @@ func main() {
 	mux.HandleFunc("GET /network", authHandler.Middleware(networkHandler.GetConnections))
 	mux.HandleFunc("GET /network/potential", authHandler.Middleware(networkHandler.GetPotentialConnections))
 	mux.HandleFunc("GET /network/lookup", authHandler.Middleware(networkHandler.LookupUserByEmail))
+	mux.HandleFunc("POST /network/invite", authHandler.Middleware(networkHandler.InviteByEmail))
 	mux.HandleFunc("POST /network", authHandler.Middleware(networkHandler.CreateConnection))
 	mux.HandleFunc("PATCH /network/{contactId}", authHandler.Middleware(networkHandler.UpdateConnection))
 	mux.HandleFunc("DELETE /network/{contactId}", authHandler.Middleware(networkHandler.DeleteConnection))

@@ -216,4 +216,82 @@ func TestNetworkRepository(t *testing.T) {
 		err := repo.DeleteConnection(ctx, uuid.NewString(), owner.Id)
 		require.ErrorIs(t, err, ErrConnectionNotFound)
 	})
+
+	t.Run("CreateOrRefreshInvite is idempotent per inviter and email", func(t *testing.T) {
+		inviter := authtest.CreateUser(t, pool)
+
+		first, err := repo.CreateOrRefreshInvite(ctx, inviter.Id, "invitee@example.com")
+		require.NoError(t, err)
+		require.Equal(t, inviter.Id, first.InviterID)
+		require.Equal(t, "invitee@example.com", first.InvitedEmail)
+		require.Nil(t, first.AcceptedAt)
+
+		second, err := repo.CreateOrRefreshInvite(ctx, inviter.Id, "invitee@example.com")
+		require.NoError(t, err)
+		require.Equal(t, first.ID, second.ID, "re-inviting the same pending email should refresh, not duplicate")
+
+		pending, err := repo.ListPendingInvitesByEmail(ctx, "invitee@example.com")
+		require.NoError(t, err)
+		require.Len(t, pending, 1)
+	})
+
+	t.Run("ListPendingInvitesByEmail returns invites from multiple inviters, excludes accepted", func(t *testing.T) {
+		inviterA := authtest.CreateUser(t, pool)
+		inviterB := authtest.CreateUser(t, pool)
+
+		inviteA, err := repo.CreateOrRefreshInvite(ctx, inviterA.Id, "multi@example.com")
+		require.NoError(t, err)
+		_, err = repo.CreateOrRefreshInvite(ctx, inviterB.Id, "multi@example.com")
+		require.NoError(t, err)
+
+		pending, err := repo.ListPendingInvitesByEmail(ctx, "multi@example.com")
+		require.NoError(t, err)
+		require.Len(t, pending, 2)
+
+		require.NoError(t, repo.MarkInviteAccepted(ctx, inviteA.ID))
+
+		pending, err = repo.ListPendingInvitesByEmail(ctx, "multi@example.com")
+		require.NoError(t, err)
+		require.Len(t, pending, 1)
+		require.Equal(t, inviterB.Id, pending[0].InviterID)
+	})
+
+	t.Run("MarkInviteAccepted not found", func(t *testing.T) {
+		err := repo.MarkInviteAccepted(ctx, uuid.NewString())
+		require.ErrorIs(t, err, ErrInviteNotFound)
+	})
+
+	t.Run("CreateMutualConnection connects both directions", func(t *testing.T) {
+		userA := authtest.CreateUser(t, pool)
+		userB := authtest.CreateUser(t, pool)
+
+		err := repo.CreateMutualConnection(ctx, userA.Id, userB.Id)
+		require.NoError(t, err)
+
+		aConnections, err := repo.ListConnections(ctx, userA.Id)
+		require.NoError(t, err)
+		require.Len(t, aConnections, 1)
+		require.Equal(t, userB.Id, aConnections[0].ContactID)
+
+		bConnections, err := repo.ListConnections(ctx, userB.Id)
+		require.NoError(t, err)
+		require.Len(t, bConnections, 1)
+		require.Equal(t, userA.Id, bConnections[0].ContactID)
+	})
+
+	t.Run("CreateMutualConnection is safe when one direction already exists", func(t *testing.T) {
+		userA := authtest.CreateUser(t, pool)
+		userB := authtest.CreateUser(t, pool)
+
+		_, err := repo.CreateConnection(ctx, CreateConnectionPayload{ContactID: userB.Id}, userA.Id)
+		require.NoError(t, err)
+
+		err = repo.CreateMutualConnection(ctx, userA.Id, userB.Id)
+		require.NoError(t, err)
+
+		bConnections, err := repo.ListConnections(ctx, userB.Id)
+		require.NoError(t, err)
+		require.Len(t, bConnections, 1)
+		require.Equal(t, userA.Id, bConnections[0].ContactID)
+	})
 }
