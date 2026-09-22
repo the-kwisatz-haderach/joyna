@@ -1,10 +1,12 @@
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { HttpResponse, http } from "msw"
 import { MemoryRouter } from "react-router"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { AuthProvider } from "../auth-context"
 import { mockUsers } from "../mocks/data"
+import { server } from "../mocks/node"
 import Network from "./network"
 
 function renderNetwork() {
@@ -103,5 +105,32 @@ describe("Network", () => {
 
     expect(screen.getByText("Alan Turing")).toBeInTheDocument()
     expect(screen.queryByText("Grace Hopper")).not.toBeInTheDocument()
+  })
+
+  it("shows an empty state with an add-by-email button when the network has no connections", async () => {
+    server.use(
+      http.get("/api/network", () => HttpResponse.json([])),
+      http.get("/api/network/potential", () => HttpResponse.json([])),
+    )
+    renderNetwork()
+
+    expect(
+      await screen.findByRole("heading", { name: /your network is empty/i }),
+    ).toBeInTheDocument()
+    const addLink = screen.getByRole("link", { name: /add by email/i })
+    expect(addLink).toHaveAttribute("href", "/network/add")
+    expect(screen.queryByLabelText(/search your network/i)).not.toBeInTheDocument()
+  })
+
+  it("still shows suggestions below the empty state when there are potential connections", async () => {
+    server.use(http.get("/api/network", () => HttpResponse.json([])))
+    renderNetwork()
+
+    expect(
+      await screen.findByRole("heading", { name: /your network is empty/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: /people you may know/i }),
+    ).toBeInTheDocument()
   })
 })
