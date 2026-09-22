@@ -53,7 +53,7 @@ function EditProfile() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="h-10 rounded-field"
+            className="h-10 rounded-field bg-white"
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
@@ -61,7 +61,7 @@ function EditProfile() {
           <Input
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="h-10 rounded-field"
+            className="h-10 rounded-field bg-white"
           />
           <span className="text-xs font-normal text-joyna-ink-faint">
             Used to pre-fill the location when you create events.
