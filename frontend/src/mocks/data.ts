@@ -261,6 +261,20 @@ export const mockEvents: MockEvent[] = [
     type: 'party',
     defaultSpreadAllowed: 2,
   },
+  // Ada is neither the host nor an invitee here — exercises the "not
+  // invited" access-control path for the event detail screen, distinct from
+  // an event id that doesn't exist at all.
+  {
+    id: 'c1a2b3c4-1111-4a1a-8a1a-000000000015',
+    ownerId: mockUsers[1].id,
+    name: 'Alumni Reunion',
+    description: 'Catching up with old classmates.',
+    createdAt: daysFromNow(-6),
+    date: daysFromNow(50),
+    location: 'Old Campus Hall',
+    type: 'gathering',
+    defaultSpreadAllowed: 0,
+  },
 ]
 
 export const mockEventInvites: MockEventInvite[] = [

@@ -92,4 +92,10 @@ describe('NotificationRow', () => {
 
     expect(screen.queryByRole('link')).not.toBeInTheDocument()
   })
+
+  it('is not a link even with an eventId when removed from the event', () => {
+    renderRow(makeNotification({ type: 'event_uninvite', eventId: 'event-1' }))
+
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+  })
 })

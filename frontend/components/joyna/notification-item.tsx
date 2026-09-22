@@ -45,7 +45,14 @@ function describeNotification(notification: AppNotification): string {
   }
 }
 
+// Removed-from-event notifications never link anywhere — the viewer has just
+// lost access to that event, so linking to it would only 404/redirect them.
+function isLinkable(notification: AppNotification): boolean {
+  return Boolean(notification.eventId) && notification.type !== 'event_uninvite'
+}
+
 export function NotificationRow({ notification }: { notification: AppNotification }) {
+  const linkable = isLinkable(notification)
   const content = (
     <>
       <span
@@ -67,7 +74,7 @@ export function NotificationRow({ notification }: { notification: AppNotificatio
         <p className="mt-0.5 text-sm text-joyna-ink-soft">{describeNotification(notification)}</p>
         <p className="mt-1 text-xs text-joyna-ink-faint">{formatRelativeTime(notification.createdAt)}</p>
       </div>
-      {notification.eventId && (
+      {linkable && (
         <span className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-full border border-joyna-border-strong text-joyna-ink-soft">
           <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
         </span>
@@ -75,7 +82,7 @@ export function NotificationRow({ notification }: { notification: AppNotificatio
     </>
   )
 
-  if (notification.eventId) {
+  if (linkable) {
     return (
       <Link to={`/events/${notification.eventId}`} className="flex items-center gap-3 py-4">
         {content}
