@@ -56,6 +56,16 @@ describe('EventDetail', () => {
     expect(await screen.findByText('Margaret Hamilton')).toBeInTheDocument()
   })
 
+  it('counts only the host and accepted guests as attending, excluding pending and declined invites', async () => {
+    loginAsMockUser()
+    renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000001')
+
+    await screen.findByText('Hedy Lamarr')
+
+    // Ada (host) + Margaret (accepted) = 2. Hedy declined so isn't counted.
+    expect(screen.getByText('2 attending')).toBeInTheDocument()
+  })
+
   it("shows a declined guest's reason in the owner's guest list", async () => {
     loginAsMockUser()
     renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000001')
