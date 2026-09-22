@@ -81,8 +81,12 @@ describe('EventDetail', () => {
     await user.type(textarea, "Can't make it, sorry!")
     await user.click(screen.getByRole('button', { name: /save note/i }))
 
+    // The reason now appears twice — once as the still-open textarea's own
+    // value, once reflected in the guest list (GuestRow wraps it in curly
+    // quotes) — so match the guest-list rendering specifically rather than
+    // a plain substring, which would ambiguously match both.
     expect(
-      await screen.findByText(/Can't make it, sorry!/),
+      await screen.findByText("“Can't make it, sorry!”"),
     ).toBeInTheDocument()
   })
 
