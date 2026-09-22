@@ -279,6 +279,7 @@ export const handlers = [
       isOwner,
       viewerInviteStatus: isOwner ? undefined : invite?.status,
       viewerSpreadAllowed: isOwner ? undefined : invite?.spreadAllowed,
+      viewerDeclineReason: isOwner ? undefined : invite?.declineReason,
     })
   }),
 
@@ -314,6 +315,7 @@ export const handlers = [
             isOwner: false,
             status: invite.status,
             invitedBy: invite.invitedBy,
+            declineReason: invite.declineReason,
           }
         }),
     ]
@@ -336,13 +338,24 @@ export const handlers = [
         { status: 403 },
       )
     }
-    const body = (await request.json()) as { status?: "accepted" | "declined" }
+    const body = (await request.json()) as {
+      status?: "accepted" | "declined"
+      reason?: string
+    }
     if (body.status !== "accepted" && body.status !== "declined") {
       return new HttpResponse("status must be 'accepted' or 'declined'", {
         status: 400,
       })
     }
-    eventInvites[index] = { ...eventInvites[index], status: body.status }
+    const declineReason =
+      body.status === "declined" && body.reason?.trim()
+        ? body.reason.trim()
+        : undefined
+    eventInvites[index] = {
+      ...eventInvites[index],
+      status: body.status,
+      declineReason,
+    }
     return HttpResponse.json(eventInvites[index])
   }),
 

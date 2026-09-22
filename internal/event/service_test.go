@@ -16,7 +16,7 @@ type fakeRepository struct {
 	getEventsByOwnerFunc     func(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]EventView, error)
 	getEventFunc             func(ctx context.Context, eventID string) (Event, error)
 	getEventInviteFunc       func(ctx context.Context, eventID, userID string) (EventInvite, error)
-	respondToEventInviteFunc func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error)
+	respondToEventInviteFunc func(ctx context.Context, eventID, userID string, status EventInviteStatus, declineReason *string) (EventInvite, error)
 	listEventAttendeesFunc   func(ctx context.Context, eventID string) ([]Attendee, error)
 	createEventInviteFunc    func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 	forwardEventInviteFunc   func(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
@@ -50,8 +50,8 @@ func (f *fakeRepository) GetEventInvite(ctx context.Context, eventID, userID str
 	return f.getEventInviteFunc(ctx, eventID, userID)
 }
 
-func (f *fakeRepository) RespondToEventInvite(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error) {
-	return f.respondToEventInviteFunc(ctx, eventID, userID, status)
+func (f *fakeRepository) RespondToEventInvite(ctx context.Context, eventID, userID string, status EventInviteStatus, declineReason *string) (EventInvite, error) {
+	return f.respondToEventInviteFunc(ctx, eventID, userID, status, declineReason)
 }
 
 func (f *fakeRepository) ListEventAttendees(ctx context.Context, eventID string) ([]Attendee, error) {
@@ -435,23 +435,60 @@ func TestRespondToEventInvite(t *testing.T) {
 		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
 			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
 		},
-		respondToEventInviteFunc: func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error) {
+		respondToEventInviteFunc: func(ctx context.Context, eventID, userID string, status EventInviteStatus, declineReason *string) (EventInvite, error) {
 			require.Equal(t, "event-id", eventID)
 			require.Equal(t, "user-id", userID)
 			require.Equal(t, InviteStateAccepted, status)
+			require.Nil(t, declineReason)
 			return updated, nil
 		},
 	}
 	service := NewService(repo, nil)
-	invite, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateAccepted)
+	invite, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateAccepted, nil)
 	require.NoError(t, err)
 	require.Equal(t, updated, invite)
+}
+
+func TestRespondToEventInvite_WithDeclineReason(t *testing.T) {
+	reason := "Already have plans that evening, sorry!"
+	updated := EventInvite{EventID: "event-id", InvitedUserID: "user-id", Status: InviteStateDeclined, DeclineReason: &reason}
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+		respondToEventInviteFunc: func(ctx context.Context, eventID, userID string, status EventInviteStatus, declineReason *string) (EventInvite, error) {
+			require.Equal(t, InviteStateDeclined, status)
+			require.NotNil(t, declineReason)
+			require.Equal(t, reason, *declineReason)
+			return updated, nil
+		},
+	}
+	service := NewService(repo, nil)
+	invite, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateDeclined, &reason)
+	require.NoError(t, err)
+	require.Equal(t, updated, invite)
+}
+
+func TestRespondToEventInvite_IgnoresReasonWhenAccepted(t *testing.T) {
+	reason := "irrelevant"
+	repo := &fakeRepository{
+		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
+			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
+		},
+		respondToEventInviteFunc: func(ctx context.Context, eventID, userID string, status EventInviteStatus, declineReason *string) (EventInvite, error) {
+			require.Nil(t, declineReason)
+			return EventInvite{}, nil
+		},
+	}
+	service := NewService(repo, nil)
+	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateAccepted, &reason)
+	require.NoError(t, err)
 }
 
 func TestRespondToEventInvite_InvalidStatus(t *testing.T) {
 	repo := &fakeRepository{}
 	service := NewService(repo, nil)
-	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStatePending)
+	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStatePending, nil)
 	require.ErrorIs(t, err, ErrInvalidInviteStatus)
 }
 
@@ -460,12 +497,12 @@ func TestRespondToEventInvite_NotFound(t *testing.T) {
 		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
 			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
 		},
-		respondToEventInviteFunc: func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error) {
+		respondToEventInviteFunc: func(ctx context.Context, eventID, userID string, status EventInviteStatus, declineReason *string) (EventInvite, error) {
 			return EventInvite{}, ErrInviteNotFound
 		},
 	}
 	service := NewService(repo, nil)
-	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateDeclined)
+	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateDeclined, nil)
 	require.ErrorIs(t, err, ErrInviteNotFound)
 }
 
@@ -476,7 +513,7 @@ func TestRespondToEventInvite_EventNotFound(t *testing.T) {
 		},
 	}
 	service := NewService(repo, nil)
-	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateAccepted)
+	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateAccepted, nil)
 	require.ErrorIs(t, err, ErrEventNotFound)
 }
 
@@ -488,7 +525,7 @@ func TestRespondToEventInvite_RsvpClosed(t *testing.T) {
 		},
 	}
 	service := NewService(repo, nil)
-	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateAccepted)
+	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateAccepted, nil)
 	require.ErrorIs(t, err, ErrRsvpClosed)
 }
 
@@ -712,13 +749,13 @@ func TestRespondToEventInvite_NotifiesOriginalInviter(t *testing.T) {
 		getEventFunc: func(ctx context.Context, eventID string) (Event, error) {
 			return Event{ID: "event-id", OwnerId: "owner-id"}, nil
 		},
-		respondToEventInviteFunc: func(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error) {
+		respondToEventInviteFunc: func(ctx context.Context, eventID, userID string, status EventInviteStatus, declineReason *string) (EventInvite, error) {
 			return updated, nil
 		},
 	}
 	notifier := &fakeNotifier{}
 	service := NewService(repo, notifier)
-	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateDeclined)
+	_, err := service.RespondToEventInvite(context.Background(), "event-id", "user-id", InviteStateDeclined, nil)
 	require.NoError(t, err)
 	require.Equal(t, []notifyCall{{
 		userID:           "inviter-id",

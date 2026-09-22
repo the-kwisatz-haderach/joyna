@@ -40,3 +40,24 @@ func TestCreateEventInvitePayload_Validate_InvalidUserId(t *testing.T) {
 	err := payload.Validate()
 	require.ErrorIs(t, err, ErrNegativeSpread)
 }
+
+func TestRespondToEventInvitePayload_Sanitize_TrimsReason(t *testing.T) {
+	reason := "  Already have plans that evening, sorry!  "
+	payload := RespondToEventInvitePayload{Status: InviteStateDeclined, Reason: &reason}
+	payload.Sanitize()
+	require.NotNil(t, payload.Reason)
+	require.Equal(t, "Already have plans that evening, sorry!", *payload.Reason)
+}
+
+func TestRespondToEventInvitePayload_Sanitize_BlankReasonBecomesNil(t *testing.T) {
+	reason := "   "
+	payload := RespondToEventInvitePayload{Status: InviteStateDeclined, Reason: &reason}
+	payload.Sanitize()
+	require.Nil(t, payload.Reason)
+}
+
+func TestRespondToEventInvitePayload_Sanitize_NilReason(t *testing.T) {
+	payload := RespondToEventInvitePayload{Status: InviteStateAccepted}
+	payload.Sanitize()
+	require.Nil(t, payload.Reason)
+}

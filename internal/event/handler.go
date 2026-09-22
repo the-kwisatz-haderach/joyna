@@ -219,12 +219,13 @@ func (h *Handler) RespondToEventInvite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
+	payload.Sanitize()
 	if err := payload.Validate(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	updated, err := h.service.RespondToEventInvite(r.Context(), eventID, userID, payload.Status)
+	updated, err := h.service.RespondToEventInvite(r.Context(), eventID, userID, payload.Status, payload.Reason)
 	if err != nil {
 		if errors.Is(err, ErrInvalidInviteStatus) {
 			http.Error(w, err.Error(), http.StatusBadRequest)

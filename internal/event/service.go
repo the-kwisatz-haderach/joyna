@@ -43,7 +43,7 @@ type repository interface {
 	GetEventsByOwner(ctx context.Context, userID string, sortField EventSortField, order SortOrder, scope EventListScope) ([]EventView, error)
 	GetEvent(ctx context.Context, eventID string) (Event, error)
 	GetEventInvite(ctx context.Context, eventID, userID string) (EventInvite, error)
-	RespondToEventInvite(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error)
+	RespondToEventInvite(ctx context.Context, eventID, userID string, status EventInviteStatus, declineReason *string) (EventInvite, error)
 	ListEventAttendees(ctx context.Context, eventID string) ([]Attendee, error)
 	CreateEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
 	ForwardEventInvite(ctx context.Context, payload CreateEventInvitePayload, invitedBy string) (EventInvite, error)
@@ -169,7 +169,7 @@ func (s *Service) GetEventDetail(ctx context.Context, eventID, viewerID string) 
 
 	status := invite.Status
 	spreadAllowed := invite.SpreadAllowed
-	return EventView{Event: ev, ViewerInviteStatus: &status, ViewerSpreadAllowed: &spreadAllowed}, nil
+	return EventView{Event: ev, ViewerInviteStatus: &status, ViewerSpreadAllowed: &spreadAllowed, ViewerDeclineReason: invite.DeclineReason}, nil
 }
 
 func (s *Service) GetEventAttendees(ctx context.Context, eventID, viewerID string) ([]Attendee, error) {
@@ -179,9 +179,12 @@ func (s *Service) GetEventAttendees(ctx context.Context, eventID, viewerID strin
 	return s.repo.ListEventAttendees(ctx, eventID)
 }
 
-func (s *Service) RespondToEventInvite(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error) {
+func (s *Service) RespondToEventInvite(ctx context.Context, eventID, userID string, status EventInviteStatus, declineReason *string) (EventInvite, error) {
 	if status != InviteStateAccepted && status != InviteStateDeclined {
 		return EventInvite{}, ErrInvalidInviteStatus
+	}
+	if status != InviteStateDeclined {
+		declineReason = nil
 	}
 	ev, err := s.repo.GetEvent(ctx, eventID)
 	if err != nil {
@@ -190,7 +193,7 @@ func (s *Service) RespondToEventInvite(ctx context.Context, eventID, userID stri
 	if rsvpClosed(ev) {
 		return EventInvite{}, ErrRsvpClosed
 	}
-	updated, err := s.repo.RespondToEventInvite(ctx, eventID, userID, status)
+	updated, err := s.repo.RespondToEventInvite(ctx, eventID, userID, status, declineReason)
 	if err == nil {
 		s.notify(ctx, updated.InvitedBy, notificationInviteResponse, map[string]any{
 			"eventId": eventID,

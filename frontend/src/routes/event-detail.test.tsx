@@ -56,6 +56,36 @@ describe('EventDetail', () => {
     expect(await screen.findByText('Margaret Hamilton')).toBeInTheDocument()
   })
 
+  it("shows a declined guest's reason in the owner's guest list", async () => {
+    loginAsMockUser()
+    renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000001')
+
+    expect(await screen.findByText('Hedy Lamarr')).toBeInTheDocument()
+    expect(
+      screen.getByText(/Already have plans that evening, sorry!/),
+    ).toBeInTheDocument()
+  })
+
+  it('lets an invited user decline with a reason and see it reflected in the guest list', async () => {
+    const user = userEvent.setup()
+    loginAsMockUser()
+    renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000004')
+
+    expect(
+      await screen.findByRole('heading', { name: /turing award dinner/i }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /^no$/i }))
+
+    const textarea = await screen.findByLabelText(/let the host know why/i)
+    await user.type(textarea, "Can't make it, sorry!")
+    await user.click(screen.getByRole('button', { name: /save note/i }))
+
+    expect(
+      await screen.findByText(/Can't make it, sorry!/),
+    ).toBeInTheDocument()
+  })
+
   it('lets an invited user accept the invite', async () => {
     const user = userEvent.setup()
     loginAsMockUser()

@@ -38,6 +38,7 @@ type EventDetailData = {
   isOwner: boolean
   viewerInviteStatus?: ViewerInviteStatus
   viewerSpreadAllowed?: number
+  viewerDeclineReason?: string
   mood?: string
 }
 
@@ -48,6 +49,7 @@ type Attendee = {
   isOwner: boolean
   status?: 'pending' | 'accepted' | 'declined'
   invitedBy?: string
+  declineReason?: string
 }
 
 type NetworkConnection = {
@@ -198,6 +200,7 @@ function EventDetail() {
       return
     }
     setEvent(eventDetail)
+    setDeclineNote(eventDetail.viewerDeclineReason ?? '')
     const [attendeeList, connectionList] = await Promise.all([
       fetchJson<Attendee[]>(`/api/events/${id}/attendees`),
       fetchJson<NetworkConnection[]>('/api/network'),
@@ -229,6 +232,7 @@ function EventDetail() {
           : connection
             ? (connection.groupName ?? DEFAULT_GROUP_NAME)
             : null,
+        reason: attendee.declineReason,
       }
     })
   }, [attendees, connections, user?.id])
@@ -244,7 +248,7 @@ function EventDetail() {
       }))
   }, [attendees, connections])
 
-  async function handleRespond(status: 'accepted' | 'declined') {
+  async function handleRespond(status: 'accepted' | 'declined', reason?: string) {
     if (!id) return
     setIsResponding(true)
     setError(null)
@@ -253,7 +257,7 @@ function EventDetail() {
         method: 'PATCH',
         headers: {'Content-Type': 'application/json'},
         credentials: 'include',
-        body: JSON.stringify({status}),
+        body: JSON.stringify({status, reason}),
       })
       if (!response.ok) {
         throw new Error('failed to respond to invite')
@@ -264,6 +268,11 @@ function EventDetail() {
     } finally {
       setIsResponding(false)
     }
+  }
+
+  async function handleSaveDeclineNote() {
+    await handleRespond('declined', declineNote)
+    setNoteSaved(true)
   }
 
   async function handleAddToNetwork(contactId: string) {
@@ -424,7 +433,7 @@ function EventDetail() {
                 event.viewerInviteStatus === 'declined' ? 'default' : 'outline'
               }
               disabled={isResponding || rsvpClosed}
-              onClick={() => handleRespond('declined')}
+              onClick={() => handleRespond('declined', declineNote)}
               className={
                 event.viewerInviteStatus === 'declined'
                   ? 'h-11 flex-1 rounded-control font-display text-sm bg-joyna-bubblegum text-joyna-bubblegum-dark hover:bg-joyna-bubblegum'
@@ -474,7 +483,8 @@ function EventDetail() {
                   type="button"
                   variant="secondary"
                   className="absolute right-3 bottom-3 h-10 rounded-control font-display text-sm"
-                  onClick={() => setNoteSaved(true)}
+                  disabled={isResponding}
+                  onClick={handleSaveDeclineNote}
                 >
                   {noteSaved ? 'Saved' : 'Save note'}
                 </Button>

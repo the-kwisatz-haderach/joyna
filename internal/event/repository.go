@@ -190,10 +190,10 @@ func (r *Repository) GetEventInvite(ctx context.Context, eventID, userID string)
 	return invite, nil
 }
 
-func (r *Repository) RespondToEventInvite(ctx context.Context, eventID, userID string, status EventInviteStatus) (EventInvite, error) {
+func (r *Repository) RespondToEventInvite(ctx context.Context, eventID, userID string, status EventInviteStatus, declineReason *string) (EventInvite, error) {
 	rows, err := r.pool.Query(ctx,
-		`UPDATE event_invites SET status = $3 WHERE event_id = $1 AND invited_user_id = $2 RETURNING *`,
-		eventID, userID, status,
+		`UPDATE event_invites SET status = $3, decline_reason = $4 WHERE event_id = $1 AND invited_user_id = $2 RETURNING *`,
+		eventID, userID, status, declineReason,
 	)
 	if err != nil {
 		return EventInvite{}, fmt.Errorf("responding to event invite: %w", err)
@@ -213,12 +213,12 @@ func (r *Repository) RespondToEventInvite(ctx context.Context, eventID, userID s
 
 func (r *Repository) ListEventAttendees(ctx context.Context, eventID string) ([]Attendee, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT u.id AS user_id, u.name, u.email, TRUE AS is_owner, ''::TEXT AS status, ''::TEXT AS invited_by
+		`SELECT u.id AS user_id, u.name, u.email, TRUE AS is_owner, ''::TEXT AS status, ''::TEXT AS invited_by, NULL::TEXT AS decline_reason
 		FROM events e
 		JOIN users u ON u.id = e.owner_id
 		WHERE e.id = $1
 		UNION
-		SELECT u.id AS user_id, u.name, u.email, FALSE AS is_owner, ei.status, ei.invited_by::TEXT AS invited_by
+		SELECT u.id AS user_id, u.name, u.email, FALSE AS is_owner, ei.status, ei.invited_by::TEXT AS invited_by, ei.decline_reason
 		FROM event_invites ei
 		JOIN users u ON u.id = ei.invited_user_id
 		WHERE ei.event_id = $1

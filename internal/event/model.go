@@ -30,6 +30,7 @@ type EventInvite struct {
 	Status        EventInviteStatus `json:"status" db:"status"`
 	SpreadAllowed int               `json:"spreadAllowed" db:"spread_allowed"`
 	CreatedAt     time.Time         `json:"createdAt" db:"created_at"`
+	DeclineReason *string           `json:"declineReason,omitempty" db:"decline_reason"`
 }
 
 // EventView is an Event enriched with the requesting viewer's relationship
@@ -39,18 +40,20 @@ type EventView struct {
 	IsOwner             bool               `json:"isOwner"`
 	ViewerInviteStatus  *EventInviteStatus `json:"viewerInviteStatus,omitempty"`
 	ViewerSpreadAllowed *int               `json:"viewerSpreadAllowed,omitempty"`
+	ViewerDeclineReason *string            `json:"viewerDeclineReason,omitempty"`
 }
 
 // Attendee is a user associated with an event: its owner, or anyone with an
 // invite (pending, accepted, or declined). The owner row has no meaningful
 // Status/InvitedBy since they aren't invited to their own event.
 type Attendee struct {
-	UserID    string            `json:"userId" db:"user_id"`
-	Name      string            `json:"name" db:"name"`
-	Email     string            `json:"email" db:"email"`
-	IsOwner   bool              `json:"isOwner" db:"is_owner"`
-	Status    EventInviteStatus `json:"status,omitempty" db:"status"`
-	InvitedBy string            `json:"invitedBy,omitempty" db:"invited_by"`
+	UserID        string            `json:"userId" db:"user_id"`
+	Name          string            `json:"name" db:"name"`
+	Email         string            `json:"email" db:"email"`
+	IsOwner       bool              `json:"isOwner" db:"is_owner"`
+	Status        EventInviteStatus `json:"status,omitempty" db:"status"`
+	InvitedBy     string            `json:"invitedBy,omitempty" db:"invited_by"`
+	DeclineReason *string           `json:"declineReason,omitempty" db:"decline_reason"`
 }
 
 // ReminderInvite is the minimal shape needed to raise a daily reminder
@@ -63,6 +66,19 @@ type ReminderInvite struct {
 
 type RespondToEventInvitePayload struct {
 	Status EventInviteStatus `json:"status"`
+	Reason *string           `json:"reason,omitempty"`
+}
+
+func (p *RespondToEventInvitePayload) Sanitize() {
+	if p.Reason == nil {
+		return
+	}
+	trimmed := strings.TrimSpace(*p.Reason)
+	if trimmed == "" {
+		p.Reason = nil
+		return
+	}
+	p.Reason = &trimmed
 }
 
 func (p RespondToEventInvitePayload) Validate() error {

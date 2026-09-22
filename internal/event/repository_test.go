@@ -85,11 +85,11 @@ func TestEventRepository(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, invite, fetched)
 
-		updated, err := repo.RespondToEventInvite(ctx, createdEvent.ID, invitee.Id, InviteStateAccepted)
+		updated, err := repo.RespondToEventInvite(ctx, createdEvent.ID, invitee.Id, InviteStateAccepted, nil)
 		require.NoError(t, err)
 		require.Equal(t, InviteStateAccepted, updated.Status)
 
-		_, err = repo.RespondToEventInvite(ctx, createdEvent.ID, uuid.NewString(), InviteStateAccepted)
+		_, err = repo.RespondToEventInvite(ctx, createdEvent.ID, uuid.NewString(), InviteStateAccepted, nil)
 		require.ErrorIs(t, err, ErrInviteNotFound)
 	})
 
@@ -104,7 +104,8 @@ func TestEventRepository(t *testing.T) {
 		require.NoError(t, err)
 		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: createdEvent.ID, InvitedUserID: declined.Id}, owner.Id)
 		require.NoError(t, err)
-		_, err = repo.RespondToEventInvite(ctx, createdEvent.ID, declined.Id, InviteStateDeclined)
+		reason := "Already have plans that evening, sorry!"
+		_, err = repo.RespondToEventInvite(ctx, createdEvent.ID, declined.Id, InviteStateDeclined, &reason)
 		require.NoError(t, err)
 
 		attendees, err := repo.ListEventAttendees(ctx, createdEvent.ID)
@@ -117,14 +118,18 @@ func TestEventRepository(t *testing.T) {
 		}
 
 		require.True(t, byID[owner.Id].IsOwner)
+		require.Nil(t, byID[owner.Id].DeclineReason)
 
 		require.False(t, byID[accepted.Id].IsOwner)
 		require.Equal(t, InviteStateAccepted, byID[accepted.Id].Status)
 		require.Equal(t, owner.Id, byID[accepted.Id].InvitedBy)
+		require.Nil(t, byID[accepted.Id].DeclineReason)
 
 		require.False(t, byID[declined.Id].IsOwner)
 		require.Equal(t, InviteStateDeclined, byID[declined.Id].Status)
 		require.Equal(t, owner.Id, byID[declined.Id].InvitedBy)
+		require.NotNil(t, byID[declined.Id].DeclineReason)
+		require.Equal(t, reason, *byID[declined.Id].DeclineReason)
 	})
 
 	t.Run("DeleteEventInvite", func(t *testing.T) {
@@ -155,7 +160,7 @@ func TestEventRepository(t *testing.T) {
 		require.NoError(t, err)
 		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: invitedEvent.ID, InvitedUserID: owner.Id}, invitee.Id)
 		require.NoError(t, err)
-		_, err = repo.RespondToEventInvite(ctx, invitedEvent.ID, owner.Id, InviteStateAccepted)
+		_, err = repo.RespondToEventInvite(ctx, invitedEvent.ID, owner.Id, InviteStateAccepted, nil)
 		require.NoError(t, err)
 
 		views, err := repo.GetEventsByOwner(ctx, owner.Id, EventSortFieldDate, SortOrderAsc, EventListScopeAll)
@@ -199,7 +204,7 @@ func TestEventRepository(t *testing.T) {
 		declinedInvitee := authtest.CreateUser(t, pool)
 		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: declinedInvitee.Id}, owner.Id)
 		require.NoError(t, err)
-		_, err = repo.RespondToEventInvite(ctx, ev.ID, declinedInvitee.Id, InviteStateDeclined)
+		_, err = repo.RespondToEventInvite(ctx, ev.ID, declinedInvitee.Id, InviteStateDeclined, nil)
 		require.NoError(t, err)
 
 		invites, err = repo.ListPendingInvitesWithRsvpDeadlineOn(ctx, deadline)
@@ -222,11 +227,11 @@ func TestEventRepository(t *testing.T) {
 		require.NoError(t, err)
 		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: invitee.Id}, owner.Id)
 		require.NoError(t, err)
-		_, err = repo.RespondToEventInvite(ctx, ev.ID, invitee.Id, InviteStateAccepted)
+		_, err = repo.RespondToEventInvite(ctx, ev.ID, invitee.Id, InviteStateAccepted, nil)
 		require.NoError(t, err)
 		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: ev.ID, InvitedUserID: alreadyNotified.Id}, owner.Id)
 		require.NoError(t, err)
-		_, err = repo.RespondToEventInvite(ctx, ev.ID, alreadyNotified.Id, InviteStateAccepted)
+		_, err = repo.RespondToEventInvite(ctx, ev.ID, alreadyNotified.Id, InviteStateAccepted, nil)
 		require.NoError(t, err)
 
 		notificationRepo := notification.NewRepository(pool)
