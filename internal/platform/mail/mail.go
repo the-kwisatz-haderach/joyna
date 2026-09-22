@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/mail"
 	"net/smtp"
 	"strings"
 )
@@ -51,6 +52,11 @@ func (m *SMTPMailer) Send(ctx context.Context, to, subject, body string) error {
 	if err != nil {
 		return err
 	}
+	parsedTo, err := mail.ParseAddress(safeTo)
+	if err != nil || parsedTo == nil || parsedTo.Address == "" || parsedTo.Name != "" {
+		return fmt.Errorf("invalid to header value")
+	}
+	safeTo = parsedTo.Address
 	safeSubject, err := sanitizeHeaderValue(subject, "subject")
 	if err != nil {
 		return err
