@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Camera01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
 
@@ -25,6 +26,7 @@ async function fetchCount(url: string): Promise<number> {
 
 function Profile() {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [stats, setStats] = useState<Record<StatKey, number>>({ hosted: 0, attended: 0, network: 0 })
 
   useEffect(() => {
@@ -95,8 +97,8 @@ function Profile() {
       <div className="flex flex-col divide-y divide-joyna-border rounded-card border border-joyna-border bg-white">
         <button
           type="button"
-          className="flex items-center justify-between px-4 py-3 text-left text-sm text-joyna-ink-faint"
-          disabled
+          className="flex items-center justify-between px-4 py-3 text-left text-sm text-joyna-ink"
+          onClick={() => navigate('/profile/edit')}
         >
           Edit profile
           <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />

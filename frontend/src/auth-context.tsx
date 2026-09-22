@@ -17,6 +17,7 @@ export type SessionUser = {
 type AuthContextValue = {
   user: SessionUser | null
   login: (user: SessionUser) => void
+  updateUser: (user: SessionUser) => void
   logout: () => void
 }
 
@@ -50,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, updateUser: login, logout }}>
       {children}
     </AuthContext.Provider>
   )

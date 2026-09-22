@@ -73,4 +73,41 @@ func TestAuthRepository(t *testing.T) {
 		require.Equal(t, &address, user.Address)
 		require.Equal(t, userPassHash, passHash)
 	})
+
+	t.Run("UpdateUser", func(t *testing.T) {
+		name := "Update Me"
+		email := "update_test@test.dev"
+		address := "1 Old St"
+		created, err := repo.CreateUser(context.Background(), name, email, "hashed-password", &address)
+		require.NoError(t, err)
+
+		newName := "Updated Name"
+		newAddress := "2 New St"
+		updated, err := repo.UpdateUser(context.Background(), UpdateUserPayload{Name: &newName, Address: &newAddress}, created.Id)
+		require.NoError(t, err)
+		require.Equal(t, created.Id, updated.Id)
+		require.Equal(t, newName, updated.Name)
+		require.Equal(t, &newAddress, updated.Address)
+		require.Equal(t, created.Email, updated.Email)
+	})
+
+	t.Run("UpdateUser partial update leaves omitted fields unchanged", func(t *testing.T) {
+		name := "Partial Update"
+		email := "partial_update_test@test.dev"
+		address := "1 Kept St"
+		created, err := repo.CreateUser(context.Background(), name, email, "hashed-password", &address)
+		require.NoError(t, err)
+
+		newName := "Only Name Changed"
+		updated, err := repo.UpdateUser(context.Background(), UpdateUserPayload{Name: &newName}, created.Id)
+		require.NoError(t, err)
+		require.Equal(t, newName, updated.Name)
+		require.Equal(t, &address, updated.Address)
+	})
+
+	t.Run("UpdateUser not found", func(t *testing.T) {
+		name := "Missing"
+		_, err := repo.UpdateUser(context.Background(), UpdateUserPayload{Name: &name}, uuid.NewString())
+		require.ErrorIs(t, err, ErrUserNotFound)
+	})
 }

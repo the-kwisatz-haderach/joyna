@@ -16,6 +16,7 @@ import NetworkManage from './routes/network-manage'
 import NetworkProfile from './routes/network-profile'
 import Notifications from './routes/notifications'
 import Profile from './routes/profile'
+import EditProfile from './routes/edit-profile'
 
 export const router = createBrowserRouter([
   {
@@ -115,6 +116,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireAuth>
             <Profile />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'profile/edit',
+        element: (
+          <RequireAuth>
+            <EditProfile />
           </RequireAuth>
         ),
       },

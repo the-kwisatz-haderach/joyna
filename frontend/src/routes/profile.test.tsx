@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { MemoryRouter, Route, Routes } from "react-router"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { AuthProvider } from "../auth-context"
@@ -21,7 +22,12 @@ function loginAsMockUser() {
 function renderProfile() {
   return render(
     <AuthProvider>
-      <Profile />
+      <MemoryRouter initialEntries={["/profile"]}>
+        <Routes>
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/edit" element={<div>Edit profile page</div>} />
+        </Routes>
+      </MemoryRouter>
     </AuthProvider>,
   )
 }
@@ -37,6 +43,17 @@ describe("Profile", () => {
     renderProfile()
 
     expect(screen.getByText(mockUsers[0].name)).toBeInTheDocument()
+  })
+
+  it("navigates to the edit profile page when 'Edit profile' is clicked", async () => {
+    loginAsMockUser()
+    const user = userEvent.setup()
+
+    renderProfile()
+
+    await user.click(screen.getByRole("button", { name: /edit profile/i }))
+
+    expect(screen.getByText("Edit profile page")).toBeInTheDocument()
   })
 
   it("logs the user out when the log out button is clicked", async () => {

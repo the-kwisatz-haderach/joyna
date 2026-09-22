@@ -59,3 +59,30 @@ func (p RegisterUserPayload) Validate() error {
 	}
 	return nil
 }
+
+type UpdateUserPayload struct {
+	Name    *string `json:"name,omitempty"`
+	Address *string `json:"address,omitempty"`
+}
+
+func (p *UpdateUserPayload) Sanitize() {
+	if p.Name != nil {
+		trimmed := strings.TrimSpace(*p.Name)
+		p.Name = &trimmed
+	}
+	if p.Address != nil {
+		trimmed := strings.TrimSpace(*p.Address)
+		if trimmed == "" {
+			p.Address = nil
+		} else {
+			p.Address = &trimmed
+		}
+	}
+}
+
+func (p UpdateUserPayload) Validate() error {
+	if p.Name != nil && *p.Name == "" {
+		return ErrEmptyName
+	}
+	return nil
+}
