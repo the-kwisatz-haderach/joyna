@@ -12,6 +12,7 @@ import {
   type MockEvent,
   type MockEventInvite,
   type MockGroup,
+  type MockUser,
 } from "./data"
 
 // Mutable in-memory copies so writes made during a session don't leak
@@ -21,7 +22,8 @@ let eventInvites = [...mockEventInvites]
 let groups = [...mockGroups]
 let connections = [...mockConnections]
 let notifications = [...mockNotifications]
-const currentUser = mockUsers[0]
+let users = [...mockUsers]
+let currentUser = users[0]
 
 // Every handler below only ever replaces these arrays wholesale (never
 // mutates an existing mock*/array item in place), so re-seeding from the
@@ -34,10 +36,12 @@ export function resetMockData() {
   groups = [...mockGroups]
   connections = [...mockConnections]
   notifications = [...mockNotifications]
+  users = [...mockUsers]
+  currentUser = users[0]
 }
 
 function serializeConnection(connection: MockConnection) {
-  const contact = mockUsers.find((user) => user.id === connection.contactId)
+  const contact = users.find((user) => user.id === connection.contactId)
   const group = connection.groupId
     ? groups.find((candidate) => candidate.id === connection.groupId)
     : undefined
@@ -126,7 +130,7 @@ function listPotentialConnections(userId: string) {
 
   return [...sharedEventCountByUserId.entries()]
     .map(([candidateId, sharedEventCount]) => {
-      const user = mockUsers.find((candidate) => candidate.id === candidateId)
+      const user = users.find((candidate) => candidate.id === candidateId)
       return {
         userId: candidateId,
         name: user?.name ?? "",
@@ -149,7 +153,7 @@ export const handlers = [
       return new HttpResponse("invalid request body", { status: 400 })
     }
     const email = body.email.trim().toLowerCase()
-    if (mockUsers.some((user) => user.email === email)) {
+    if (users.some((user) => user.email === email)) {
       return new HttpResponse("user already exists with this email", {
         status: 409,
       })
@@ -169,7 +173,7 @@ export const handlers = [
       email?: string
       password?: string
     }
-    const user = mockUsers.find((candidate) => candidate.email === body.email)
+    const user = users.find((candidate) => candidate.email === body.email)
     if (!user || body.password !== MOCK_PASSWORD) {
       return new HttpResponse("invalid credentials", { status: 401 })
     }
@@ -177,6 +181,22 @@ export const handlers = [
   }),
 
   http.post("/api/auth/logout", () => new HttpResponse(null, { status: 204 })),
+
+  http.patch("/api/me", async ({ request }) => {
+    const body = (await request.json()) as Partial<Pick<MockUser, "name" | "address">>
+    if (body.name !== undefined && !body.name.trim()) {
+      return new HttpResponse("name can't be empty", { status: 400 })
+    }
+    const index = users.findIndex((user) => user.id === currentUser.id)
+    const updated: MockUser = {
+      ...users[index],
+      ...(body.name !== undefined ? { name: body.name.trim() } : {}),
+      ...(body.address !== undefined ? { address: body.address.trim() || undefined } : {}),
+    }
+    users = users.map((user, i) => (i === index ? updated : user))
+    currentUser = updated
+    return HttpResponse.json(updated)
+  }),
 
   http.get("/api/events", ({ request }) => {
     const url = new URL(request.url)
@@ -301,13 +321,13 @@ export const handlers = [
     if (!isOwner && !isInvited) {
       return new HttpResponse("event not found", { status: 404 })
     }
-    const owner = mockUsers.find((candidate) => candidate.id === event.ownerId)
+    const owner = users.find((candidate) => candidate.id === event.ownerId)
     const attendees = [
       { userId: event.ownerId, name: owner?.name ?? "", email: owner?.email ?? "", isOwner: true },
       ...eventInvites
         .filter((invite) => invite.eventId === event.id)
         .map((invite) => {
-          const user = mockUsers.find((candidate) => candidate.id === invite.invitedUserId)
+          const user = users.find((candidate) => candidate.id === invite.invitedUserId)
           return {
             userId: invite.invitedUserId,
             name: user?.name ?? "",
@@ -480,7 +500,7 @@ export const handlers = [
     if (!email) {
       return new HttpResponse("email is required", { status: 400 })
     }
-    const user = mockUsers.find((candidate) => candidate.email === email)
+    const user = users.find((candidate) => candidate.email === email)
     if (!user) {
       return new HttpResponse("user not found", { status: 404 })
     }
@@ -492,7 +512,7 @@ export const handlers = [
       contactId?: string
       groupId?: string
     }
-    if (!body.contactId || !mockUsers.some((user) => user.id === body.contactId)) {
+    if (!body.contactId || !users.some((user) => user.id === body.contactId)) {
       return new HttpResponse("contact not found", { status: 404 })
     }
     if (body.contactId === currentUser.id) {

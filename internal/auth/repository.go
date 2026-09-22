@@ -65,6 +65,27 @@ func (r *Repository) CreateUser(ctx context.Context, name, email, passwordHash s
 	return user, nil
 }
 
+func (r *Repository) UpdateUser(ctx context.Context, userUpdate UpdateUserPayload, userID string) (User, error) {
+	row := r.pool.QueryRow(ctx,
+		`UPDATE users SET
+			name = COALESCE($2, name),
+			address = COALESCE($3, address)
+		WHERE id = $1
+		RETURNING id, name, email, joined_at, profile_picture_key, address`,
+		userID, userUpdate.Name, userUpdate.Address,
+	)
+
+	var user User
+	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.JoinedAt, &user.ProfilePictureKey, &user.Address); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return User{}, ErrUserNotFound
+		}
+		return User{}, fmt.Errorf("updating user: %w", err)
+	}
+
+	return user, nil
+}
+
 func (r *Repository) GetUserByEmail(ctx context.Context, email string) (User, string, error) {
 	row := r.pool.QueryRow(ctx,
 		`SELECT u.id, u.name, u.email, u.joined_at, u.profile_picture_key, u.address, c.password_hash

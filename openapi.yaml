@@ -148,6 +148,46 @@ paths:
               schema:
                 type: string
 
+  /me:
+    patch:
+      tags: [Auth]
+      summary: Update the authenticated user's profile
+      description: Only `name` and `address` may be updated. Omitted fields are left unchanged.
+      operationId: updateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserPayload'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request body or validation error (empty name)
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: User not found
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
   /events:
     get:
       tags: [Events]
@@ -842,6 +882,19 @@ components:
             Optional postal address, used to simplify event creation by pre-filling
             the event location.
       required: [name, email, password]
+
+    UpdateUserPayload:
+      type: object
+      description: All fields are optional; omitted fields are left unchanged.
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+          nullable: true
+          description: >
+            Optional postal address, used to simplify event creation by pre-filling
+            the event location.
 
     LoginRequest:
       type: object

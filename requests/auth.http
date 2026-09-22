@@ -22,3 +22,13 @@ Content-Type: application/json
 
 ### Logout
 POST {{baseUrl}}/auth/logout
+
+### Update profile
+# Requires the session cookie from Login above
+PATCH {{baseUrl}}/me
+Content-Type: application/json
+
+{
+  "name": "Ada Lovelace",
+  "address": "1 Analytical Engine Way"
+}

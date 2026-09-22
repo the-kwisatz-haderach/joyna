@@ -11,6 +11,7 @@ import (
 type fakeRepository struct {
 	createUserFunc     func(ctx context.Context, name, email, passwordHash string, address *string) (User, error)
 	getUserByEmailFunc func(ctx context.Context, email string) (User, string, error)
+	updateUserFunc     func(ctx context.Context, userUpdate UpdateUserPayload, userID string) (User, error)
 }
 
 func (f *fakeRepository) CreateUser(ctx context.Context, name, email, passwordHash string, address *string) (User, error) {
@@ -19,6 +20,10 @@ func (f *fakeRepository) CreateUser(ctx context.Context, name, email, passwordHa
 
 func (f *fakeRepository) GetUserByEmail(ctx context.Context, email string) (User, string, error) {
 	return f.getUserByEmailFunc(ctx, email)
+}
+
+func (f *fakeRepository) UpdateUser(ctx context.Context, userUpdate UpdateUserPayload, userID string) (User, error) {
+	return f.updateUserFunc(ctx, userUpdate, userID)
 }
 
 func TestRegister(t *testing.T) {
@@ -75,6 +80,34 @@ func TestAuthenticate_InvalidPassword(t *testing.T) {
 	user, err := service.Authenticate(context.Background(), "email", "invalid_pass")
 	require.ErrorIs(t, err, ErrInvalidCredentials)
 	require.Equal(t, User{}, user)
+}
+
+func TestUpdateUser(t *testing.T) {
+	updatedUser := User{
+		Id:   "user-1",
+		Name: "New Name",
+	}
+	var repo = &fakeRepository{
+		updateUserFunc: func(ctx context.Context, userUpdate UpdateUserPayload, userID string) (User, error) {
+			return updatedUser, nil
+		},
+	}
+	service := NewService(repo)
+	name := "New Name"
+	user, err := service.UpdateUser(context.Background(), UpdateUserPayload{Name: &name}, "user-1")
+	require.NoError(t, err)
+	require.Equal(t, updatedUser, user)
+}
+
+func TestUpdateUser_NotFound(t *testing.T) {
+	var repo = &fakeRepository{
+		updateUserFunc: func(ctx context.Context, userUpdate UpdateUserPayload, userID string) (User, error) {
+			return User{}, ErrUserNotFound
+		},
+	}
+	service := NewService(repo)
+	_, err := service.UpdateUser(context.Background(), UpdateUserPayload{}, "missing-user")
+	require.ErrorIs(t, err, ErrUserNotFound)
 }
 
 func TestAuthenticate_UserNotFound(t *testing.T) {

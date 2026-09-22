@@ -47,3 +47,38 @@ func TestValidate_EmptyPassword(t *testing.T) {
 	err := payload.Validate()
 	require.ErrorIs(t, err, ErrEmptyPassword)
 }
+
+func TestUpdateUserPayload_Sanitize(t *testing.T) {
+	name := "  New Name  "
+	address := "  123 Main St  "
+	payload := UpdateUserPayload{Name: &name, Address: &address}
+	payload.Sanitize()
+	require.Equal(t, "New Name", *payload.Name)
+	require.Equal(t, "123 Main St", *payload.Address)
+}
+
+func TestUpdateUserPayload_Sanitize_BlankAddressBecomesNil(t *testing.T) {
+	address := "   "
+	payload := UpdateUserPayload{Address: &address}
+	payload.Sanitize()
+	require.Nil(t, payload.Address)
+}
+
+func TestUpdateUserPayload_Sanitize_NilFieldsUnchanged(t *testing.T) {
+	payload := UpdateUserPayload{}
+	payload.Sanitize()
+	require.Nil(t, payload.Name)
+	require.Nil(t, payload.Address)
+}
+
+func TestUpdateUserPayload_Validate_EmptyName(t *testing.T) {
+	name := ""
+	payload := UpdateUserPayload{Name: &name}
+	err := payload.Validate()
+	require.ErrorIs(t, err, ErrEmptyName)
+}
+
+func TestUpdateUserPayload_Validate_OmittedFieldsAreValid(t *testing.T) {
+	payload := UpdateUserPayload{}
+	require.NoError(t, payload.Validate())
+}

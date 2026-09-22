@@ -13,6 +13,7 @@ var ErrInvalidCredentials = errors.New("invalid credentials")
 type repository interface {
 	CreateUser(ctx context.Context, name, email, passwordHash string, address *string) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, string, error)
+	UpdateUser(ctx context.Context, userUpdate UpdateUserPayload, userID string) (User, error)
 }
 
 type Service struct {
@@ -31,6 +32,10 @@ func (s *Service) Register(ctx context.Context, name, email, password string, ad
 	}
 
 	return s.repo.CreateUser(ctx, name, email, string(hash), address)
+}
+
+func (s *Service) UpdateUser(ctx context.Context, userUpdate UpdateUserPayload, userID string) (User, error) {
+	return s.repo.UpdateUser(ctx, userUpdate, userID)
 }
 
 func (s *Service) Authenticate(ctx context.Context, email, password string) (User, error) {
