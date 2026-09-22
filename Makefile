@@ -115,28 +115,28 @@ helm-upgrade:
 
 .PHONY: helm-upgrade-frontend
 helm-upgrade-frontend:
-	helm upgrade --reuse-values --install $(RELEASE) $(CHART_DIR) \
+	helm upgrade --reset-then-reuse-values --install $(RELEASE) $(CHART_DIR) \
 		--namespace $(NAMESPACE) --create-namespace \
 		$(HELM_VALUES_SECRET) $(HELM_VALUES_FRONTEND) --set migrate.enabled=false \
 		--wait --timeout 5m
 
 .PHONY: helm-upgrade-api
 helm-upgrade-api:
-	helm upgrade --reuse-values --install $(RELEASE) $(CHART_DIR) \
+	helm upgrade --reset-then-reuse-values --install $(RELEASE) $(CHART_DIR) \
 		--namespace $(NAMESPACE) --create-namespace \
 		$(HELM_VALUES_SECRET) $(HELM_VALUES_API) --set migrate.enabled=true \
 		--wait --timeout 5m
 
 .PHONY: helm-upgrade-migrate
 helm-upgrade-migrate:
-	helm upgrade --reuse-values --install $(RELEASE) $(CHART_DIR) \
+	helm upgrade --reset-then-reuse-values --install $(RELEASE) $(CHART_DIR) \
 		--namespace $(NAMESPACE) --create-namespace \
 		$(HELM_VALUES_SECRET) $(HELM_VALUES_MIGRATE) --set migrate.enabled=true \
 		--wait --timeout 5m
 
 .PHONY: helm-upgrade-notifier
 helm-upgrade-notifier:
-	helm upgrade --reuse-values --install $(RELEASE) $(CHART_DIR) \
+	helm upgrade --reset-then-reuse-values --install $(RELEASE) $(CHART_DIR) \
 		--namespace $(NAMESPACE) --create-namespace \
 		$(HELM_VALUES_SECRET) $(HELM_VALUES_NOTIFIER) --set migrate.enabled=false \
 		--wait --timeout 5m
