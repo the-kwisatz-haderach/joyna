@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowRight01Icon, PlusSignIcon } from "@hugeicons/core-free-icons"
+import { ArrowRight01Icon, UserAdd01Icon } from "@hugeicons/core-free-icons"
 
 import { Input } from "@/components/ui/input"
 import { GuestAvatar } from "../../components/joyna/guest-avatar"
@@ -183,13 +183,10 @@ function PotentialNetwork({
             aria-label={`Add ${candidate.name}`}
             disabled={pendingUserId === candidate.userId}
             onClick={() => onAdd(candidate.userId)}
-            className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-joyna-mint/20 transition-transform active:scale-90 disabled:opacity-50"
+            className="ml-2 flex shrink-0 items-center gap-1 rounded-full bg-joyna-periwinkle/10 px-2.5 py-1 text-[10.5px] font-semibold text-joyna-periwinkle-dark transition-transform active:scale-90 disabled:opacity-50"
           >
-            <HugeiconsIcon
-              icon={PlusSignIcon}
-              className="h-3 w-3 text-joyna-mint-dark"
-              strokeWidth={2.5}
-            />
+            <HugeiconsIcon icon={UserAdd01Icon} className="h-3 w-3" strokeWidth={2.2} />{" "}
+            Add
           </button>
         </li>
       ))}
