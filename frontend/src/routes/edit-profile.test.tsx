@@ -45,6 +45,14 @@ describe('EditProfile', () => {
     expect(screen.getByLabelText(/location/i)).toHaveValue('')
   })
 
+  it('gives the form fields a white background', () => {
+    loginAsMockUser()
+    renderEditProfile()
+
+    expect(screen.getByLabelText(/name/i).className).toMatch(/bg-white/)
+    expect(screen.getByLabelText(/location/i).className).toMatch(/bg-white/)
+  })
+
   it('navigates back to the profile page on cancel', async () => {
     const user = userEvent.setup()
     loginAsMockUser()

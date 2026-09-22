@@ -179,6 +179,30 @@ describe('RootLayout', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('shows a "Profile" back link and hides the bottom nav on the edit profile route', () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/profile/edit'])
+
+    const header = screen.getByRole('banner')
+    const backLink = header.querySelector('a[href="/profile"]:not([aria-label])')
+    expect(backLink).not.toBeNull()
+    expect(backLink).toHaveTextContent('Profile')
+    expect(
+      screen.queryByRole('navigation', {name: 'Primary'}),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows the profile nav button as active on the edit profile route', () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/profile/edit'])
+
+    const accountNav = within(screen.getByRole('navigation', {name: 'Account'}))
+    const profileLink = accountNav.getByRole('link', {name: /^profile$/i})
+    expect(profileLink.className).toMatch(/bg-joyna-ink/)
+  })
+
   it('shows the bottom nav with an active but clickable Events link on the all events route', () => {
     loginAsMockUser()
 

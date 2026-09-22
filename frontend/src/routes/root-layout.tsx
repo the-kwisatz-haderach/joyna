@@ -63,6 +63,9 @@ function getBackTarget(pathname: string): {to: string; label: string} | null {
   if (pathname === '/network/add' || /^\/network\/[^/]+$/.test(pathname)) {
     return {to: '/network', label: 'Network'}
   }
+  if (pathname === '/profile/edit') {
+    return {to: '/profile', label: 'Profile'}
+  }
   return null
 }
 
@@ -79,6 +82,7 @@ function TopMenu() {
   const hidden = useHideOnScroll()
   const unreadCount = useUnreadNotificationsCount(pathname)
   const showUnreadBadge = unreadCount > 0 && pathname !== '/notifications'
+  const profileActive = pathname === '/profile' || pathname === '/profile/edit'
 
   return (
     <header
@@ -135,7 +139,7 @@ function TopMenu() {
           aria-label="Profile"
           className={cn(
             'flex h-10 w-10 items-center justify-center rounded-control border transition-colors',
-            pathname === '/profile'
+            profileActive
               ? 'border-joyna-ink bg-joyna-ink text-white'
               : 'border-joyna-border bg-white text-joyna-ink-soft hover:text-joyna-ink',
           )}
