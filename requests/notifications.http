@@ -4,7 +4,11 @@
 # REST Client shares its cookie jar across files in the same VS Code window.
 
 ### List notifications (also marks any currently-unread ones as read)
+### Paginated: 30 per page, defaults to page 1
 GET {{baseUrl}}/notifications
+
+### List notifications, page 2
+GET {{baseUrl}}/notifications?page=2
 
 ### Get unread notification count (for the nav badge; does not mark anything as read)
 GET {{baseUrl}}/notifications/unread-count

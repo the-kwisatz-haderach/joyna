@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
@@ -53,8 +54,22 @@ const SAMPLE_NOTIFICATIONS: AppNotification[] = [
   },
 ]
 
-function mockNotificationsResponse(notifications: AppNotification[]) {
-  server.use(http.get('/api/notifications', () => HttpResponse.json(notifications)))
+function mockNotificationsResponse(
+  notifications: AppNotification[],
+  { totalPages = 1 }: { totalPages?: number } = {},
+) {
+  server.use(
+    http.get('/api/notifications', ({ request }) => {
+      const page = Number(new URL(request.url).searchParams.get('page')) || 1
+      return HttpResponse.json({
+        notifications,
+        page,
+        pageSize: 30,
+        totalCount: notifications.length,
+        totalPages,
+      })
+    }),
+  )
 }
 
 function renderNotifications() {
@@ -125,5 +140,40 @@ describe('Notifications', () => {
       '/events/event-3',
       '/events/event-4',
     ])
+  })
+
+  it('hides pagination when there is only one page', async () => {
+    mockNotificationsResponse(SAMPLE_NOTIFICATIONS, { totalPages: 1 })
+
+    renderNotifications()
+    await screen.findByText('Turing Award Dinner')
+
+    expect(screen.queryByRole('navigation', { name: /pagination/i })).not.toBeInTheDocument()
+  })
+
+  it('shows pagination and requests the next page on click', async () => {
+    const user = userEvent.setup()
+    let requestedPage = 1
+    server.use(
+      http.get('/api/notifications', ({ request }) => {
+        requestedPage = Number(new URL(request.url).searchParams.get('page')) || 1
+        return HttpResponse.json({
+          notifications: SAMPLE_NOTIFICATIONS,
+          page: requestedPage,
+          pageSize: 30,
+          totalCount: 60,
+          totalPages: 2,
+        })
+      }),
+    )
+
+    renderNotifications()
+    await screen.findByText('Turing Award Dinner')
+
+    expect(screen.getByRole('button', { name: '1' })).toHaveAttribute('aria-current', 'page')
+
+    await user.click(screen.getByRole('button', { name: '2' }))
+
+    await waitFor(() => expect(requestedPage).toBe(2))
   })
 })

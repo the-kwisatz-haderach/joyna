@@ -37,7 +37,7 @@ func TestNotificationRepository(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		notifications, err := repo.ListByUser(ctx, recipient.Id)
+		notifications, err := repo.ListByUser(ctx, recipient.Id, 30, 0)
 		require.NoError(t, err)
 		require.Len(t, notifications, 1)
 
@@ -67,7 +67,7 @@ func TestNotificationRepository(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		notifications, err := repo.ListByUser(ctx, recipient.Id)
+		notifications, err := repo.ListByUser(ctx, recipient.Id, 30, 0)
 		require.NoError(t, err)
 		require.Len(t, notifications, 1)
 		require.NotNil(t, notifications[0].Status)
@@ -84,7 +84,7 @@ func TestNotificationRepository(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		notifications, err := repo.ListByUser(ctx, recipient.Id)
+		notifications, err := repo.ListByUser(ctx, recipient.Id, 30, 0)
 		require.NoError(t, err)
 		require.Len(t, notifications, 1)
 		require.Nil(t, notifications[0].ActorID)
@@ -109,7 +109,7 @@ func TestNotificationRepository(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 0, count)
 
-		notifications, err := repo.ListByUser(ctx, user.Id)
+		notifications, err := repo.ListByUser(ctx, user.Id, 30, 0)
 		require.NoError(t, err)
 		require.Len(t, notifications, 2)
 		for _, n := range notifications {
@@ -125,8 +125,34 @@ func TestNotificationRepository(t *testing.T) {
 
 		require.NoError(t, repo.Create(ctx, userA.Id, TypeEventInvite, map[string]any{"eventId": ev.ID, "actorId": other.Id}))
 
-		notifications, err := repo.ListByUser(ctx, userB.Id)
+		notifications, err := repo.ListByUser(ctx, userB.Id, 30, 0)
 		require.NoError(t, err)
 		require.Empty(t, notifications)
+	})
+
+	t.Run("ListByUser paginates via limit/offset and CountByUser reports the total", func(t *testing.T) {
+		user := authtest.CreateUser(t, pool)
+		other := authtest.CreateUser(t, pool)
+		ev := eventtest.CreateEvent(t, pool, other.Id)
+
+		for range 5 {
+			require.NoError(t, repo.Create(ctx, user.Id, TypeEventUpdated, map[string]any{"eventId": ev.ID}))
+		}
+
+		count, err := repo.CountByUser(ctx, user.Id)
+		require.NoError(t, err)
+		require.Equal(t, 5, count)
+
+		firstPage, err := repo.ListByUser(ctx, user.Id, 2, 0)
+		require.NoError(t, err)
+		require.Len(t, firstPage, 2)
+
+		secondPage, err := repo.ListByUser(ctx, user.Id, 2, 2)
+		require.NoError(t, err)
+		require.Len(t, secondPage, 2)
+
+		lastPage, err := repo.ListByUser(ctx, user.Id, 2, 4)
+		require.NoError(t, err)
+		require.Len(t, lastPage, 1)
 	})
 }

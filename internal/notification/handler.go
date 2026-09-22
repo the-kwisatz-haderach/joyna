@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/the-kwisatz-haderach/joyna/internal/auth"
 )
@@ -16,8 +17,17 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-// ListNotifications returns the caller's notifications and marks any
-// currently-unread ones as read as a side effect.
+type notificationListResponse struct {
+	Notifications []Notification `json:"notifications"`
+	Page          int            `json:"page"`
+	PageSize      int            `json:"pageSize"`
+	TotalCount    int            `json:"totalCount"`
+	TotalPages    int            `json:"totalPages"`
+}
+
+// ListNotifications returns a page of the caller's notifications and marks
+// any currently-unread ones as read as a side effect. Pages are 1-indexed
+// and requested via the ?page= query param, defaulting to 1.
 func (h *Handler) ListNotifications(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.UserIDFromContext(r.Context())
 	if !ok {
@@ -25,15 +35,36 @@ func (h *Handler) ListNotifications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notifications, err := h.service.ListForUser(r.Context(), userID)
+	page := 1
+	if raw := r.URL.Query().Get("page"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed < 1 {
+			http.Error(w, "page must be a positive integer", http.StatusBadRequest)
+			return
+		}
+		page = parsed
+	}
+
+	notifications, total, err := h.service.ListForUser(r.Context(), userID, page)
 	if err != nil {
 		slog.Error("failed to list notifications", "error", err)
 		http.Error(w, "failed to list notifications", http.StatusInternalServerError)
 		return
 	}
 
+	totalPages := (total + PageSize - 1) / PageSize
+	if totalPages < 1 {
+		totalPages = 1
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(notifications)
+	json.NewEncoder(w).Encode(notificationListResponse{
+		Notifications: notifications,
+		Page:          page,
+		PageSize:      PageSize,
+		TotalCount:    total,
+		TotalPages:    totalPages,
+	})
 }
 
 type unreadCountResponse struct {

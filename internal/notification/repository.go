@@ -39,18 +39,19 @@ func (r *Repository) Create(ctx context.Context, userID string, notifType Type, 
 	return nil
 }
 
-// ListByUser returns userID's notifications, most recent first, with the
-// referenced event/actor names resolved via a join rather than stored
-// redundantly on the row.
-func (r *Repository) ListByUser(ctx context.Context, userID string) ([]Notification, error) {
+// ListByUser returns a page of userID's notifications, most recent first,
+// with the referenced event/actor names resolved via a join rather than
+// stored redundantly on the row.
+func (r *Repository) ListByUser(ctx context.Context, userID string, limit, offset int) ([]Notification, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT `+listColumns+`
 		FROM notifications n
 		LEFT JOIN events e ON e.id = NULLIF(n.payload ->> 'eventId', '')::uuid
 		LEFT JOIN users a ON a.id = NULLIF(n.payload ->> 'actorId', '')::uuid
 		WHERE n.user_id = $1
-		ORDER BY n.created_at DESC`,
-		userID,
+		ORDER BY n.created_at DESC
+		LIMIT $2 OFFSET $3`,
+		userID, limit, offset,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("listing notifications: %w", err)
@@ -66,6 +67,20 @@ func (r *Repository) ListByUser(ctx context.Context, userID string) ([]Notificat
 	}
 
 	return notifications, nil
+}
+
+// CountByUser returns the total number of userID's notifications, used to
+// compute the page count for ListByUser's pagination.
+func (r *Repository) CountByUser(ctx context.Context, userID string) (int, error) {
+	var count int
+	err := r.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM notifications WHERE user_id = $1`,
+		userID,
+	).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("counting notifications: %w", err)
+	}
+	return count, nil
 }
 
 func (r *Repository) MarkAllAsRead(ctx context.Context, userID string) error {

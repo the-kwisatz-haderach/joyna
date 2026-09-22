@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
 import {
   EventFilterBar,
   DEFAULT_EVENT_FILTER,
@@ -10,6 +9,7 @@ import {
 } from '../../components/joyna/event-filter-bar'
 import { EventListByMonth } from '../../components/joyna/event-list'
 import type { EventListItem } from '../../components/joyna/event-card'
+import { Pagination } from '../../components/joyna/pagination'
 
 const PAGE_SIZE = 10
 
@@ -27,57 +27,6 @@ function SearchIcon() {
       <circle cx="11" cy="11" r="7" />
       <path d="m21 21-4.35-4.35" />
     </svg>
-  )
-}
-
-function Pagination({
-  page,
-  totalPages,
-  onChange,
-}: {
-  page: number
-  totalPages: number
-  onChange: (page: number) => void
-}) {
-  if (totalPages <= 1) {
-    return null
-  }
-
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1)
-
-  return (
-    <nav aria-label="Pagination" className="flex items-center justify-center gap-1 pt-2 text-sm">
-      <button
-        type="button"
-        disabled={page === 1}
-        onClick={() => onChange(page - 1)}
-        className="px-2 font-semibold text-joyna-ink-soft disabled:text-joyna-ink-faint disabled:opacity-50"
-      >
-        ‹ Prev
-      </button>
-      {pages.map((p) => (
-        <button
-          key={p}
-          type="button"
-          aria-current={p === page ? 'page' : undefined}
-          onClick={() => onChange(p)}
-          className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-semibold transition-colors',
-            p === page ? 'bg-joyna-ink text-white' : 'text-joyna-ink-soft',
-          )}
-        >
-          {p}
-        </button>
-      ))}
-      <button
-        type="button"
-        disabled={page === totalPages}
-        onClick={() => onChange(page + 1)}
-        className="px-2 font-semibold text-joyna-ink-soft disabled:text-joyna-ink-faint disabled:opacity-50"
-      >
-        Next ›
-      </button>
-    </nav>
   )
 }
 

@@ -3,6 +3,15 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
 
 import { NotificationRow, type AppNotification } from '../../components/joyna/notification-item'
+import { Pagination } from '../../components/joyna/pagination'
+
+type NotificationsResponse = {
+  notifications: AppNotification[]
+  page: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+}
 
 function EmptyState() {
   return (
@@ -19,21 +28,25 @@ function EmptyState() {
 function Notifications() {
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
   useEffect(() => {
     let cancelled = false
 
     async function loadNotifications() {
+      setIsLoading(true)
       try {
-        const response = await fetch('/api/notifications', {
+        const response = await fetch(`/api/notifications?page=${page}`, {
           credentials: 'include',
         })
         if (!response.ok) {
           return
         }
-        const data = (await response.json()) as AppNotification[]
+        const data = (await response.json()) as NotificationsResponse
         if (!cancelled) {
-          setNotifications(data)
+          setNotifications(data.notifications)
+          setTotalPages(data.totalPages)
         }
       } finally {
         if (!cancelled) {
@@ -46,7 +59,7 @@ function Notifications() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [page])
 
   if (isLoading) {
     return (
@@ -59,10 +72,13 @@ function Notifications() {
   }
 
   return (
-    <section className="mx-auto flex max-w-2xl flex-col divide-y divide-joyna-border px-5 py-2">
-      {notifications.map((notification) => (
-        <NotificationRow key={notification.id} notification={notification} />
-      ))}
+    <section className="mx-auto flex max-w-2xl flex-col gap-2 px-5 py-2">
+      <div className="flex flex-col divide-y divide-joyna-border">
+        {notifications.map((notification) => (
+          <NotificationRow key={notification.id} notification={notification} />
+        ))}
+      </div>
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
     </section>
   )
 }
