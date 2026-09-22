@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"net/smtp"
+	"strings"
 )
 
 // Mailer sends a single plain-text email. Domains that need to send mail
@@ -42,13 +43,40 @@ func (m *SMTPMailer) Send(ctx context.Context, to, subject, body string) error {
 		auth = smtp.PlainAuth("", m.user, m.password, m.host)
 	}
 
+	safeFrom, err := sanitizeHeaderValue(m.from, "from")
+	if err != nil {
+		return err
+	}
+	safeTo, err := sanitizeHeaderValue(to, "to")
+	if err != nil {
+		return err
+	}
+	safeSubject, err := sanitizeHeaderValue(subject, "subject")
+	if err != nil {
+		return err
+	}
+	safeBody := strings.ReplaceAll(body, "\r", "")
+
 	msg := fmt.Sprintf(
 		"From: %s\r\nTo: %s\r\nSubject: %s\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n%s\r\n",
-		m.from, to, subject, body,
+		safeFrom, safeTo, safeSubject, safeBody,
 	)
 
-	if err := smtp.SendMail(addr, auth, m.from, []string{to}, []byte(msg)); err != nil {
+	if err := smtp.SendMail(addr, auth, safeFrom, []string{safeTo}, []byte(msg)); err != nil {
 		return fmt.Errorf("sending mail via smtp: %w", err)
 	}
 	return nil
+}
+
+func sanitizeHeaderValue(v, field string) (string, error) {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return "", fmt.Errorf("invalid %s header value: empty", field)
+	}
+	for _, r := range v {
+		if r == '\r' || r == '\n' || (r < 32 && r != '\t') || r == 127 {
+			return "", fmt.Errorf("invalid %s header value", field)
+		}
+	}
+	return v, nil
 }
