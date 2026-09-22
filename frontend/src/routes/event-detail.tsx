@@ -24,6 +24,7 @@ import {
 } from '../../components/joyna/guest-row'
 import {DEFAULT_MOODS} from '../../components/joyna/mood-picker'
 import {useAuth} from '../auth-context'
+import {cn} from '@/lib/utils'
 
 type ViewerInviteStatus = 'pending' | 'accepted' | 'declined'
 
@@ -253,7 +254,10 @@ function EventDetail() {
       }))
   }, [attendees, connections])
 
-  async function handleRespond(status: 'accepted' | 'declined', reason?: string) {
+  async function handleRespond(
+    status: 'accepted' | 'declined',
+    reason?: string,
+  ) {
     if (!id) return
     setIsResponding(true)
     setError(null)
@@ -487,7 +491,10 @@ function EventDetail() {
                 <Button
                   type="button"
                   variant="secondary"
-                  className="absolute right-3 bottom-3 h-10 rounded-control font-display text-sm"
+                  className={cn(
+                    'absolute right-3 bottom-3 h-10 rounded-control font-display text-sm',
+                    noteSaved && 'bg-gray-900 text-white border-none',
+                  )}
                   disabled={isResponding}
                   onClick={handleSaveDeclineNote}
                 >
