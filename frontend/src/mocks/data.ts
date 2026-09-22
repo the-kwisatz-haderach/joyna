@@ -36,6 +36,7 @@ export type MockEventInvite = {
   status: 'pending' | 'accepted' | 'declined'
   spreadAllowed: number
   createdAt: string
+  declineReason?: string
 }
 
 export type MockConnection = {
@@ -280,6 +281,15 @@ export const mockEventInvites: MockEventInvite[] = [
     createdAt: "2026-06-02T09:00:00Z",
   },
   {
+    eventId: mockEvents[0].id,
+    invitedBy: mockUsers[0].id,
+    invitedUserId: mockUsers[3].id,
+    status: "declined",
+    spreadAllowed: 0,
+    createdAt: "2026-06-03T09:00:00Z",
+    declineReason: "Already have plans that evening, sorry!",
+  },
+  {
     eventId: mockEvents[2].id,
     invitedBy: mockUsers[1].id,
     invitedUserId: mockUsers[3].id,
@@ -318,6 +328,7 @@ export const mockEventInvites: MockEventInvite[] = [
     status: "declined",
     spreadAllowed: 0,
     createdAt: daysFromNow(-39),
+    declineReason: "Out of town that week, have a great one!",
   },
   {
     eventId: mockEvents[11].id, // Coffee Catchup

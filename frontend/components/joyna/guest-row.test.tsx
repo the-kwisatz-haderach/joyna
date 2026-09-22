@@ -19,4 +19,28 @@ describe('GuestRow', () => {
     expect(screen.getByText('Alan Turing')).toBeInTheDocument()
     expect(screen.queryByLabelText('Host')).not.toBeInTheDocument()
   })
+
+  it('shows the decline reason under the name for a not-attending guest', () => {
+    const guest: Guest = {
+      id: '3',
+      name: 'Will',
+      status: 'not_attending',
+      group: 'Acquaintances',
+      reason: 'Already have plans that evening, sorry!',
+    }
+    render(<GuestRow guest={guest} />)
+
+    expect(screen.getByText('Will')).toBeInTheDocument()
+    expect(
+      screen.getByText(/Already have plans that evening, sorry!/),
+    ).toBeInTheDocument()
+  })
+
+  it('does not show a reason for a not-attending guest who left none', () => {
+    const guest: Guest = { id: '4', name: 'Grace Hopper', status: 'not_attending', group: 'Acquaintances' }
+    render(<GuestRow guest={guest} />)
+
+    expect(screen.getByText('Grace Hopper')).toBeInTheDocument()
+    expect(screen.queryByText(/plans/)).not.toBeInTheDocument()
+  })
 })
