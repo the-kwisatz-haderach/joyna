@@ -237,6 +237,11 @@ function EventDetail() {
     })
   }, [attendees, connections, user?.id])
 
+  const attendingCount = useMemo(
+    () => guests.filter((g) => g.isHost || g.status === 'going').length,
+    [guests],
+  )
+
   const candidates: NetworkCandidate[] = useMemo(() => {
     const attendeeIds = new Set(attendees.map((a) => a.userId))
     return connections
@@ -401,7 +406,7 @@ function EventDetail() {
               className="h-3.5 w-3.5"
               strokeWidth={2}
             />
-            {guests.length} attending
+            {attendingCount} attending
           </span>
         </div>
         {event.description && (
