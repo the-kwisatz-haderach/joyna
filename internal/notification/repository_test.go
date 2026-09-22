@@ -155,4 +155,72 @@ func TestNotificationRepository(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, lastPage, 1)
 	})
+
+	t.Run("CreateOrRefreshPushSubscription upserts on endpoint", func(t *testing.T) {
+		userA := authtest.CreateUser(t, pool)
+		userB := authtest.CreateUser(t, pool)
+
+		sub, err := repo.CreateOrRefreshPushSubscription(ctx, userA.Id, "shared-endpoint", "p256dh-1", "auth-1")
+		require.NoError(t, err)
+		require.Equal(t, userA.Id, sub.UserID)
+
+		refreshed, err := repo.CreateOrRefreshPushSubscription(ctx, userB.Id, "shared-endpoint", "p256dh-2", "auth-2")
+		require.NoError(t, err)
+		require.Equal(t, sub.ID, refreshed.ID)
+		require.Equal(t, userB.Id, refreshed.UserID)
+		require.Equal(t, "p256dh-2", refreshed.P256dh)
+
+		subsA, err := repo.ListPushSubscriptionsByUser(ctx, userA.Id)
+		require.NoError(t, err)
+		require.Empty(t, subsA)
+
+		subsB, err := repo.ListPushSubscriptionsByUser(ctx, userB.Id)
+		require.NoError(t, err)
+		require.Len(t, subsB, 1)
+	})
+
+	t.Run("DeletePushSubscription scopes to the caller and reports not found otherwise", func(t *testing.T) {
+		userA := authtest.CreateUser(t, pool)
+		userB := authtest.CreateUser(t, pool)
+
+		_, err := repo.CreateOrRefreshPushSubscription(ctx, userA.Id, "userA-endpoint", "p256dh", "auth")
+		require.NoError(t, err)
+
+		err = repo.DeletePushSubscription(ctx, userB.Id, "userA-endpoint")
+		require.ErrorIs(t, err, ErrPushSubscriptionNotFound)
+
+		err = repo.DeletePushSubscription(ctx, userA.Id, "userA-endpoint")
+		require.NoError(t, err)
+
+		subs, err := repo.ListPushSubscriptionsByUser(ctx, userA.Id)
+		require.NoError(t, err)
+		require.Empty(t, subs)
+	})
+
+	t.Run("DeletePushSubscriptionByID removes regardless of owner", func(t *testing.T) {
+		user := authtest.CreateUser(t, pool)
+		sub, err := repo.CreateOrRefreshPushSubscription(ctx, user.Id, "by-id-endpoint", "p256dh", "auth")
+		require.NoError(t, err)
+
+		require.NoError(t, repo.DeletePushSubscriptionByID(ctx, sub.ID))
+
+		subs, err := repo.ListPushSubscriptionsByUser(ctx, user.Id)
+		require.NoError(t, err)
+		require.Empty(t, subs)
+	})
+
+	t.Run("NotificationContext resolves names and tolerates empty/unknown ids", func(t *testing.T) {
+		actor := authtest.CreateUser(t, pool)
+		ev := eventtest.CreateEvent(t, pool, actor.Id)
+
+		eventName, actorName, err := repo.NotificationContext(ctx, ev.ID, actor.Id)
+		require.NoError(t, err)
+		require.Equal(t, ev.Name, eventName)
+		require.Equal(t, actor.Name, actorName)
+
+		eventName, actorName, err = repo.NotificationContext(ctx, "", "")
+		require.NoError(t, err)
+		require.Empty(t, eventName)
+		require.Empty(t, actorName)
+	})
 }

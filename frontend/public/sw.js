@@ -45,3 +45,35 @@ self.addEventListener('fetch', (event) => {
     }),
   )
 })
+
+self.addEventListener('push', (event) => {
+  let payload = { title: 'Joyna', body: '' }
+  try {
+    payload = event.data ? event.data.json() : payload
+  } catch {
+    // Non-JSON push payload - fall back to the default above.
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title ?? 'Joyna', {
+      body: payload.body ?? '',
+      icon: '/favicon.svg',
+      data: { url: payload.url ?? '/' },
+    }),
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = event.notification.data?.url ?? '/'
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsList) => {
+      const existing = clientsList.find((client) => new URL(client.url).pathname === url)
+      if (existing) {
+        return existing.focus()
+      }
+      return self.clients.openWindow(url)
+    }),
+  )
+})

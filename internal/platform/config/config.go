@@ -21,6 +21,15 @@ type Config struct {
 
 	// FrontendURL builds the registration link sent in invite emails.
 	FrontendURL string `env:"FRONTEND_URL" envDefault:"http://localhost:5173"`
+
+	// VAPID_* configure web push notifications (see internal/platform/push).
+	// Optional, same reasoning as SMTP_* — the app boots without them, push
+	// just doesn't send until they're set. Generate a keypair once with
+	// `npx web-push generate-vapid-keys` (or equivalent); VAPIDSubject is a
+	// mailto: contact URI required by the VAPID spec.
+	VAPIDPublicKey  string `env:"VAPID_PUBLIC_KEY"`
+	VAPIDPrivateKey string `env:"VAPID_PRIVATE_KEY"`
+	VAPIDSubject    string `env:"VAPID_SUBJECT" envDefault:"mailto:joyna@joyna.dev"`
 }
 
 func Load() (*Config, error) {

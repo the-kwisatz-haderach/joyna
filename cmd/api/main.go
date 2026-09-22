@@ -22,6 +22,7 @@ import (
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/db"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/logging"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/mail"
+	"github.com/the-kwisatz-haderach/joyna/internal/platform/push"
 )
 
 func main() {
@@ -57,8 +58,10 @@ func main() {
 	authService := auth.NewService(authRepo, networkService)
 	authHandler := auth.NewHandler(authService, sessionManager)
 
+	pusher := push.NewWebPusher(cfg.VAPIDPublicKey, cfg.VAPIDPrivateKey, cfg.VAPIDSubject)
+
 	notificationRepo := notification.NewRepository(pool)
-	notificationService := notification.NewService(notificationRepo)
+	notificationService := notification.NewService(notificationRepo, pusher, cfg.VAPIDPublicKey)
 	notificationHandler := notification.NewHandler(notificationService)
 
 	eventRepo := event.NewRepository(pool)
@@ -103,6 +106,9 @@ func main() {
 	// Notification handlers
 	mux.HandleFunc("GET /notifications", authHandler.Middleware(notificationHandler.ListNotifications))
 	mux.HandleFunc("GET /notifications/unread-count", authHandler.Middleware(notificationHandler.GetUnreadCount))
+	mux.HandleFunc("POST /push-subscriptions", authHandler.Middleware(notificationHandler.SubscribeToPush))
+	mux.HandleFunc("DELETE /push-subscriptions", authHandler.Middleware(notificationHandler.UnsubscribeFromPush))
+	mux.HandleFunc("GET /push-subscriptions/vapid-public-key", authHandler.Middleware(notificationHandler.GetVAPIDPublicKey))
 
 	// Group handlers
 	mux.HandleFunc("GET /groups", authHandler.Middleware(groupHandler.GetGroups))
