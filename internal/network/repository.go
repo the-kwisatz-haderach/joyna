@@ -196,3 +196,94 @@ func (r *Repository) DeleteConnection(ctx context.Context, contactID, ownerID st
 	}
 	return nil
 }
+
+// CreateOrRefreshInvite creates a pending invite, or — if the inviter
+// already has one pending for this email (the partial unique index on
+// (inviter_id, invited_email) WHERE accepted_at IS NULL) — bumps its
+// created_at and returns the existing row instead of erroring, so
+// re-clicking "Invite to Joyna" resends rather than duplicating.
+func (r *Repository) CreateOrRefreshInvite(ctx context.Context, inviterID, email string) (NetworkInvite, error) {
+	rows, err := r.pool.Query(ctx,
+		`INSERT INTO network_invites (inviter_id, invited_email)
+		VALUES ($1, $2)
+		ON CONFLICT (inviter_id, invited_email) WHERE accepted_at IS NULL
+		DO UPDATE SET created_at = NOW()
+		RETURNING *`,
+		inviterID, email,
+	)
+	defer rows.Close()
+	if err != nil {
+		return NetworkInvite{}, fmt.Errorf("inserting network invite: %w", err)
+	}
+
+	invite, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[NetworkInvite])
+	if err != nil {
+		return NetworkInvite{}, GetSentinelError(err, fmt.Errorf("inserting network invite: %w", err))
+	}
+	return invite, nil
+}
+
+// ListPendingInvitesByEmail returns every not-yet-accepted invite raised
+// for email, possibly from more than one inviter.
+func (r *Repository) ListPendingInvitesByEmail(ctx context.Context, email string) ([]NetworkInvite, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT * FROM network_invites WHERE invited_email = $1 AND accepted_at IS NULL`,
+		email,
+	)
+	defer rows.Close()
+	if err != nil {
+		return nil, fmt.Errorf("listing pending network invites: %w", err)
+	}
+
+	invites, err := pgx.CollectRows(rows, pgx.RowToStructByName[NetworkInvite])
+	if err != nil {
+		return nil, fmt.Errorf("listing pending network invites: %w", err)
+	}
+	if invites == nil {
+		invites = []NetworkInvite{}
+	}
+	return invites, nil
+}
+
+func (r *Repository) MarkInviteAccepted(ctx context.Context, inviteID string) error {
+	tag, err := r.pool.Exec(ctx,
+		`UPDATE network_invites SET accepted_at = NOW() WHERE id = $1`,
+		inviteID,
+	)
+	if err != nil {
+		return fmt.Errorf("marking network invite accepted: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrInviteNotFound
+	}
+	return nil
+}
+
+// CreateMutualConnection connects userA and userB in one transaction by
+// inserting both directional connections rows (the table only models one
+// direction per row). ON CONFLICT DO NOTHING makes this safe to call even
+// if one direction already exists some other way.
+func (r *Repository) CreateMutualConnection(ctx context.Context, userA, userB string) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("beginning tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	const insertDirection = `
+		INSERT INTO connections (user_id, contact_id)
+		VALUES ($1, $2)
+		ON CONFLICT (user_id, contact_id) DO NOTHING`
+
+	if _, err := tx.Exec(ctx, insertDirection, userA, userB); err != nil {
+		return fmt.Errorf("inserting connection %s -> %s: %w", userA, userB, err)
+	}
+	if _, err := tx.Exec(ctx, insertDirection, userB, userA); err != nil {
+		return fmt.Errorf("inserting connection %s -> %s: %w", userB, userA, err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("committing tx: %w", err)
+	}
+	return nil
+}

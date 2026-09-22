@@ -6,12 +6,14 @@ import {
   mockEventInvites,
   mockEvents,
   mockGroups,
+  mockNetworkInvites,
   mockNotifications,
   mockUsers,
   type MockConnection,
   type MockEvent,
   type MockEventInvite,
   type MockGroup,
+  type MockNetworkInvite,
   type MockUser,
 } from "./data"
 
@@ -27,6 +29,7 @@ let connections = [...mockConnections]
 let notifications = [...mockNotifications]
 let users = [...mockUsers]
 let currentUser = users[0]
+let networkInvites = [...mockNetworkInvites]
 
 // Every handler below only ever replaces these arrays wholesale (never
 // mutates an existing mock*/array item in place), so re-seeding from the
@@ -41,6 +44,7 @@ export function resetMockData() {
   notifications = [...mockNotifications]
   users = [...mockUsers]
   currentUser = users[0]
+  networkInvites = [...mockNetworkInvites]
 }
 
 function serializeConnection(connection: MockConnection) {
@@ -162,13 +166,40 @@ export const handlers = [
       })
     }
     const address = body.address?.trim()
-    return HttpResponse.json({
+    const created: MockUser = {
       id: crypto.randomUUID(),
       name: body.name.trim(),
       email,
       joinedAt: new Date().toISOString(),
       ...(address ? { address } : {}),
-    })
+    }
+    users = [...users, created]
+
+    // Mirrors auth.Service.Register's ResolvePendingInvites call: connect
+    // the new user to everyone who invited this email, in both directions,
+    // and mark those invites accepted.
+    const pending = networkInvites.filter(
+      (invite) => invite.invitedEmail === email && !invite.acceptedAt,
+    )
+    for (const invite of pending) {
+      if (!connections.some((c) => c.userId === invite.inviterId && c.contactId === created.id)) {
+        connections = [
+          ...connections,
+          { userId: invite.inviterId, contactId: created.id, createdAt: new Date().toISOString(), isFavorite: false },
+        ]
+      }
+      if (!connections.some((c) => c.userId === created.id && c.contactId === invite.inviterId)) {
+        connections = [
+          ...connections,
+          { userId: created.id, contactId: invite.inviterId, createdAt: new Date().toISOString(), isFavorite: false },
+        ]
+      }
+    }
+    networkInvites = networkInvites.map((invite) =>
+      pending.includes(invite) ? { ...invite, acceptedAt: new Date().toISOString() } : invite,
+    )
+
+    return HttpResponse.json(created)
   }),
 
   http.post("/api/auth/login", async ({ request }) => {
@@ -268,6 +299,8 @@ export const handlers = [
       type: body.type ?? "party",
       defaultSpreadAllowed: body.defaultSpreadAllowed ?? 0,
       mood: body.mood,
+      latitude: body.latitude,
+      longitude: body.longitude,
     }
     events = [...events, created]
     return HttpResponse.json(created)
@@ -508,6 +541,44 @@ export const handlers = [
       return new HttpResponse("user not found", { status: 404 })
     }
     return HttpResponse.json({ userId: user.id, name: user.name, email: user.email })
+  }),
+
+  // Mirrors POST /network/invite: sends (mock) an invite to an email with
+  // no account yet. Idempotent per (inviter, email) — re-inviting refreshes
+  // the existing pending row instead of duplicating it.
+  http.post("/api/network/invite", async ({ request }) => {
+    const body = (await request.json()) as { email?: string }
+    const email = body.email?.trim().toLowerCase()
+    if (!email) {
+      return new HttpResponse("email is required", { status: 400 })
+    }
+    if (users.some((user) => user.email === email)) {
+      return new HttpResponse("a user with this email is already registered", {
+        status: 409,
+      })
+    }
+
+    const existingIndex = networkInvites.findIndex(
+      (invite) =>
+        invite.inviterId === currentUser.id && invite.invitedEmail === email && !invite.acceptedAt,
+    )
+    if (existingIndex !== -1) {
+      const refreshed: MockNetworkInvite = {
+        ...networkInvites[existingIndex],
+        createdAt: new Date().toISOString(),
+      }
+      networkInvites = networkInvites.map((invite, i) => (i === existingIndex ? refreshed : invite))
+      return HttpResponse.json(refreshed)
+    }
+
+    const created: MockNetworkInvite = {
+      id: crypto.randomUUID(),
+      inviterId: currentUser.id,
+      invitedEmail: email,
+      createdAt: new Date().toISOString(),
+    }
+    networkInvites = [...networkInvites, created]
+    return HttpResponse.json(created)
   }),
 
   http.post("/api/network", async ({ request }) => {

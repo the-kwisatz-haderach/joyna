@@ -12,6 +12,7 @@ var (
 	ErrContactNotFound         = errors.New("contact not found")
 	ErrGroupNotFound           = errors.New("connection group not found")
 	ErrUserNotFound            = errors.New("user not found")
+	ErrInviteNotFound          = errors.New("network invite not found")
 )
 
 const (

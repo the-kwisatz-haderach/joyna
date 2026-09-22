@@ -20,9 +20,9 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 
 func (r *Repository) CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error) {
 	rows, err := r.pool.Query(ctx,
-		`INSERT INTO events (owner_id, name, description, date, location, rsvp_deadline, type, default_spread_allowed, mood)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-		ownerID, payload.Name, payload.Description, payload.Date, payload.Location, payload.RsvpDeadline, payload.Type, payload.DefaultSpreadAllowed, payload.Mood,
+		`INSERT INTO events (owner_id, name, description, date, location, rsvp_deadline, type, default_spread_allowed, mood, latitude, longitude)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+		ownerID, payload.Name, payload.Description, payload.Date, payload.Location, payload.RsvpDeadline, payload.Type, payload.DefaultSpreadAllowed, payload.Mood, payload.Latitude, payload.Longitude,
 	)
 	if err != nil {
 		return Event{}, fmt.Errorf("inserting event: %w", err)
@@ -61,10 +61,12 @@ func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate UpdateEventPay
 			rsvp_deadline = COALESCE($7, rsvp_deadline),
 			type = COALESCE($8, type),
 			default_spread_allowed = COALESCE($9, default_spread_allowed),
-			mood = COALESCE($10, mood)
+			mood = COALESCE($10, mood),
+			latitude = COALESCE($11, latitude),
+			longitude = COALESCE($12, longitude)
 		WHERE id = $1 AND owner_id = $2
 		RETURNING *`,
-		eventID, ownerID, eventUpdate.Name, eventUpdate.Description, eventUpdate.Date, eventUpdate.Location, eventUpdate.RsvpDeadline, eventUpdate.Type, eventUpdate.DefaultSpreadAllowed, eventUpdate.Mood,
+		eventID, ownerID, eventUpdate.Name, eventUpdate.Description, eventUpdate.Date, eventUpdate.Location, eventUpdate.RsvpDeadline, eventUpdate.Type, eventUpdate.DefaultSpreadAllowed, eventUpdate.Mood, eventUpdate.Latitude, eventUpdate.Longitude,
 	)
 	if err != nil {
 		return Event{}, fmt.Errorf("updating event: %w", err)

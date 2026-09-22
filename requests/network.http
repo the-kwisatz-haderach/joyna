@@ -18,6 +18,39 @@ GET {{baseUrl}}/network/lookup?email=no-such-user@example.com
 ### Look up a user by email — missing query param, expect 400
 GET {{baseUrl}}/network/lookup
 
+### Invite an email with no account to Joyna — sends a registration email and
+# creates the pending invite that's auto-resolved into a mutual connection
+# once that address registers. Requires SMTP_* to be configured; see
+# .env.example.
+POST {{baseUrl}}/network/invite
+Content-Type: application/json
+
+{
+  "email": "not-yet-registered@example.com"
+}
+
+### Invite by email again — re-invites/resends rather than erroring
+POST {{baseUrl}}/network/invite
+Content-Type: application/json
+
+{
+  "email": "not-yet-registered@example.com"
+}
+
+### Invite by email — already registered, expect 409
+POST {{baseUrl}}/network/invite
+Content-Type: application/json
+
+{
+  "email": "someone@example.com"
+}
+
+### Invite by email — missing email, expect 400
+POST {{baseUrl}}/network/invite
+Content-Type: application/json
+
+{}
+
 ### Add a contact to your network
 # @name createConnection
 POST {{baseUrl}}/network

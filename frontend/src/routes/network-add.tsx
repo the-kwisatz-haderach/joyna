@@ -38,6 +38,7 @@ function NetworkAdd() {
   const [groupId, setGroupId] = useState("")
   const [isAdding, setIsAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+  const [invitedEmail, setInvitedEmail] = useState<string | null>(null)
 
   useEffect(() => {
     fetchGroupOptions().then(setGroupOptions)
@@ -51,6 +52,10 @@ function NetworkAdd() {
       setStatus("idle")
       return
     }
+    // Only clear the "invite sent" confirmation once the user starts a new
+    // lookup — not when this effect re-runs because a successful invite
+    // itself cleared the email field.
+    setInvitedEmail(null)
 
     let cancelled = false
     setStatus("loading")
@@ -86,29 +91,58 @@ function NetworkAdd() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    // Not-found state has nothing to add yet — "Invite to Joyna" is a dummy
-    // button for now, so this is a no-op until that flow exists.
-    if (!result) {
+
+    if (status === "found") {
+      if (!result) return
+      setIsAdding(true)
+      setAddError(null)
+      try {
+        const response = await fetch("/api/network", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ contactId: result.userId, groupId: groupId || undefined }),
+        })
+        if (!response.ok) {
+          throw new Error("failed to add connection")
+        }
+        navigate("/network")
+      } catch {
+        setAddError("Couldn't add that person to your network. Please try again.")
+      } finally {
+        setIsAdding(false)
+      }
       return
     }
 
-    setIsAdding(true)
-    setAddError(null)
-    try {
-      const response = await fetch("/api/network", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ contactId: result.userId, groupId: groupId || undefined }),
-      })
-      if (!response.ok) {
-        throw new Error("failed to add connection")
+    if (status === "not-found") {
+      const trimmed = email.trim()
+      if (!trimmed) return
+      setIsAdding(true)
+      setAddError(null)
+      try {
+        const response = await fetch("/api/network/invite", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email: trimmed }),
+        })
+        if (response.status === 409) {
+          setAddError(
+            "Someone just registered with that email — search again to add them directly.",
+          )
+          return
+        }
+        if (!response.ok) {
+          throw new Error("failed to send invite")
+        }
+        setInvitedEmail(trimmed)
+        setEmail("")
+      } catch {
+        setAddError("Couldn't send that invite. Please try again.")
+      } finally {
+        setIsAdding(false)
       }
-      navigate("/network")
-    } catch {
-      setAddError("Couldn't add that person to your network. Please try again.")
-    } finally {
-      setIsAdding(false)
     }
   }
 
@@ -187,9 +221,22 @@ function NetworkAdd() {
           )}
 
           <Button type="submit" disabled={isAdding} className="h-11 rounded-control font-display text-sm">
-            {status === "found" ? (isAdding ? "Adding…" : "Add to network") : "Invite to Joyna"}
+            {status === "found"
+              ? isAdding
+                ? "Adding…"
+                : "Add to network"
+              : isAdding
+                ? "Sending…"
+                : "Invite to Joyna"}
           </Button>
         </form>
+      )}
+
+      {invitedEmail && (
+        <p role="status" className="text-sm text-joyna-mint-dark">
+          Invite sent to {invitedEmail}. They&apos;ll be added to your network
+          once they register.
+        </p>
       )}
     </section>
   )

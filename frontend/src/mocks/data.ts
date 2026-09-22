@@ -19,6 +19,8 @@ export type MockEvent = {
   type: string
   defaultSpreadAllowed: number
   mood?: string
+  latitude?: number
+  longitude?: number
 }
 
 export type MockGroup = {
@@ -396,6 +398,18 @@ export const mockConnections: MockConnection[] = [
     isFavorite: false,
   },
 ]
+
+export type MockNetworkInvite = {
+  id: string
+  inviterId: string
+  invitedEmail: string
+  createdAt: string
+  acceptedAt?: string
+}
+
+// Empty by default — invites are created via the "Invite to Joyna" flow on
+// /network/add and resolved into mockConnections on mock /auth/register.
+export const mockNetworkInvites: MockNetworkInvite[] = []
 
 export type MockNotificationType =
   | 'event_invite'

@@ -54,3 +54,33 @@ spec:
                 configMapKeyRef:
                   name: '{{.Release.Name}}-configmap'
                   key: APP_PORT
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: '{{.Release.Name}}-secrets'
+                  key: SMTP_HOST
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: '{{.Release.Name}}-secrets'
+                  key: SMTP_USER
+            - name: SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: '{{.Release.Name}}-secrets'
+                  key: SMTP_PASSWORD
+            - name: SMTP_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{.Release.Name}}-configmap'
+                  key: SMTP_PORT
+            - name: SMTP_FROM
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{.Release.Name}}-configmap'
+                  key: SMTP_FROM
+            - name: FRONTEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{.Release.Name}}-configmap'
+                  key: FRONTEND_URL

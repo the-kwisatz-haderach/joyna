@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +9,8 @@ import type { SessionUser } from '../auth-context'
 function Register() {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const prefilledEmail = searchParams.get('email') ?? ''
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -66,7 +68,13 @@ function Register() {
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
             Email
-            <Input type="email" name="email" required className="h-10 rounded-field" />
+            <Input
+              type="email"
+              name="email"
+              required
+              defaultValue={prefilledEmail}
+              className="h-10 rounded-field"
+            />
           </label>
           <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
             Password

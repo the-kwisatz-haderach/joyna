@@ -37,16 +37,33 @@ type PotentialConnection struct {
 	SharedEventCount int    `json:"sharedEventCount" db:"shared_event_count"`
 }
 
+// NetworkInvite is a pending invitation to join Joyna, sent by an existing
+// user to an email address with no account yet. ResolvePendingInvites looks
+// these up by email once that address registers, connecting both users.
+type NetworkInvite struct {
+	ID           string     `json:"id" db:"id"`
+	InviterID    string     `json:"inviterId" db:"inviter_id"`
+	InvitedEmail string     `json:"invitedEmail" db:"invited_email"`
+	Token        string     `json:"token" db:"token"`
+	CreatedAt    time.Time  `json:"createdAt" db:"created_at"`
+	AcceptedAt   *time.Time `json:"acceptedAt,omitempty" db:"accepted_at"`
+}
+
+type InviteByEmailPayload struct {
+	Email string `json:"email"`
+}
+
 type CreateConnectionPayload struct {
 	ContactID string  `json:"contactId"`
 	GroupID   *string `json:"groupId,omitempty"`
 }
 
 var (
-	ErrInvalidContactID = errors.New("contactId isn't valid")
-	ErrInvalidGroupID   = errors.New("groupId isn't valid")
-	ErrSelfConnection   = errors.New("can't add yourself to your network")
-	ErrEmailRequired    = errors.New("email is required")
+	ErrInvalidContactID       = errors.New("contactId isn't valid")
+	ErrInvalidGroupID         = errors.New("groupId isn't valid")
+	ErrSelfConnection         = errors.New("can't add yourself to your network")
+	ErrEmailRequired          = errors.New("email is required")
+	ErrEmailAlreadyRegistered = errors.New("a user with this email is already registered")
 )
 
 func (p CreateConnectionPayload) Validate() error {

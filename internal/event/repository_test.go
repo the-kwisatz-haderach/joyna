@@ -68,6 +68,25 @@ func TestEventRepository(t *testing.T) {
 		require.ErrorIs(t, err, ErrInvalidEventMood)
 	})
 
+	t.Run("CreateEvent and UpdateEvent with coordinates", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		lat, lng := 59.3293, 18.0686
+		createdEvent, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(24 * time.Hour), Latitude: &lat, Longitude: &lng}, owner.Id)
+		require.NoError(t, err)
+		require.NotNil(t, createdEvent.Latitude)
+		require.NotNil(t, createdEvent.Longitude)
+		require.Equal(t, lat, *createdEvent.Latitude)
+		require.Equal(t, lng, *createdEvent.Longitude)
+
+		newLat, newLng := 51.5072, -0.1276
+		updatedEvent, err := repo.UpdateEvent(ctx, UpdateEventPayload{Latitude: &newLat, Longitude: &newLng}, createdEvent.ID, owner.Id)
+		require.NoError(t, err)
+		require.NotNil(t, updatedEvent.Latitude)
+		require.NotNil(t, updatedEvent.Longitude)
+		require.Equal(t, newLat, *updatedEvent.Latitude)
+		require.Equal(t, newLng, *updatedEvent.Longitude)
+	})
+
 	t.Run("GetEventInvite and RespondToEventInvite", func(t *testing.T) {
 		owner := authtest.CreateUser(t, pool)
 		invitee := authtest.CreateUser(t, pool)
@@ -103,6 +122,8 @@ func TestEventRepository(t *testing.T) {
 		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: createdEvent.ID, InvitedUserID: accepted.Id}, owner.Id)
 		require.NoError(t, err)
 		_, err = repo.CreateEventInvite(ctx, CreateEventInvitePayload{EventID: createdEvent.ID, InvitedUserID: declined.Id}, owner.Id)
+		require.NoError(t, err)
+		_, err = repo.RespondToEventInvite(ctx, createdEvent.ID, accepted.Id, InviteStateAccepted, nil)
 		require.NoError(t, err)
 		reason := "Already have plans that evening, sorry!"
 		_, err = repo.RespondToEventInvite(ctx, createdEvent.ID, declined.Id, InviteStateDeclined, &reason)
@@ -221,7 +242,12 @@ func TestEventRepository(t *testing.T) {
 		owner := authtest.CreateUser(t, pool)
 		invitee := authtest.CreateUser(t, pool)
 		alreadyNotified := authtest.CreateUser(t, pool)
-		eventDate := time.Now().Add(24 * time.Hour)
+		// This query matches ALL accepted invites for events on a given
+		// calendar day, not just this test's own event — so eventDate can't
+		// be the common +24h offset several other subtests in this shared
+		// table also use, or their accepted invites leak into this one's
+		// results depending on run order.
+		eventDate := time.Now().AddDate(1, 0, 0)
 
 		ev, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: eventDate}, owner.Id)
 		require.NoError(t, err)
