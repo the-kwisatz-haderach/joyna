@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { ArrowRight01Icon, Tick02Icon } from '@hugeicons/core-free-icons'
+import { ArrowRight01Icon } from '@hugeicons/core-free-icons'
 import { format, isSameYear } from 'date-fns'
 
 import { cn } from '@/lib/utils'
@@ -39,16 +39,17 @@ export function formatRsvpDeadline(rsvpDeadline?: string): string | null {
   return `RSVP in ${diffDays} day${diffDays === 1 ? '' : 's'}`
 }
 
-function AcceptedBadge() {
-  return (
-    <span
-      role="img"
-      aria-label="Attending"
-      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-joyna-mint text-white"
-    >
-      <HugeiconsIcon icon={Tick02Icon} className="h-2.5 w-2.5" strokeWidth={3.5} />
-    </span>
-  )
+function eventCardTone(event: Pick<EventListItem, 'isOwner' | 'viewerInviteStatus'>): string {
+  if (event.isOwner) {
+    return 'border-joyna-sunflower bg-joyna-sunflower/10'
+  }
+  if (event.viewerInviteStatus === 'accepted') {
+    return 'border-joyna-mint bg-joyna-mint/10'
+  }
+  if (event.viewerInviteStatus === 'declined') {
+    return 'border-joyna-bubblegum bg-joyna-bubblegum/10'
+  }
+  return 'border-joyna-border bg-white'
 }
 
 export function EventCard({ event, dimmed }: { event: EventListItem; dimmed?: boolean }) {
@@ -58,19 +59,15 @@ export function EventCard({ event, dimmed }: { event: EventListItem; dimmed?: bo
     <Link
       to={`/events/${event.id}`}
       className={cn(
-        'flex items-center justify-between gap-3 rounded-card border bg-white p-4 transition-opacity',
-        event.isOwner ? 'border-joyna-sunflower' : 'border-joyna-border',
+        'flex items-center justify-between gap-3 rounded-card border p-4 transition-opacity',
+        eventCardTone(event),
         dimmed && 'opacity-60 hover:opacity-80',
       )}
     >
       <div className="flex min-w-0 flex-col gap-1">
         <span className="flex items-center gap-1.5 font-display text-sm font-semibold text-joyna-ink">
           <span className="truncate">{event.name}</span>
-          {event.isOwner ? (
-            <HostBadge label="Hosting" />
-          ) : event.viewerInviteStatus === 'accepted' ? (
-            <AcceptedBadge />
-          ) : null}
+          {event.isOwner ? <HostBadge label="Hosting" /> : null}
         </span>
         <div className="flex items-center gap-1.5 text-xs">
           <span className="text-joyna-ink-soft">{formatEventDate(event.date)}</span>
