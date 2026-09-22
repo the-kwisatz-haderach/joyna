@@ -6,6 +6,7 @@ package mail
 import (
 	"context"
 	"fmt"
+	"mime"
 	"net"
 	"net/mail"
 	"net/smtp"
@@ -44,23 +45,19 @@ func (m *SMTPMailer) Send(ctx context.Context, to, subject, body string) error {
 		auth = smtp.PlainAuth("", m.user, m.password, m.host)
 	}
 
-	safeFrom, err := sanitizeHeaderValue(m.from, "from")
+	safeFrom, err := sanitizeAddress(m.from)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid from address: %w", err)
 	}
-	safeTo, err := sanitizeHeaderValue(to, "to")
+	safeTo, err := sanitizeAddress(to)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid to address: %w", err)
 	}
-	parsedTo, err := mail.ParseAddress(safeTo)
-	if err != nil || parsedTo == nil || parsedTo.Address == "" || parsedTo.Name != "" {
-		return fmt.Errorf("invalid to header value")
-	}
-	safeTo = parsedTo.Address
-	safeSubject, err := sanitizeHeaderValue(subject, "subject")
-	if err != nil {
-		return err
-	}
+	// Q-encoding maps its input onto a fixed, CR/LF-free ASCII alphabet
+	// (RFC 2047 encoded-word), so unlike stripping/rejecting characters
+	// after the fact, header injection via subject is structurally
+	// impossible regardless of what it contains.
+	safeSubject := mime.QEncoding.Encode("UTF-8", subject)
 	safeBody := strings.ReplaceAll(body, "\r", "")
 
 	msg := fmt.Sprintf(
@@ -74,15 +71,17 @@ func (m *SMTPMailer) Send(ctx context.Context, to, subject, body string) error {
 	return nil
 }
 
-func sanitizeHeaderValue(v, field string) (string, error) {
-	v = strings.TrimSpace(v)
-	if v == "" {
-		return "", fmt.Errorf("invalid %s header value: empty", field)
+// sanitizeAddress validates v as a single RFC 5322 address with no display
+// name, and returns the parser's own canonical rendering of it rather than
+// the raw input — so the bytes that reach the header/envelope are always
+// mail.ParseAddress's output, never attacker-controlled text.
+func sanitizeAddress(v string) (string, error) {
+	parsed, err := mail.ParseAddress(strings.TrimSpace(v))
+	if err != nil {
+		return "", err
 	}
-	for _, r := range v {
-		if r == '\r' || r == '\n' || (r < 32 && r != '\t') || r == 127 {
-			return "", fmt.Errorf("invalid %s header value", field)
-		}
+	if parsed.Address == "" || parsed.Name != "" {
+		return "", fmt.Errorf("unsupported address format")
 	}
-	return v, nil
+	return parsed.Address, nil
 }
