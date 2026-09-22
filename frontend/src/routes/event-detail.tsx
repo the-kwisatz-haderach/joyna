@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from 'react'
-import {Link, useParams} from 'react-router'
+import {Link, Navigate, useParams} from 'react-router'
 import {HugeiconsIcon} from '@hugeicons/react'
 import {
   Location01Icon,
@@ -330,14 +330,7 @@ function EventDetail() {
   }
 
   if (notFound) {
-    return (
-      <section className="mx-auto flex max-w-2xl flex-col gap-4 px-6 py-16">
-        <Link to="/events" className="text-sm text-joyna-coral hover:underline">
-          ← Back to events
-        </Link>
-        <p className="text-joyna-ink-soft">Event not found.</p>
-      </section>
-    )
+    return <Navigate to="/events" replace />
   }
 
   if (isLoading || !event) {

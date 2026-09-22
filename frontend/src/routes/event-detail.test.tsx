@@ -25,6 +25,7 @@ function renderEventDetail(eventId: string) {
       <MemoryRouter initialEntries={[`/events/${eventId}`]}>
         <Routes>
           <Route path="/events/:id" element={<EventDetail />} />
+          <Route path="/events" element={<p>All events</p>} />
         </Routes>
       </MemoryRouter>
     </AuthProvider>,
@@ -143,13 +144,17 @@ describe('EventDetail', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('shows a not-found message for an event the viewer cannot access', async () => {
+  it('redirects to /events for an event id that does not exist', async () => {
     loginAsMockUser()
     renderEventDetail('00000000-0000-0000-0000-000000000000')
 
-    expect(await screen.findByText(/event not found/i)).toBeInTheDocument()
-    expect(
-      screen.getByRole('link', { name: /back to events/i }),
-    ).toHaveAttribute('href', '/events')
+    expect(await screen.findByText('All events')).toBeInTheDocument()
+  })
+
+  it('redirects to /events for an existing event the viewer is neither hosting nor invited to', async () => {
+    loginAsMockUser()
+    renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000015')
+
+    expect(await screen.findByText('All events')).toBeInTheDocument()
   })
 })
