@@ -15,6 +15,9 @@ import {
   type MockUser,
 } from "./data"
 
+// Mirrors internal/notification's Service.PageSize.
+const NOTIFICATIONS_PAGE_SIZE = 30
+
 // Mutable in-memory copies so writes made during a session don't leak
 // between page reloads or affect the fixtures other handlers read from.
 let events = [...mockEvents]
@@ -540,15 +543,29 @@ export const handlers = [
     return HttpResponse.json(serializeConnection(created))
   }),
 
-  // Mirrors GET /notifications: returns the pre-visit read state, then marks
-  // everything read as a side effect — the badge/unread count only reflects
-  // notifications raised since the last visit to this screen.
-  http.get("/api/notifications", () => {
-    const response = notifications.map((notification) => ({ ...notification }))
+  // Mirrors GET /notifications: returns a page of the pre-visit read state
+  // (NOTIFICATIONS_PAGE_SIZE per page, ?page= query param, 1-indexed),
+  // then marks everything read as a side effect regardless of which page was
+  // requested — the badge/unread count only reflects notifications raised
+  // since the last visit to this screen.
+  http.get("/api/notifications", ({ request }) => {
+    const page = Number(new URL(request.url).searchParams.get("page")) || 1
+    const totalCount = notifications.length
+    const totalPages = Math.max(1, Math.ceil(totalCount / NOTIFICATIONS_PAGE_SIZE))
+    const start = (page - 1) * NOTIFICATIONS_PAGE_SIZE
+    const pageItems = notifications
+      .slice(start, start + NOTIFICATIONS_PAGE_SIZE)
+      .map((notification) => ({ ...notification }))
     notifications = notifications.map((notification) =>
       notification.isRead ? notification : { ...notification, isRead: true },
     )
-    return HttpResponse.json(response)
+    return HttpResponse.json({
+      notifications: pageItems,
+      page,
+      pageSize: NOTIFICATIONS_PAGE_SIZE,
+      totalCount,
+      totalPages,
+    })
   }),
 
   http.get("/api/notifications/unread-count", () => {
