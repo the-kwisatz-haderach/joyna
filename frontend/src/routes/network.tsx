@@ -3,6 +3,7 @@ import { Link } from "react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowRight01Icon, UserAdd01Icon } from "@hugeicons/core-free-icons"
 
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { GuestAvatar } from "../../components/joyna/guest-avatar"
 
@@ -104,6 +105,27 @@ function groupConnections(connections: NetworkConnection[]) {
       ),
     }))
     .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+function EmptyNetworkState() {
+  return (
+    <div className="mx-auto flex max-w-sm flex-col items-center gap-3 px-6 py-20 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-joyna-periwinkle/10 text-joyna-periwinkle">
+        <HugeiconsIcon icon={UserAdd01Icon} className="h-8 w-8" strokeWidth={1.8} />
+      </div>
+      <h2 className="font-display text-lg font-semibold text-joyna-ink">Your network is empty</h2>
+      <p className="text-sm text-joyna-ink-soft">
+        Add someone by email, or check the suggestions below.
+      </p>
+      <Button
+        render={<Link to="/network/add" />}
+        className="mt-2 h-11 rounded-control px-6 font-display text-sm"
+      >
+        <HugeiconsIcon icon={UserAdd01Icon} className="h-4 w-4" strokeWidth={2} />
+        Add by email
+      </Button>
+    </div>
+  )
 }
 
 function ContactRow({ contact }: { contact: NetworkConnection }) {
@@ -256,25 +278,21 @@ function Network() {
     </Link>
   )
 
+  const potentialConnectionsSection = potentialConnections.length > 0 && (
+    <div className="flex flex-col gap-3">
+      <h3 className="text-xs font-semibold tracking-wide text-joyna-ink-faint uppercase">
+        People you may know
+      </h3>
+      <PotentialNetwork
+        potentialConnections={potentialConnections}
+        pendingUserId={pendingUserId}
+        onAdd={handleAdd}
+      />
+    </div>
+  )
+
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-5 px-5 py-6">
-      <label className="sr-only" htmlFor="network-search">
-        Search your network
-      </label>
-      <div className="relative">
-        <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-joyna-ink-faint">
-          <SearchIcon />
-        </span>
-        <Input
-          id="network-search"
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search your network…"
-          className="h-11 rounded-control border-joyna-border-strong bg-white pl-9 text-sm"
-        />
-      </div>
-
       {error && (
         <p role="alert" className="text-sm text-joyna-red-dark">
           {error}
@@ -283,42 +301,47 @@ function Network() {
 
       {isLoading ? (
         <p className="text-sm text-joyna-ink-faint">Loading your network&hellip;</p>
-      ) : (
+      ) : connections.length === 0 ? (
         <div className="flex flex-col gap-8">
-          <div className="flex flex-col gap-3">
-            {connections.length === 0 ? (
-              <>
-                <div className="flex items-center justify-end">{addByEmailLink}</div>
-                <p className="text-sm text-joyna-ink-faint">
-                  Your network is empty. Add someone by email, or check the
-                  suggestions below.
-                </p>
-              </>
-            ) : groups.length === 0 ? (
-              <>
-                <div className="flex items-center justify-end">{addByEmailLink}</div>
-                <p className="text-sm text-joyna-ink-faint">
-                  No matches for &ldquo;{query}&rdquo;.
-                </p>
-              </>
-            ) : (
-              <NetworkGroups groups={groups} addByEmailSlot={addByEmailLink} />
-            )}
+          <EmptyNetworkState />
+          {potentialConnectionsSection}
+        </div>
+      ) : (
+        <>
+          <label className="sr-only" htmlFor="network-search">
+            Search your network
+          </label>
+          <div className="relative">
+            <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-joyna-ink-faint">
+              <SearchIcon />
+            </span>
+            <Input
+              id="network-search"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search your network…"
+              className="h-11 rounded-control border-joyna-border-strong bg-white pl-9 text-sm"
+            />
           </div>
 
-          {potentialConnections.length > 0 && (
+          <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-3">
-              <h3 className="text-xs font-semibold tracking-wide text-joyna-ink-faint uppercase">
-                People you may know
-              </h3>
-              <PotentialNetwork
-                potentialConnections={potentialConnections}
-                pendingUserId={pendingUserId}
-                onAdd={handleAdd}
-              />
+              {groups.length === 0 ? (
+                <>
+                  <div className="flex items-center justify-end">{addByEmailLink}</div>
+                  <p className="text-sm text-joyna-ink-faint">
+                    No matches for &ldquo;{query}&rdquo;.
+                  </p>
+                </>
+              ) : (
+                <NetworkGroups groups={groups} addByEmailSlot={addByEmailLink} />
+              )}
             </div>
-          )}
-        </div>
+
+            {potentialConnectionsSection}
+          </div>
+        </>
       )}
     </section>
   )
