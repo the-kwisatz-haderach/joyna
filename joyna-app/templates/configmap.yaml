@@ -12,3 +12,5 @@ data:
   SMTP_PORT: {{.Values.mail.smtpPort | quote}}
   SMTP_FROM: {{.Values.mail.smtpFrom | quote}}
   FRONTEND_URL: {{ required "frontendURL is required" .Values.frontendURL | quote}}
+  VAPID_PUBLIC_KEY: {{.Values.push.publicKey | quote}}
+  VAPID_SUBJECT: {{.Values.push.subject | quote}}

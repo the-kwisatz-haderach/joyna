@@ -16,6 +16,7 @@ import (
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/config"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/db"
 	"github.com/the-kwisatz-haderach/joyna/internal/platform/logging"
+	"github.com/the-kwisatz-haderach/joyna/internal/platform/push"
 )
 
 func main() {
@@ -34,8 +35,10 @@ func main() {
 	}
 	defer pool.Close()
 
+	pusher := push.NewWebPusher(cfg.VAPIDPublicKey, cfg.VAPIDPrivateKey, cfg.VAPIDSubject)
+
 	notificationRepo := notification.NewRepository(pool)
-	notificationService := notification.NewService(notificationRepo)
+	notificationService := notification.NewService(notificationRepo, pusher, cfg.VAPIDPublicKey)
 
 	eventRepo := event.NewRepository(pool)
 	eventService := event.NewService(eventRepo, notificationService)

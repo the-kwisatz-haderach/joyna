@@ -137,6 +137,12 @@ jobs:
           cat <<EOF > joyna-app/values.secret.yaml
           postgres:
             password: ${{ secrets.POSTGRES_PASSWORD }}
+          smtp:
+            host: ${{ secrets.SMTP_HOST }}
+            user: ${{ secrets.SMTP_USER }}
+            password: ${{ secrets.SMTP_PASSWORD }}
+          push:
+            privateKey: ${{ secrets.VAPID_PRIVATE_KEY }}
           EOF
 
       - name: Helm lint
@@ -190,6 +196,12 @@ jobs:
           cat <<EOF > joyna-app/values.secret.yaml
           postgres:
             password: ${{ secrets.POSTGRES_PASSWORD }}
+          smtp:
+            host: ${{ secrets.SMTP_HOST }}
+            user: ${{ secrets.SMTP_USER }}
+            password: ${{ secrets.SMTP_PASSWORD }}
+          push:
+            privateKey: ${{ secrets.VAPID_PRIVATE_KEY }}
           EOF
 
       - name: Helm lint

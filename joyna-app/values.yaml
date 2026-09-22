@@ -48,3 +48,11 @@ frontendURL: http://34.2.48.78
 mail:
   smtpPort: 587
   smtpFrom: no-reploy@mogva.dev
+
+# VAPID settings for browser Web Push notifications (internal/platform/push).
+# publicKey isn't secret — it's sent to the browser's push service on every
+# subscribe — so it lives here rather than values.secret.yaml. privateKey is
+# a real secret and lives there instead, same split as mail/smtp above.
+push:
+  publicKey: 'BOMMtdr8kDVFJQ9RlzC7EiXa0OQ8YE-sMH8BNWRG1YKZud4hc-Kq5sy2jZgq3Cdi32mMhr8AWkxyE59dM9vBvMM'
+  subject: 'mailto:you@joyna.dev'

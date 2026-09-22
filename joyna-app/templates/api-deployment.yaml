@@ -84,3 +84,18 @@ spec:
                 configMapKeyRef:
                   name: '{{.Release.Name}}-configmap'
                   key: FRONTEND_URL
+            - name: VAPID_PUBLIC_KEY
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{.Release.Name}}-configmap'
+                  key: VAPID_PUBLIC_KEY
+            - name: VAPID_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: '{{.Release.Name}}-secrets'
+                  key: VAPID_PRIVATE_KEY
+            - name: VAPID_SUBJECT
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{.Release.Name}}-configmap'
+                  key: VAPID_SUBJECT

@@ -30,6 +30,14 @@ let notifications = [...mockNotifications]
 let users = [...mockUsers]
 let currentUser = users[0]
 let networkInvites = [...mockNetworkInvites]
+let pushSubscriptions: {
+  id: string
+  userId: string
+  endpoint: string
+  p256dh: string
+  auth: string
+  createdAt: string
+}[] = []
 
 // Every handler below only ever replaces these arrays wholesale (never
 // mutates an existing mock*/array item in place), so re-seeding from the
@@ -45,6 +53,7 @@ export function resetMockData() {
   users = [...mockUsers]
   currentUser = users[0]
   networkInvites = [...mockNetworkInvites]
+  pushSubscriptions = []
 }
 
 function serializeConnection(connection: MockConnection) {
@@ -642,6 +651,44 @@ export const handlers = [
   http.get("/api/notifications/unread-count", () => {
     const count = notifications.filter((notification) => !notification.isRead).length
     return HttpResponse.json({ count })
+  }),
+
+  // Fixed dummy value — real content doesn't matter for exercising the
+  // subscribe flow against a mock PushManager in tests/dev:mock. Length is
+  // chosen so it round-trips through base64url→base64 padding correctly
+  // (real VAPID keys are 87 base64url chars for the same reason).
+  http.get("/api/push-subscriptions/vapid-public-key", () => {
+    return HttpResponse.json({ publicKey: "mock-vapid-public-key000" })
+  }),
+
+  http.post("/api/push-subscriptions", async ({ request }) => {
+    const body = (await request.json()) as { endpoint?: string; p256dh?: string; auth?: string }
+    if (!body.endpoint || !body.p256dh || !body.auth) {
+      return new HttpResponse("endpoint, p256dh and auth are all required", { status: 400 })
+    }
+    const existing = pushSubscriptions.find((sub) => sub.endpoint === body.endpoint)
+    const created = {
+      id: existing?.id ?? crypto.randomUUID(),
+      userId: currentUser.id,
+      endpoint: body.endpoint,
+      p256dh: body.p256dh,
+      auth: body.auth,
+      createdAt: existing?.createdAt ?? new Date().toISOString(),
+    }
+    pushSubscriptions = [...pushSubscriptions.filter((sub) => sub.endpoint !== body.endpoint), created]
+    return HttpResponse.json(created)
+  }),
+
+  http.delete("/api/push-subscriptions", async ({ request }) => {
+    const body = (await request.json()) as { endpoint?: string }
+    const index = pushSubscriptions.findIndex(
+      (sub) => sub.userId === currentUser.id && sub.endpoint === body.endpoint,
+    )
+    if (index === -1) {
+      return new HttpResponse("push subscription not found", { status: 404 })
+    }
+    pushSubscriptions = pushSubscriptions.filter((_, i) => i !== index)
+    return new HttpResponse(null, { status: 204 })
   }),
 
   http.patch("/api/network/:contactId", async ({ request, params }) => {

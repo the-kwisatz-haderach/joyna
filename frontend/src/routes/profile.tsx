@@ -105,8 +105,8 @@ function Profile() {
         </button>
         <button
           type="button"
-          className="flex items-center justify-between px-4 py-3 text-left text-sm text-joyna-ink-faint"
-          disabled
+          className="flex items-center justify-between px-4 py-3 text-left text-sm text-joyna-ink"
+          onClick={() => navigate('/profile/notifications')}
         >
           Notification settings
           <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
