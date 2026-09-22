@@ -127,6 +127,38 @@ describe("NetworkManage", () => {
 
     expect(bookClubCard.className).not.toMatch(/border-joyna-periwinkle/)
   })
+
+  it("deletes a group and moves its members back to acquaintances after confirming", async () => {
+    const user = userEvent.setup()
+    renderNetworkManage()
+
+    const closeFriends = await screen.findByRole("group", { name: "Close Friends" })
+    await user.click(within(closeFriends).getByRole("button", { name: /delete close friends/i }))
+
+    expect(await screen.findByText(/delete .close friends.\?/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/alan turing will move to acquaintances\. this can.t be undone\./i),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: /delete group/i }))
+
+    expect(screen.queryByRole("group", { name: "Close Friends" })).not.toBeInTheDocument()
+    expect(await screen.findAllByText("Alan Turing")).toHaveLength(1)
+  })
+
+  it("cancels group deletion without removing the group", async () => {
+    const user = userEvent.setup()
+    renderNetworkManage()
+
+    const bookClub = await screen.findByRole("group", { name: "Book Club" })
+    await user.click(within(bookClub).getByRole("button", { name: /delete book club/i }))
+
+    await screen.findByText(/delete .book club.\?/i)
+    await user.click(screen.getByRole("button", { name: /cancel/i }))
+
+    expect(screen.queryByText(/delete .book club.\?/i)).not.toBeInTheDocument()
+    expect(await screen.findByRole("group", { name: "Book Club" })).toBeInTheDocument()
+  })
 })
 
 // Native HTML5 drag/drop: jsdom dispatches "dragstart"/"drop" as plain
