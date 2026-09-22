@@ -1,0 +1,18 @@
+{
+  "name": "Joyna",
+  "short_name": "Joyna",
+  "description": "Create, share, and manage events with your network.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff8f0",
+  "theme_color": "#ff6f5e",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
