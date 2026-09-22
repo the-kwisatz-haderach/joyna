@@ -11,6 +11,7 @@ export type SessionUser = {
   email: string
   joinedAt: string
   profilePictureKey?: string
+  address?: string
 }
 
 type AuthContextValue = {

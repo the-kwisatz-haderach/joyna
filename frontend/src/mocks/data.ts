@@ -4,6 +4,7 @@ export type MockUser = {
   email: string
   joinedAt: string
   profilePictureKey?: string
+  address?: string
 }
 
 export type MockEvent = {

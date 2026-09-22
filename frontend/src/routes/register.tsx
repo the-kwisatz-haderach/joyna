@@ -20,6 +20,7 @@ function Register() {
     const name = String(form.get('name') ?? '')
     const email = String(form.get('email') ?? '')
     const password = String(form.get('password') ?? '')
+    const address = String(form.get('address') ?? '').trim()
 
     setIsSubmitting(true)
     try {
@@ -27,7 +28,7 @@ function Register() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, address: address || undefined }),
       })
 
       if (!response.ok) {
@@ -70,6 +71,13 @@ function Register() {
           <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
             Password
             <Input type="password" name="password" required className="h-10 rounded-field" />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
+            Address <span className="font-normal text-joyna-ink-faint">(optional)</span>
+            <Input type="text" name="address" className="h-10 rounded-field" />
+            <span className="text-xs font-normal text-joyna-ink-faint">
+              Used to pre-fill the location when you create events.
+            </span>
           </label>
           {error && (
             <p role="alert" className="text-sm text-joyna-red-dark">

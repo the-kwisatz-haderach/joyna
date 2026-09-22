@@ -26,18 +26,18 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
 }
 
-func (r *Repository) CreateUser(ctx context.Context, name, email, passwordHash string) (User, error) {
+func (r *Repository) CreateUser(ctx context.Context, name, email, passwordHash string, address *string) (User, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return User{}, fmt.Errorf("beginning tx: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	user := User{Name: name, Email: email}
+	user := User{Name: name, Email: email, Address: address}
 
 	row := tx.QueryRow(ctx,
-		`INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id, joined_at`,
-		user.Name, user.Email,
+		`INSERT INTO users (name, email, address) VALUES ($1, $2, $3) RETURNING id, joined_at`,
+		user.Name, user.Email, user.Address,
 	)
 	if err := row.Scan(&user.Id, &user.JoinedAt); err != nil {
 		var pgErr *pgconn.PgError
@@ -67,7 +67,7 @@ func (r *Repository) CreateUser(ctx context.Context, name, email, passwordHash s
 
 func (r *Repository) GetUserByEmail(ctx context.Context, email string) (User, string, error) {
 	row := r.pool.QueryRow(ctx,
-		`SELECT u.id, u.name, u.email, u.joined_at, u.profile_picture_key, c.password_hash
+		`SELECT u.id, u.name, u.email, u.joined_at, u.profile_picture_key, u.address, c.password_hash
 		 FROM credentials c
 		 JOIN users u ON u.id = c.user_id
 		 WHERE c.email = $1`,
@@ -76,7 +76,7 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (User, st
 
 	var user User
 	var passwordHash string
-	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.JoinedAt, &user.ProfilePictureKey, &passwordHash); err != nil {
+	if err := row.Scan(&user.Id, &user.Name, &user.Email, &user.JoinedAt, &user.ProfilePictureKey, &user.Address, &passwordHash); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return User{}, "", ErrUserNotFound
 		}

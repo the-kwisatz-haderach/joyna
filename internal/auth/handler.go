@@ -32,7 +32,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.service.Register(r.Context(), payload.Name, payload.Email, payload.Password)
+	user, err := h.service.Register(r.Context(), payload.Name, payload.Email, payload.Password, payload.Address)
 	if err != nil {
 		if errors.Is(err, ErrUserAlreadyExists) {
 			http.Error(w, "user already exists with this email", http.StatusConflict)

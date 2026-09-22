@@ -9,12 +9,12 @@ import (
 )
 
 type fakeRepository struct {
-	createUserFunc     func(ctx context.Context, name, email, passwordHash string) (User, error)
+	createUserFunc     func(ctx context.Context, name, email, passwordHash string, address *string) (User, error)
 	getUserByEmailFunc func(ctx context.Context, email string) (User, string, error)
 }
 
-func (f *fakeRepository) CreateUser(ctx context.Context, name, email, passwordHash string) (User, error) {
-	return f.createUserFunc(ctx, name, email, passwordHash)
+func (f *fakeRepository) CreateUser(ctx context.Context, name, email, passwordHash string, address *string) (User, error) {
+	return f.createUserFunc(ctx, name, email, passwordHash, address)
 }
 
 func (f *fakeRepository) GetUserByEmail(ctx context.Context, email string) (User, string, error) {
@@ -27,12 +27,12 @@ func TestRegister(t *testing.T) {
 		Email: "world",
 	}
 	var repo = &fakeRepository{
-		createUserFunc: func(ctx context.Context, name, email, passwordHash string) (User, error) {
+		createUserFunc: func(ctx context.Context, name, email, passwordHash string, address *string) (User, error) {
 			return createdUser, nil
 		},
 	}
 	service := NewService(repo)
-	user, err := service.Register(context.Background(), "name", "email", "pass")
+	user, err := service.Register(context.Background(), "name", "email", "pass", nil)
 	require.NoError(t, err)
 	require.Equal(t, createdUser, user)
 }

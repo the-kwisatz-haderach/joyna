@@ -16,6 +16,20 @@ func TestSanitize(t *testing.T) {
 	}, payload)
 }
 
+func TestSanitize_TrimsAddress(t *testing.T) {
+	address := "  123 Main St  "
+	payload := RegisterUserPayload{Name: "name", Email: "test@test.com", Password: "pass", Address: &address}
+	payload.Sanitize()
+	require.Equal(t, "123 Main St", *payload.Address)
+}
+
+func TestSanitize_BlankAddressBecomesNil(t *testing.T) {
+	address := "   "
+	payload := RegisterUserPayload{Name: "name", Email: "test@test.com", Password: "pass", Address: &address}
+	payload.Sanitize()
+	require.Nil(t, payload.Address)
+}
+
 func TestValidate_EmptyName(t *testing.T) {
 	payload := RegisterUserPayload{Name: "", Email: "test@test.com", Password: "test"}
 	err := payload.Validate()

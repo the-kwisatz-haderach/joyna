@@ -109,6 +109,11 @@ describe('CreateEvent', () => {
     expect(screen.getByRole('button', { name: /add deadline/i })).toBeInTheDocument()
   })
 
+  // These two simulate real keystrokes across several fields plus a calendar
+  // click and an async navigation wait — comfortably under 5s in isolation,
+  // but that many sequential userEvent interactions can tip past vitest's
+  // default 5000ms test timeout under the CPU contention of a full parallel
+  // suite run. Give them headroom rather than racing the default.
   it('creates the event and navigates to its detail page on success', async () => {
     const user = userEvent.setup()
     renderCreateEvent()
@@ -128,7 +133,7 @@ describe('CreateEvent', () => {
     await waitFor(() => {
       expect(screen.getByText(/event detail/i)).toBeInTheDocument()
     })
-  })
+  }, 15000)
 
   it('submits the selected mood and shows it as a chip on the created event', async () => {
     const user = userEvent.setup()
@@ -141,5 +146,5 @@ describe('CreateEvent', () => {
     await user.click(screen.getByRole('button', { name: /^create$/i }))
 
     expect(await screen.findByText(/chill mood/i)).toBeInTheDocument()
-  })
+  }, 15000)
 })
