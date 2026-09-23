@@ -7,7 +7,7 @@ import { AuthProvider } from "../auth-context"
 import { mockUsers } from "../mocks/data"
 import Profile from "./profile"
 
-function loginAsMockUser() {
+function loginAsMockUser(overrides: Partial<{ address: string }> = {}) {
   localStorage.setItem(
     "joyna.currentUser",
     JSON.stringify({
@@ -15,6 +15,7 @@ function loginAsMockUser() {
       name: mockUsers[0].name,
       email: mockUsers[0].email,
       joinedAt: mockUsers[0].joinedAt,
+      ...overrides,
     }),
   )
 }
@@ -43,6 +44,22 @@ describe("Profile", () => {
     renderProfile()
 
     expect(screen.getByText(mockUsers[0].name)).toBeInTheDocument()
+  })
+
+  it("shows the user's location when set", () => {
+    loginAsMockUser({ address: "Stockholm, Sweden" })
+
+    renderProfile()
+
+    expect(screen.getByText("Stockholm, Sweden")).toBeInTheDocument()
+  })
+
+  it("does not show a location when unset", () => {
+    loginAsMockUser()
+
+    renderProfile()
+
+    expect(screen.queryByTestId("profile-location")).not.toBeInTheDocument()
   })
 
   it("navigates to the edit profile page when 'Edit profile' is clicked", async () => {

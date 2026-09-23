@@ -76,6 +76,11 @@ function Profile() {
         <div className="text-center">
           <p className="font-display text-lg font-semibold text-joyna-ink">{user.name}</p>
           <p className="text-sm text-joyna-ink-soft">{user.email}</p>
+          {user.address && (
+            <p data-testid="profile-location" className="text-sm text-joyna-ink-soft">
+              {user.address}
+            </p>
+          )}
         </div>
       </div>
 
