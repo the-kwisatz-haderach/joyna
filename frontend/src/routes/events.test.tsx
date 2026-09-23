@@ -46,6 +46,15 @@ describe('Events', () => {
     expect(link).toHaveAttribute('href', '/events/all')
   })
 
+  it('shows a Templates section above the events list with a Manage link', async () => {
+    loginAsMockUser()
+    renderEvents()
+
+    expect(await screen.findByRole('button', { name: /afterwork today/i })).toBeInTheDocument()
+    const manageLink = screen.getByRole('link', { name: /manage/i })
+    expect(manageLink).toHaveAttribute('href', '/events/templates')
+  })
+
   it('marks an event the user is hosting with a host badge', async () => {
     loginAsMockUser()
     renderEvents()

@@ -2,8 +2,10 @@ import { http, HttpResponse } from "msw"
 
 import {
   MOCK_PASSWORD,
+  createDefaultEventTemplates,
   mockConnections,
   mockEventInvites,
+  mockEventTemplates,
   mockEvents,
   mockGroups,
   mockNetworkInvites,
@@ -12,6 +14,7 @@ import {
   type MockConnection,
   type MockEvent,
   type MockEventInvite,
+  type MockEventTemplate,
   type MockGroup,
   type MockNetworkInvite,
   type MockUser,
@@ -24,6 +27,7 @@ const NOTIFICATIONS_PAGE_SIZE = 30
 // between page reloads or affect the fixtures other handlers read from.
 let events = [...mockEvents]
 let eventInvites = [...mockEventInvites]
+let eventTemplates = [...mockEventTemplates]
 let groups = [...mockGroups]
 let connections = [...mockConnections]
 let notifications = [...mockNotifications]
@@ -47,6 +51,7 @@ let pushSubscriptions: {
 export function resetMockData() {
   events = [...mockEvents]
   eventInvites = [...mockEventInvites]
+  eventTemplates = [...mockEventTemplates]
   groups = [...mockGroups]
   connections = [...mockConnections]
   notifications = [...mockNotifications]
@@ -207,6 +212,9 @@ export const handlers = [
     networkInvites = networkInvites.map((invite) =>
       pending.includes(invite) ? { ...invite, acceptedAt: new Date().toISOString() } : invite,
     )
+
+    // Mirrors auth.Service.Register's SeedDefaultTemplates call.
+    eventTemplates = [...eventTemplates, ...createDefaultEventTemplates(created.id)]
 
     return HttpResponse.json(created)
   }),
@@ -483,6 +491,89 @@ export const handlers = [
       })
     }
     eventInvites = eventInvites.filter((_, i) => i !== index)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  // Sorted oldest-first, mirroring the real ORDER BY created_at ASC so
+  // default templates show up in seed order ahead of anything a user adds.
+  http.get("/api/event-templates", () => {
+    const own = eventTemplates
+      .filter((template) => template.ownerId === currentUser.id)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    return HttpResponse.json(own)
+  }),
+
+  http.post("/api/event-templates", async ({ request }) => {
+    const body = (await request.json()) as Partial<MockEventTemplate>
+    if (!body.name?.trim()) {
+      return new HttpResponse("template name must not be empty", { status: 400 })
+    }
+    if (!body.icon?.trim()) {
+      return new HttpResponse("template icon must not be empty", { status: 400 })
+    }
+    if (!body.title?.trim()) {
+      return new HttpResponse("template title must not be empty", { status: 400 })
+    }
+    const created: MockEventTemplate = {
+      id: crypto.randomUUID(),
+      ownerId: currentUser.id,
+      name: body.name.trim(),
+      icon: body.icon.trim(),
+      createdAt: new Date().toISOString(),
+      title: body.title.trim(),
+      dateOption: body.dateOption ?? "none",
+      timeOfDay: body.timeOfDay,
+      location: body.location?.trim() ?? "",
+      rsvpDeadlineOption: body.rsvpDeadlineOption ?? "none",
+      mood: body.mood,
+      description: body.description?.trim() ?? "",
+    }
+    eventTemplates = [...eventTemplates, created]
+    return HttpResponse.json(created)
+  }),
+
+  http.patch("/api/event-templates/:id", async ({ request, params }) => {
+    const index = eventTemplates.findIndex(
+      (template) => template.id === params.id && template.ownerId === currentUser.id,
+    )
+    if (index === -1) {
+      return new HttpResponse("event template not found", { status: 404 })
+    }
+    const body = (await request.json()) as Partial<MockEventTemplate> & {
+      clearTimeOfDay?: boolean
+      clearMood?: boolean
+    }
+    const updated = { ...eventTemplates[index] }
+    if (body.name !== undefined) updated.name = body.name.trim()
+    if (body.icon !== undefined) updated.icon = body.icon.trim()
+    if (body.title !== undefined) updated.title = body.title.trim()
+    if (body.dateOption !== undefined) updated.dateOption = body.dateOption
+    if (body.clearTimeOfDay) {
+      updated.timeOfDay = undefined
+    } else if (body.timeOfDay !== undefined) {
+      updated.timeOfDay = body.timeOfDay
+    }
+    if (body.location !== undefined) updated.location = body.location.trim()
+    if (body.rsvpDeadlineOption !== undefined) updated.rsvpDeadlineOption = body.rsvpDeadlineOption
+    if (body.clearMood) {
+      updated.mood = undefined
+    } else if (body.mood !== undefined) {
+      updated.mood = body.mood
+    }
+    if (body.description !== undefined) updated.description = body.description.trim()
+    eventTemplates = eventTemplates.map((template, i) => (i === index ? updated : template))
+    return HttpResponse.json(updated)
+  }),
+
+  http.delete("/api/event-templates/:id", ({ params }) => {
+    if (
+      !eventTemplates.some(
+        (template) => template.id === params.id && template.ownerId === currentUser.id,
+      )
+    ) {
+      return new HttpResponse("event template not found", { status: 404 })
+    }
+    eventTemplates = eventTemplates.filter((template) => template.id !== params.id)
     return new HttpResponse(null, { status: 204 })
   }),
 

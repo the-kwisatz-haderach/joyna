@@ -35,6 +35,14 @@ func (f *fakeInviteResolver) ResolvePendingInvites(ctx context.Context, userID, 
 	return f.resolvePendingInvitesFunc(ctx, userID, email)
 }
 
+type fakeTemplateSeeder struct {
+	seedDefaultTemplatesFunc func(ctx context.Context, ownerID string) error
+}
+
+func (f *fakeTemplateSeeder) SeedDefaultTemplates(ctx context.Context, ownerID string) error {
+	return f.seedDefaultTemplatesFunc(ctx, ownerID)
+}
+
 func TestRegister(t *testing.T) {
 	createdUser := User{
 		Name:  "hello",
@@ -45,7 +53,7 @@ func TestRegister(t *testing.T) {
 			return createdUser, nil
 		},
 	}
-	service := NewService(repo, nil)
+	service := NewService(repo, nil, nil)
 	user, err := service.Register(context.Background(), "name", "email", "pass", nil)
 	require.NoError(t, err)
 	require.Equal(t, createdUser, user)
@@ -67,7 +75,7 @@ func TestRegister_ResolvesPendingInvites(t *testing.T) {
 			return nil
 		},
 	}
-	service := NewService(repo, resolver)
+	service := NewService(repo, resolver, nil)
 	_, err := service.Register(context.Background(), "name", "email", "pass", nil)
 	require.NoError(t, err)
 	require.True(t, resolveCalled)
@@ -85,7 +93,46 @@ func TestRegister_SucceedsWhenResolvingPendingInvitesFails(t *testing.T) {
 			return errors.New("boom")
 		},
 	}
-	service := NewService(repo, resolver)
+	service := NewService(repo, resolver, nil)
+	user, err := service.Register(context.Background(), "name", "email", "pass", nil)
+	require.NoError(t, err)
+	require.Equal(t, createdUser, user)
+}
+
+func TestRegister_SeedsDefaultTemplates(t *testing.T) {
+	createdUser := User{Id: "user-1", Name: "hello", Email: "world"}
+	var seedCalled bool
+	repo := &fakeRepository{
+		createUserFunc: func(ctx context.Context, name, email, passwordHash string, address *string) (User, error) {
+			return createdUser, nil
+		},
+	}
+	seeder := &fakeTemplateSeeder{
+		seedDefaultTemplatesFunc: func(ctx context.Context, ownerID string) error {
+			seedCalled = true
+			require.Equal(t, "user-1", ownerID)
+			return nil
+		},
+	}
+	service := NewService(repo, nil, seeder)
+	_, err := service.Register(context.Background(), "name", "email", "pass", nil)
+	require.NoError(t, err)
+	require.True(t, seedCalled)
+}
+
+func TestRegister_SucceedsWhenSeedingDefaultTemplatesFails(t *testing.T) {
+	createdUser := User{Id: "user-1", Name: "hello", Email: "world"}
+	repo := &fakeRepository{
+		createUserFunc: func(ctx context.Context, name, email, passwordHash string, address *string) (User, error) {
+			return createdUser, nil
+		},
+	}
+	seeder := &fakeTemplateSeeder{
+		seedDefaultTemplatesFunc: func(ctx context.Context, ownerID string) error {
+			return errors.New("boom")
+		},
+	}
+	service := NewService(repo, nil, seeder)
 	user, err := service.Register(context.Background(), "name", "email", "pass", nil)
 	require.NoError(t, err)
 	require.Equal(t, createdUser, user)
@@ -105,7 +152,7 @@ func TestAuthenticate_Valid(t *testing.T) {
 			return storedUser, string(correctHash), nil
 		},
 	}
-	service := NewService(repo, nil)
+	service := NewService(repo, nil, nil)
 	user, err := service.Authenticate(context.Background(), "email", password)
 	require.NoError(t, err)
 	require.Equal(t, storedUser, user)
@@ -125,7 +172,7 @@ func TestAuthenticate_InvalidPassword(t *testing.T) {
 			return storedUser, string(correctHash), nil
 		},
 	}
-	service := NewService(repo, nil)
+	service := NewService(repo, nil, nil)
 	user, err := service.Authenticate(context.Background(), "email", "invalid_pass")
 	require.ErrorIs(t, err, ErrInvalidCredentials)
 	require.Equal(t, User{}, user)
@@ -141,7 +188,7 @@ func TestUpdateUser(t *testing.T) {
 			return updatedUser, nil
 		},
 	}
-	service := NewService(repo, nil)
+	service := NewService(repo, nil, nil)
 	name := "New Name"
 	user, err := service.UpdateUser(context.Background(), UpdateUserPayload{Name: &name}, "user-1")
 	require.NoError(t, err)
@@ -154,7 +201,7 @@ func TestUpdateUser_NotFound(t *testing.T) {
 			return User{}, ErrUserNotFound
 		},
 	}
-	service := NewService(repo, nil)
+	service := NewService(repo, nil, nil)
 	_, err := service.UpdateUser(context.Background(), UpdateUserPayload{}, "missing-user")
 	require.ErrorIs(t, err, ErrUserNotFound)
 }
@@ -169,7 +216,7 @@ func TestAuthenticate_UserNotFound(t *testing.T) {
 			return User{}, string(correctHash), ErrUserNotFound
 		},
 	}
-	service := NewService(repo, nil)
+	service := NewService(repo, nil, nil)
 	_, err = service.Authenticate(context.Background(), "email", password)
 	require.ErrorIs(t, err, ErrInvalidCredentials)
 }

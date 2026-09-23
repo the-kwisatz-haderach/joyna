@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Calendar03Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
 
@@ -12,8 +12,60 @@ import {
 } from '../../components/joyna/event-filter-bar'
 import { EventListByMonth } from '../../components/joyna/event-list'
 import type { EventListItem } from '../../components/joyna/event-card'
+import { TemplateCard } from '../../components/joyna/template-card'
+import type { EventTemplate } from '@/lib/event-template'
 
 const MAX_EVENTS = 10
+
+function TemplatesSection() {
+  const navigate = useNavigate()
+  const [templates, setTemplates] = useState<EventTemplate[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadTemplates() {
+      try {
+        const response = await fetch('/api/event-templates', { credentials: 'include' })
+        if (!response.ok) return
+        const data = (await response.json()) as EventTemplate[]
+        if (!cancelled) setTemplates(data)
+      } catch {
+        // Non-critical — the events list still works without templates.
+      }
+    }
+
+    loadTemplates()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (templates.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-base font-semibold text-joyna-ink">Templates</h2>
+        <Link to="/events/templates" className="text-xs font-semibold text-joyna-coral">
+          Manage
+        </Link>
+      </div>
+      <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 pb-1">
+        {templates.map((template) => (
+          <TemplateCard
+            key={template.id}
+            template={template}
+            onClick={() => navigate('/events/new/blank', { state: { template } })}
+            className="w-64 shrink-0"
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function EmptyEventsState() {
   return (
@@ -77,7 +129,12 @@ function Events() {
   const upcoming = events.filter((event) => new Date(event.date).getTime() >= now)
 
   if (upcoming.length === 0) {
-    return <EmptyEventsState />
+    return (
+      <section className="mx-auto flex max-w-2xl flex-col gap-4 px-5 py-6">
+        <TemplatesSection />
+        <EmptyEventsState />
+      </section>
+    )
   }
 
   const filtered = upcoming.filter((event) => matchesEventFilter(event, filter))
@@ -85,6 +142,7 @@ function Events() {
 
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-4 px-5 py-6">
+      <TemplatesSection />
       <div className="flex items-center justify-between">
         <h2 className="font-display text-base font-semibold text-joyna-ink">Upcoming events</h2>
         <Link to="/events/all" className="text-xs font-semibold text-joyna-coral">

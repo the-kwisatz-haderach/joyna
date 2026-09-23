@@ -1,0 +1,80 @@
+@baseUrl = http://localhost:8080
+
+# Requires an active session — run the Login request in auth.http first.
+# REST Client shares its cookie jar across files in the same VS Code window.
+
+### List event templates
+GET {{baseUrl}}/event-templates
+
+### Create event template
+# @name createTemplate
+POST {{baseUrl}}/event-templates
+Content-Type: application/json
+
+{
+  "name": "Afterwork today",
+  "icon": "🍻",
+  "title": "Afterwork drinks",
+  "dateOption": "today",
+  "timeOfDay": "17:00",
+  "location": "Ye ol' pub",
+  "rsvpDeadlineOption": "none",
+  "mood": "chill",
+  "description": ""
+}
+
+### Create event template — missing name, expect 400
+POST {{baseUrl}}/event-templates
+Content-Type: application/json
+
+{
+  "name": "",
+  "icon": "🍻",
+  "title": "Afterwork drinks"
+}
+
+### Create event template — invalid date option, expect 400
+POST {{baseUrl}}/event-templates
+Content-Type: application/json
+
+{
+  "name": "Bad template",
+  "icon": "🍻",
+  "title": "Bad template",
+  "dateOption": "someday"
+}
+
+### Update event template (partial — only fields you include are changed)
+PATCH {{baseUrl}}/event-templates/{{createTemplate.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "name": "Afterwork drinks — renamed",
+  "timeOfDay": "18:00"
+}
+
+### Update event template — clear optional fields
+PATCH {{baseUrl}}/event-templates/{{createTemplate.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "clearTimeOfDay": true,
+  "clearMood": true
+}
+
+### Update event template — invalid id, expect 400
+PATCH {{baseUrl}}/event-templates/not-a-uuid
+Content-Type: application/json
+
+{
+  "name": "Whatever"
+}
+
+### Delete event template
+DELETE {{baseUrl}}/event-templates/{{createTemplate.response.body.$.id}}
+
+### Delete event template — already deleted / does not exist, expect 404
+DELETE {{baseUrl}}/event-templates/{{createTemplate.response.body.$.id}}
+
+### Delete event template — invalid id, expect 400
+DELETE {{baseUrl}}/event-templates/not-a-uuid

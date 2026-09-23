@@ -15,6 +15,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/the-kwisatz-haderach/joyna/internal/auth"
 	"github.com/the-kwisatz-haderach/joyna/internal/event"
+	"github.com/the-kwisatz-haderach/joyna/internal/eventtemplate"
 	"github.com/the-kwisatz-haderach/joyna/internal/group"
 	"github.com/the-kwisatz-haderach/joyna/internal/network"
 	"github.com/the-kwisatz-haderach/joyna/internal/notification"
@@ -54,8 +55,12 @@ func main() {
 	networkService := network.NewService(networkRepo, mailer, cfg.FrontendURL)
 	networkHandler := network.NewHandler(networkService)
 
+	templateRepo := eventtemplate.NewRepository(pool)
+	templateService := eventtemplate.NewService(templateRepo)
+	templateHandler := eventtemplate.NewHandler(templateService)
+
 	authRepo := auth.NewRepository(pool)
-	authService := auth.NewService(authRepo, networkService)
+	authService := auth.NewService(authRepo, networkService, templateService)
 	authHandler := auth.NewHandler(authService, sessionManager)
 
 	pusher := push.NewWebPusher(cfg.VAPIDPublicKey, cfg.VAPIDPrivateKey, cfg.VAPIDSubject)
@@ -102,6 +107,12 @@ func main() {
 	mux.HandleFunc("PATCH /events/{id}/invite", authHandler.Middleware(eventHandler.RespondToEventInvite))
 	mux.HandleFunc("POST /events/invites", authHandler.Middleware(eventHandler.CreateEventInvite))
 	mux.HandleFunc("DELETE /events/{id}/invites/{userId}", authHandler.Middleware(eventHandler.RemoveEventInvite))
+
+	// Event template handlers
+	mux.HandleFunc("GET /event-templates", authHandler.Middleware(templateHandler.GetTemplates))
+	mux.HandleFunc("POST /event-templates", authHandler.Middleware(templateHandler.CreateTemplate))
+	mux.HandleFunc("PATCH /event-templates/{id}", authHandler.Middleware(templateHandler.UpdateTemplate))
+	mux.HandleFunc("DELETE /event-templates/{id}", authHandler.Middleware(templateHandler.DeleteTemplate))
 
 	// Notification handlers
 	mux.HandleFunc("GET /notifications", authHandler.Middleware(notificationHandler.ListNotifications))

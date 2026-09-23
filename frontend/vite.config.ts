@@ -27,5 +27,13 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     globals: false,
+    // Vite loads .env.local for every mode, including test — so a real
+    // Maps key added there for manual dev/testing (see location-field.tsx)
+    // would otherwise leak into the suite and flip LocationField out of the
+    // no-API-key fallback its tests assume. Force it empty so test runs are
+    // deterministic and don't depend on what's in a developer's local env.
+    env: {
+      VITE_GOOGLE_MAPS_API_KEY: '',
+    },
   },
 })

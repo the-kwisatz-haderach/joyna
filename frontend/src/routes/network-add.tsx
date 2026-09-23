@@ -52,28 +52,45 @@ function NetworkAdd() {
     fetchGroupOptions().then(setGroupOptions)
   }, [])
 
-  useEffect(() => {
-    const trimmed = email.trim()
+  // Tracks the [email, self-email] pair that `status`/`result`/etc. currently
+  // reflect, so a change to either can be detected — and the resulting state
+  // reset applied synchronously during render, React's documented pattern
+  // for "adjusting state when a value changes" — rather than as a
+  // synchronous setState at the top of an effect, which forces an extra,
+  // avoidable render before the effect's real async work (the debounced
+  // lookup below) even starts.
+  const selfEmail = user?.email ?? null
+  const [processed, setProcessed] = useState({email, selfEmail})
+  if (email !== processed.email || selfEmail !== processed.selfEmail) {
+    setProcessed({email, selfEmail})
     setResult(null)
     setAddError(null)
+
+    const trimmed = email.trim()
     if (!trimmed || !isValidEmail(trimmed)) {
       setStatus('idle')
-      return
-    }
-    // Only clear the "invite sent" confirmation once the user starts a new
-    // lookup — not when this effect re-runs because a successful invite
-    // itself cleared the email field.
-    setInvitedEmail(null)
+    } else {
+      // Only clear the "invite sent" confirmation once the user starts a new
+      // lookup — not when this fires because a successful invite itself
+      // cleared the email field (that takes the `idle` branch above instead).
+      setInvitedEmail(null)
 
-    // A user can't add themselves to their own network — treat their own
-    // email as a no-op "no result" without even hitting the lookup API.
-    if (user && trimmed.toLowerCase() === user.email.toLowerCase()) {
-      setStatus('not-found')
-      return
+      // A user can't add themselves to their own network — treat their own
+      // email as a no-op "no result" without even hitting the lookup API.
+      if (selfEmail && trimmed.toLowerCase() === selfEmail.toLowerCase()) {
+        setStatus('not-found')
+      } else {
+        setStatus('loading')
+      }
     }
+  }
+
+  useEffect(() => {
+    const trimmed = email.trim()
+    if (!trimmed || !isValidEmail(trimmed)) return
+    if (selfEmail && trimmed.toLowerCase() === selfEmail.toLowerCase()) return
 
     let cancelled = false
-    setStatus('loading')
     const timeout = setTimeout(async () => {
       try {
         const response = await fetch(
@@ -102,7 +119,7 @@ function NetworkAdd() {
       cancelled = true
       clearTimeout(timeout)
     }
-  }, [email, user])
+  }, [email, selfEmail])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
