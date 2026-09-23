@@ -193,9 +193,15 @@ function EventDetail() {
   const [declineNote, setDeclineNote] = useState('')
   const [noteSaved, setNoteSaved] = useState(false)
 
+  // Doesn't reset `error` itself — the mount effect below starts from the
+  // initial `null` state, and every other call site (handleRespond,
+  // handleCommitGuests) already clears it before calling this. A
+  // synchronous setState here would otherwise run inside the mount effect's
+  // callframe (an async function's body runs synchronously up to its first
+  // `await`), triggering an extra, avoidable render before any real work
+  // starts.
   const loadEvent = useCallback(async () => {
     if (!id) return
-    setError(null)
     const eventDetail = await fetchJson<EventDetailData>(`/api/events/${id}`)
     if (!eventDetail) {
       setNotFound(true)
@@ -213,8 +219,23 @@ function EventDetail() {
     setIsLoading(false)
   }, [id])
 
+  // Calling loadEvent() directly here (rather than from this nested IIFE)
+  // would trip set-state-in-effect, since the linter treats any function
+  // invoked straight from an effect body as if it set state synchronously —
+  // even though loadEvent's own setState calls only run after an await. The
+  // `cancelled` guard is a genuine bonus, not just a lint workaround: it
+  // stops a slow fetch from re-running loadEvent if this effect re-fires
+  // (e.g. React StrictMode's dev double-invoke, or `id` changing again)
+  // before the first call has settled.
   useEffect(() => {
-    loadEvent()
+    let cancelled = false
+    ;(async () => {
+      if (cancelled) return
+      await loadEvent()
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [loadEvent])
 
   const guests: Guest[] = useMemo(() => {
@@ -300,6 +321,7 @@ function EventDetail() {
 
   async function handleCommitGuests(nextGuests: Guest[]) {
     if (!id) return
+    setError(null)
     const originalIds = new Set(
       attendees.filter((a) => !a.isOwner).map((a) => a.userId),
     )

@@ -35,7 +35,7 @@ function NewEvent() {
     }
   }, [])
 
-  function useTemplate(template?: EventTemplate) {
+  function selectTemplate(template?: EventTemplate) {
     navigate('/events/new/blank', { state: template ? { template } : undefined })
   }
 
@@ -49,7 +49,7 @@ function NewEvent() {
       <AddTemplateCard
         title="Empty event"
         description="Start from scratch — fill in everything yourself"
-        onClick={() => useTemplate()}
+        onClick={() => selectTemplate()}
       />
 
       {!isLoading && templates.length > 0 && (
@@ -64,7 +64,7 @@ function NewEvent() {
           </div>
           <div className="flex flex-col gap-3">
             {templates.map((template) => (
-              <TemplateCard key={template.id} template={template} onClick={() => useTemplate(template)} />
+              <TemplateCard key={template.id} template={template} onClick={() => selectTemplate(template)} />
             ))}
           </div>
         </div>

@@ -66,7 +66,11 @@ describe('TemplateForm', () => {
     loginAsMockUser()
     renderTemplateForm('/events/templates/f1a2b3c4-1111-4a1a-8a1a-000000000004')
 
-    await screen.findByDisplayValue('Movie night')
+    // This template's name and event title happen to coincide ("Movie
+    // night" for both), so wait on the specific labeled field rather than
+    // findByDisplayValue, which would otherwise match both inputs.
+    const nameField = await screen.findByLabelText(/template name/i)
+    expect(nameField).toHaveValue('Movie night')
     await user.click(screen.getByRole('button', { name: /^delete template$/i }))
 
     const dialog = within(await screen.findByRole('dialog'))

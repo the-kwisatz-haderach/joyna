@@ -15,13 +15,12 @@ async function fetchExistingSubscription(): Promise<PushSubscription | null> {
 
 function NotificationsSettings() {
   const navigate = useNavigate()
-  const [status, setStatus] = useState<Status>("loading")
+  const [status, setStatus] = useState<Status>(() => (isPushSupported() ? "loading" : "unsupported"))
   const [isToggling, setIsToggling] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isPushSupported()) {
-      setStatus("unsupported")
       return
     }
     let cancelled = false
