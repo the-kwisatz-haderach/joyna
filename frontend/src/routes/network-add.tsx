@@ -3,7 +3,14 @@ import { useNavigate } from "react-router"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { useAuth } from "../auth-context"
 import { GuestAvatar } from "../../components/joyna/guest-avatar"
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+function isValidEmail(value: string): boolean {
+  return EMAIL_PATTERN.test(value)
+}
 
 type LookupResult = {
   userId: string
@@ -31,6 +38,7 @@ async function fetchGroupOptions(): Promise<NetworkGroupOption[]> {
 
 function NetworkAdd() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [email, setEmail] = useState("")
   const [status, setStatus] = useState<LookupStatus>("idle")
   const [result, setResult] = useState<LookupResult | null>(null)
@@ -48,7 +56,7 @@ function NetworkAdd() {
     const trimmed = email.trim()
     setResult(null)
     setAddError(null)
-    if (!trimmed) {
+    if (!trimmed || !isValidEmail(trimmed)) {
       setStatus("idle")
       return
     }
@@ -56,6 +64,13 @@ function NetworkAdd() {
     // lookup — not when this effect re-runs because a successful invite
     // itself cleared the email field.
     setInvitedEmail(null)
+
+    // A user can't add themselves to their own network — treat their own
+    // email as a no-op "no result" without even hitting the lookup API.
+    if (user && trimmed.toLowerCase() === user.email.toLowerCase()) {
+      setStatus("not-found")
+      return
+    }
 
     let cancelled = false
     setStatus("loading")
@@ -87,7 +102,7 @@ function NetworkAdd() {
       cancelled = true
       clearTimeout(timeout)
     }
-  }, [email])
+  }, [email, user])
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
