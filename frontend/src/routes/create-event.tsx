@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Cancel01Icon } from '@hugeicons/core-free-icons'
 
@@ -9,6 +9,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { Calendar } from '@/components/ui/calendar'
 import { MoodPicker } from '../../components/joyna/mood-picker'
 import { LocationField, type LocationCoordinates } from '../../components/joyna/location-field'
+import {
+  resolveTemplateDate,
+  resolveTemplateTime,
+  templateRsvpAmountAndUnit,
+  type EventTemplate,
+} from '@/lib/event-template'
 import { useAuth } from '../auth-context'
 
 type RsvpUnit = 'day' | 'week' | 'month'
@@ -45,22 +51,25 @@ type CreatedEvent = {
 function CreateEvent() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const location = useLocation()
+  const template = (location.state as { template?: EventTemplate } | null)?.template
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const [name, setName] = useState('')
-  const [date, setDate] = useState<Date | undefined>(undefined)
-  const [time, setTime] = useState('18:00')
-  // Pre-fills from the profile's saved address, per the copy on the
-  // register form ("used to pre-fill the location when you create
-  // events") — still fully editable, matches free-typing behavior.
-  const [location, setLocation] = useState(user?.address ?? '')
+  const [name, setName] = useState(template?.title ?? '')
+  const [date, setDate] = useState<Date | undefined>(() => template && resolveTemplateDate(template.dateOption))
+  const [time, setTime] = useState(() => resolveTemplateTime(template?.timeOfDay))
+  // Pre-fills from a chosen template's location, falling back to the
+  // profile's saved address per the copy on the register form ("used to
+  // pre-fill the location when you create events") — still fully editable.
+  const [eventLocation, setEventLocation] = useState(template?.location || user?.address || '')
   const [coordinates, setCoordinates] = useState<LocationCoordinates | null>(null)
-  const [hasRsvpDeadline, setHasRsvpDeadline] = useState(false)
-  const [rsvpAmount, setRsvpAmount] = useState(1)
-  const [rsvpUnit, setRsvpUnit] = useState<RsvpUnit>('day')
-  const [moodId, setMoodId] = useState('')
-  const [description, setDescription] = useState('')
+  const rsvpFromTemplate = template && templateRsvpAmountAndUnit(template.rsvpDeadlineOption)
+  const [hasRsvpDeadline, setHasRsvpDeadline] = useState(Boolean(rsvpFromTemplate))
+  const [rsvpAmount, setRsvpAmount] = useState(rsvpFromTemplate?.amount ?? 1)
+  const [rsvpUnit, setRsvpUnit] = useState<RsvpUnit>(rsvpFromTemplate?.unit ?? 'day')
+  const [moodId, setMoodId] = useState(template?.mood ?? '')
+  const [description, setDescription] = useState(template?.description ?? '')
 
   const eventDate = useMemo(() => (date ? combineDateAndTime(date, time) : undefined), [date, time])
   const rsvpDeadline = useMemo(() => {
@@ -92,7 +101,7 @@ function CreateEvent() {
         body: JSON.stringify({
           name,
           date: eventDate.toISOString(),
-          location,
+          location: eventLocation,
           description,
           type: DEFAULT_EVENT_TYPE,
           rsvpDeadline: rsvpDeadline?.toISOString(),
@@ -120,7 +129,14 @@ function CreateEvent() {
 
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-6 px-5 py-6 font-body">
-      <h1 className="font-display text-xl font-semibold text-joyna-ink">Create event</h1>
+      <div className="flex flex-col gap-1">
+        <h1 className="font-display text-xl font-semibold text-joyna-ink">Create event</h1>
+        {template && (
+          <p className="text-sm text-joyna-ink-faint">
+            {template.icon} Using the &ldquo;{template.name}&rdquo; template
+          </p>
+        )}
+      </div>
 
       <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
         <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
@@ -208,8 +224,8 @@ function CreateEvent() {
         </div>
 
         <LocationField
-          value={location}
-          onChange={setLocation}
+          value={eventLocation}
+          onChange={setEventLocation}
           coordinates={coordinates}
           onCoordinatesChange={setCoordinates}
         />

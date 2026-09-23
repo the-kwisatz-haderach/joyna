@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { AuthProvider } from '../auth-context'
 import { mockUsers } from '../mocks/data'
+import type { EventTemplate } from '@/lib/event-template'
 import CreateEvent from './create-event'
 import EventDetail from './event-detail'
 
@@ -47,6 +48,20 @@ function renderCreateEventWithRealDetail() {
           <Route path="/events" element={<div>Events</div>} />
           <Route path="/events/new" element={<CreateEvent />} />
           <Route path="/events/:id" element={<EventDetail />} />
+        </Routes>
+      </MemoryRouter>
+    </AuthProvider>,
+  )
+}
+
+function renderCreateEventWithTemplate(template: EventTemplate) {
+  return render(
+    <AuthProvider>
+      <MemoryRouter initialEntries={[{pathname: '/events/new/blank', state: {template}}]}>
+        <Routes>
+          <Route path="/events" element={<div>Events</div>} />
+          <Route path="/events/new/blank" element={<CreateEvent />} />
+          <Route path="/events/:id" element={<EventDetailStub />} />
         </Routes>
       </MemoryRouter>
     </AuthProvider>,
@@ -167,5 +182,45 @@ describe('CreateEvent', () => {
     expect(screen.getByPlaceholderText(/search for a place/i)).toHaveValue(
       '221B Baker Street',
     )
+  })
+
+  it('pre-fills title, time, location, mood and description from a template', () => {
+    renderCreateEventWithTemplate({
+      id: 'template-1',
+      name: 'Afterwork today',
+      icon: '🍻',
+      title: 'Afterwork drinks',
+      dateOption: 'today',
+      timeOfDay: '17:00',
+      location: "Ye ol' pub",
+      rsvpDeadlineOption: 'none',
+      mood: 'chill',
+      description: 'Casual after-work hangout.',
+    })
+
+    expect(screen.getByLabelText(/title/i)).toHaveValue('Afterwork drinks')
+    expect(screen.getByLabelText(/time/i)).toHaveValue('17:00')
+    expect(screen.getByPlaceholderText(/search for a place/i)).toHaveValue("Ye ol' pub")
+    expect(screen.getByLabelText(/description/i)).toHaveValue('Casual after-work hangout.')
+    expect(screen.getByRole('button', { name: /chill/i })).toHaveClass('border-joyna-periwinkle')
+    expect(screen.getByText(/using the .afterwork today. template/i)).toBeInTheDocument()
+  })
+
+  it('pre-fills the RSVP deadline amount/unit from the template\'s rsvpDeadlineOption', () => {
+    renderCreateEventWithTemplate({
+      id: 'template-2',
+      name: 'Birthday party',
+      icon: '🥳',
+      title: 'Birthday party',
+      dateOption: 'none',
+      location: '',
+      rsvpDeadlineOption: '1_week_before',
+      mood: 'party',
+      description: '',
+    })
+
+    const [amountSelect, unitSelect] = screen.getAllByRole('combobox')
+    expect(amountSelect).toHaveValue('1')
+    expect(unitSelect).toHaveValue('week')
   })
 })

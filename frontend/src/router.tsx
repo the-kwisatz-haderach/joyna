@@ -6,8 +6,11 @@ import Register from './routes/register'
 import Events from './routes/events'
 import AllEvents from './routes/events-all'
 import EventDetail from './routes/event-detail'
+import NewEvent from './routes/new-event'
 import CreateEvent from './routes/create-event'
 import EditEvent from './routes/edit-event'
+import ManageTemplates from './routes/manage-templates'
+import TemplateForm from './routes/template-form'
 import RequireAuth from './routes/require-auth'
 import RequireGuest from './routes/require-guest'
 import Network from './routes/network'
@@ -52,7 +55,39 @@ export const router = createBrowserRouter([
         path: 'events/new',
         element: (
           <RequireAuth>
+            <NewEvent />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'events/new/blank',
+        element: (
+          <RequireAuth>
             <CreateEvent />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'events/templates',
+        element: (
+          <RequireAuth>
+            <ManageTemplates />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'events/templates/new',
+        element: (
+          <RequireAuth>
+            <TemplateForm />
+          </RequireAuth>
+        ),
+      },
+      {
+        path: 'events/templates/:id',
+        element: (
+          <RequireAuth>
+            <TemplateForm />
           </RequireAuth>
         ),
       },

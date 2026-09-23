@@ -23,6 +23,34 @@ export type MockEvent = {
   longitude?: number
 }
 
+export type TemplateDateOption =
+  | 'none'
+  | 'today'
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday'
+  | 'sunday'
+
+export type TemplateRsvpDeadlineOption = 'none' | '1_day_before' | '3_days_before' | '1_week_before'
+
+export type MockEventTemplate = {
+  id: string
+  ownerId: string
+  name: string
+  icon: string
+  createdAt: string
+  title: string
+  dateOption: TemplateDateOption
+  timeOfDay?: string
+  location: string
+  rsvpDeadlineOption: TemplateRsvpDeadlineOption
+  mood?: string
+  description: string
+}
+
 export type MockGroup = {
   id: string
   ownerId: string
@@ -93,6 +121,132 @@ function daysFromNow(offsetDays: number): string {
   date.setUTCDate(date.getUTCDate() + offsetDays)
   return date.toISOString()
 }
+
+// Mirrors internal/eventtemplate.DefaultTemplates() in the Go backend —
+// kept as a factory (not a fixed array) so every mock user who registers
+// gets their own set of template ids/timestamps, matching the real seeding
+// that happens on POST /auth/register.
+export function createDefaultEventTemplates(ownerId: string): MockEventTemplate[] {
+  const now = new Date().toISOString()
+  return [
+    {
+      id: crypto.randomUUID(),
+      ownerId,
+      name: 'Afterwork today',
+      icon: '🍻',
+      createdAt: now,
+      title: 'Afterwork drinks',
+      dateOption: 'today',
+      timeOfDay: '17:00',
+      location: "Ye ol' pub",
+      rsvpDeadlineOption: 'none',
+      mood: 'chill',
+      description: '',
+    },
+    {
+      id: crypto.randomUUID(),
+      ownerId,
+      name: 'Weekend board games',
+      icon: '🎲',
+      createdAt: now,
+      title: 'Board game night',
+      dateOption: 'saturday',
+      timeOfDay: '14:00',
+      location: '',
+      rsvpDeadlineOption: 'none',
+      mood: 'competitive',
+      description: '',
+    },
+    {
+      id: crypto.randomUUID(),
+      ownerId,
+      name: 'Birthday party',
+      icon: '🥳',
+      createdAt: now,
+      title: 'Birthday party',
+      dateOption: 'none',
+      location: '',
+      rsvpDeadlineOption: '1_week_before',
+      mood: 'party',
+      description: '',
+    },
+    {
+      id: crypto.randomUUID(),
+      ownerId,
+      name: 'Movie night',
+      icon: '🍿',
+      createdAt: now,
+      title: 'Movie night',
+      dateOption: 'none',
+      timeOfDay: 'evening',
+      location: 'at home',
+      rsvpDeadlineOption: 'none',
+      mood: 'cozy',
+      description: '',
+    },
+  ]
+}
+
+// Ada's (mockUsers[0]) default templates, with fixed ids/timestamps so other
+// fixtures/tests can reference them reliably instead of via the randomized
+// factory above.
+export const mockEventTemplates: MockEventTemplate[] = [
+  {
+    id: 'f1a2b3c4-1111-4a1a-8a1a-000000000001',
+    ownerId: mockUsers[0].id,
+    name: 'Afterwork today',
+    icon: '🍻',
+    createdAt: daysFromNow(-20),
+    title: 'Afterwork drinks',
+    dateOption: 'today',
+    timeOfDay: '17:00',
+    location: "Ye ol' pub",
+    rsvpDeadlineOption: 'none',
+    mood: 'chill',
+    description: '',
+  },
+  {
+    id: 'f1a2b3c4-1111-4a1a-8a1a-000000000002',
+    ownerId: mockUsers[0].id,
+    name: 'Weekend board games',
+    icon: '🎲',
+    createdAt: daysFromNow(-19),
+    title: 'Board game night',
+    dateOption: 'saturday',
+    timeOfDay: '14:00',
+    location: '',
+    rsvpDeadlineOption: 'none',
+    mood: 'competitive',
+    description: '',
+  },
+  {
+    id: 'f1a2b3c4-1111-4a1a-8a1a-000000000003',
+    ownerId: mockUsers[0].id,
+    name: 'Birthday party',
+    icon: '🥳',
+    createdAt: daysFromNow(-18),
+    title: 'Birthday party',
+    dateOption: 'none',
+    location: '',
+    rsvpDeadlineOption: '1_week_before',
+    mood: 'party',
+    description: '',
+  },
+  {
+    id: 'f1a2b3c4-1111-4a1a-8a1a-000000000004',
+    ownerId: mockUsers[0].id,
+    name: 'Movie night',
+    icon: '🍿',
+    createdAt: daysFromNow(-17),
+    title: 'Movie night',
+    dateOption: 'none',
+    timeOfDay: 'evening',
+    location: 'at home',
+    rsvpDeadlineOption: 'none',
+    mood: 'cozy',
+    description: '',
+  },
+]
 
 export const mockEvents: MockEvent[] = [
   {

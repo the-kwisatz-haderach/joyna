@@ -96,6 +96,37 @@ describe('RootLayout', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('shows a "New event" back link on the blank create-event route', () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/events/new/blank'])
+
+    const topMenu = within(screen.getByRole('banner'))
+    const backLink = topMenu.getByRole('link', {name: /new event/i})
+    expect(backLink).toHaveAttribute('href', '/events/new')
+  })
+
+  it('shows an "Events" back link on the manage-templates route', () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/events/templates'])
+
+    const topMenu = within(screen.getByRole('banner'))
+    const backLink = topMenu.getByRole('link', {name: /^events$/i})
+    expect(backLink).toHaveAttribute('href', '/events')
+  })
+
+  it('shows a "Templates" back link on the new/edit template routes', () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/events/templates/new'])
+    const topMenu = within(screen.getByRole('banner'))
+    expect(topMenu.getByRole('link', {name: /templates/i})).toHaveAttribute(
+      'href',
+      '/events/templates',
+    )
+  })
+
   it('hides the create event button outside of the events listing screen', () => {
     loginAsMockUser()
 

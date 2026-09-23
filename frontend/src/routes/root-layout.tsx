@@ -53,8 +53,15 @@ function isPushedPath(pathname: string): boolean {
 // Pushed screens show a "‹ <label>" back link (to <to>) instead of a static
 // title, and hide the bottom nav — see isPushedPath/showBottomMenu below.
 function getBackTarget(pathname: string): {to: string; label: string} | null {
+  if (pathname === '/events/new/blank') {
+    return {to: '/events/new', label: 'New event'}
+  }
+  if (pathname === '/events/templates/new' || /^\/events\/templates\/[^/]+$/.test(pathname)) {
+    return {to: '/events/templates', label: 'Templates'}
+  }
   if (
     pathname === '/events/new' ||
+    pathname === '/events/templates' ||
     /^\/events\/[^/]+\/edit$/.test(pathname) ||
     (pathname !== '/events/all' && /^\/events\/[^/]+$/.test(pathname))
   ) {
