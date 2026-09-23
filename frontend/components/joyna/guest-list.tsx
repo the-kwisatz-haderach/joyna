@@ -179,7 +179,9 @@ export function GuestList({
         (status) =>
           grouped[status].length > 0 && (
             <div key={status}>
-              <GuestGroupLabel>{STATUS_LABEL[status]}</GuestGroupLabel>
+              {STATUS_LABEL[status] && (
+                <GuestGroupLabel>{STATUS_LABEL[status]}</GuestGroupLabel>
+              )}
               {grouped[status].map((g) => (
                 <GuestRow
                   key={g.id}
