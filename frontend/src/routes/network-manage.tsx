@@ -1,9 +1,19 @@
-import { useEffect, useMemo, useState, type DragEvent, type FormEvent } from "react"
-import { Link } from "react-router"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { Cancel01Icon, Delete02Icon, PlusSignIcon } from "@hugeicons/core-free-icons"
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type DragEvent,
+  type FormEvent,
+} from 'react'
+import {Link} from 'react-router'
+import {HugeiconsIcon} from '@hugeicons/react'
+import {
+  Cancel01Icon,
+  Delete02Icon,
+  PlusSignIcon,
+} from '@hugeicons/core-free-icons'
 
-import { Button } from "@/components/ui/button"
+import {Button} from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -11,10 +21,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
-import { GuestAvatar } from "../../components/joyna/guest-avatar"
+} from '@/components/ui/dialog'
+import {Input} from '@/components/ui/input'
+import {cn} from '@/lib/utils'
+import {GuestAvatar} from '../../components/joyna/guest-avatar'
 
 type ManagedConnection = {
   contactId: string
@@ -29,7 +39,7 @@ type ManagedGroup = {
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, { credentials: "include" })
+  const response = await fetch(url, {credentials: 'include'})
   if (!response.ok) {
     throw new Error(`failed to load ${url}`)
   }
@@ -45,9 +55,9 @@ function matchesFilter(name: string, query: string): boolean {
 
 function joinNames(names: string[]): string {
   if (names.length <= 1) {
-    return names.join("")
+    return names.join('')
   }
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
 }
 
 function describeGroupDeletion(memberNames: string[]): string {
@@ -78,8 +88,8 @@ function PersonChip({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={cn(
-        "flex shrink-0 items-center gap-1.5 rounded-full border border-joyna-border bg-white py-1 pr-1.5 pl-1 select-none",
-        isDragging && "border-2 border-dashed border-joyna-periwinkle opacity-60",
+        'flex shrink-0 items-center gap-1.5 rounded-full border border-joyna-border bg-white py-1 pr-1.5 pl-1 select-none cursor-pointer',
+        isDragging && 'border-2 border-joyna-periwinkle opacity-60',
       )}
     >
       <GuestAvatar name={name} />
@@ -107,12 +117,13 @@ function NetworkManage() {
   const [groups, setGroups] = useState<ManagedGroup[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [peopleFilter, setPeopleFilter] = useState("")
-  const [newGroupName, setNewGroupName] = useState("")
+  const [peopleFilter, setPeopleFilter] = useState('')
+  const [newGroupName, setNewGroupName] = useState('')
   const [isCreatingGroup, setIsCreatingGroup] = useState(false)
   const [draggedContactId, setDraggedContactId] = useState<string | null>(null)
   const [dragOverGroupId, setDragOverGroupId] = useState<string | null>(null)
-  const [groupPendingDeletion, setGroupPendingDeletion] = useState<ManagedGroup | null>(null)
+  const [groupPendingDeletion, setGroupPendingDeletion] =
+    useState<ManagedGroup | null>(null)
   const [isDeletingGroup, setIsDeletingGroup] = useState(false)
 
   useEffect(() => {
@@ -120,13 +131,13 @@ function NetworkManage() {
       setError(null)
       try {
         const [network, groupList] = await Promise.all([
-          fetchJson<{ contactId: string; contactName: string; groupId?: string }[]>(
-            "/api/network",
-          ),
-          fetchJson<ManagedGroup[]>("/api/groups"),
+          fetchJson<
+            {contactId: string; contactName: string; groupId?: string}[]
+          >('/api/network'),
+          fetchJson<ManagedGroup[]>('/api/groups'),
         ])
         setConnections(
-          network.map(({ contactId, contactName, groupId }) => ({
+          network.map(({contactId, contactName, groupId}) => ({
             contactId,
             contactName,
             groupId,
@@ -146,7 +157,9 @@ function NetworkManage() {
     () =>
       connections
         .filter((connection) => !connection.groupId)
-        .filter((connection) => matchesFilter(connection.contactName, peopleFilter)),
+        .filter((connection) =>
+          matchesFilter(connection.contactName, peopleFilter),
+        ),
     [connections, peopleFilter],
   )
 
@@ -154,28 +167,35 @@ function NetworkManage() {
     () =>
       groups.map((group) => ({
         ...group,
-        members: connections.filter((connection) => connection.groupId === group.id),
+        members: connections.filter(
+          (connection) => connection.groupId === group.id,
+        ),
       })),
     [groups, connections],
   )
 
-  async function moveContactToGroup(contactId: string, groupId: string | undefined) {
+  async function moveContactToGroup(
+    contactId: string,
+    groupId: string | undefined,
+  ) {
     setError(null)
     const previous = connections
     setConnections((current) =>
       current.map((connection) =>
-        connection.contactId === contactId ? { ...connection, groupId } : connection,
+        connection.contactId === contactId
+          ? {...connection, groupId}
+          : connection,
       ),
     )
     try {
       const response = await fetch(`/api/network/${contactId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ groupId: groupId ?? "" }),
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        credentials: 'include',
+        body: JSON.stringify({groupId: groupId ?? ''}),
       })
       if (!response.ok) {
-        throw new Error("failed to move contact")
+        throw new Error('failed to move contact')
       }
     } catch {
       setConnections(previous)
@@ -186,7 +206,7 @@ function NetworkManage() {
   function handleDragStart(contactId: string) {
     return (e: DragEvent<HTMLDivElement>) => {
       setDraggedContactId(contactId)
-      e.dataTransfer?.setData?.("text/plain", contactId)
+      e.dataTransfer?.setData?.('text/plain', contactId)
     }
   }
 
@@ -232,18 +252,20 @@ function NetworkManage() {
     setIsCreatingGroup(true)
     setError(null)
     try {
-      const response = await fetch("/api/groups", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ name }),
+      const response = await fetch('/api/groups', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        credentials: 'include',
+        body: JSON.stringify({name}),
       })
       if (!response.ok) {
-        throw new Error("failed to create group")
+        throw new Error('failed to create group')
       }
       const created = (await response.json()) as ManagedGroup
-      setGroups((current) => [...current, created].sort((a, b) => a.name.localeCompare(b.name)))
-      setNewGroupName("")
+      setGroups((current) =>
+        [...current, created].sort((a, b) => a.name.localeCompare(b.name)),
+      )
+      setNewGroupName('')
     } catch {
       setError("Couldn't create that group. Please try again.")
     } finally {
@@ -256,16 +278,20 @@ function NetworkManage() {
     setError(null)
     try {
       const response = await fetch(`/api/groups/${group.id}`, {
-        method: "DELETE",
-        credentials: "include",
+        method: 'DELETE',
+        credentials: 'include',
       })
       if (!response.ok) {
-        throw new Error("failed to delete group")
+        throw new Error('failed to delete group')
       }
-      setGroups((current) => current.filter((candidate) => candidate.id !== group.id))
+      setGroups((current) =>
+        current.filter((candidate) => candidate.id !== group.id),
+      )
       setConnections((current) =>
         current.map((connection) =>
-          connection.groupId === group.id ? { ...connection, groupId: undefined } : connection,
+          connection.groupId === group.id
+            ? {...connection, groupId: undefined}
+            : connection,
         ),
       )
       setGroupPendingDeletion(null)
@@ -285,10 +311,12 @@ function NetworkManage() {
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-6 px-5 py-6">
       <div className="flex flex-col gap-1.5">
-        <h1 className="font-display text-xl font-semibold text-joyna-ink">Manage network</h1>
+        <h1 className="font-display text-xl font-semibold text-joyna-ink">
+          Manage network
+        </h1>
         <p className="text-sm text-joyna-ink-faint">
-          Drag a person onto a group below to move them. Each person belongs to one group at a
-          time.
+          Drag a person onto a group below to move them. Each person belongs to
+          one group at a time.
         </p>
       </div>
 
@@ -299,7 +327,9 @@ function NetworkManage() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-joyna-ink-faint">Loading your network&hellip;</p>
+        <p className="text-sm text-joyna-ink-faint">
+          Loading your network&hellip;
+        </p>
       ) : (
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-3">
@@ -307,7 +337,10 @@ function NetworkManage() {
               <h2 className="text-xs font-semibold tracking-wide text-joyna-ink-faint uppercase">
                 Acquaintances
               </h2>
-              <Link to="/network/add" className="text-sm font-semibold text-joyna-coral">
+              <Link
+                to="/network/add"
+                className="text-xs font-semibold text-joyna-coral"
+              >
                 + Add by email
               </Link>
             </div>
@@ -332,7 +365,7 @@ function NetworkManage() {
               {acquaintances.length === 0 ? (
                 <p className="text-sm text-joyna-ink-faint">
                   {connections.filter((c) => !c.groupId).length === 0
-                    ? "No one here yet."
+                    ? 'No one here yet.'
                     : `No matches for “${peopleFilter}”.`}
                 </p>
               ) : (
@@ -350,7 +383,10 @@ function NetworkManage() {
             </div>
           </div>
 
-          <form onSubmit={handleCreateGroup} className="flex items-center gap-2">
+          <form
+            onSubmit={handleCreateGroup}
+            className="flex items-center gap-2"
+          >
             <label className="sr-only" htmlFor="new-group-name">
               New group name
             </label>
@@ -386,9 +422,9 @@ function NetworkManage() {
                 onDragLeave={handleGroupDragLeave}
                 onDrop={handleDrop(group.id)}
                 className={cn(
-                  "flex flex-col gap-3 rounded-card border border-joyna-border bg-white p-4 transition-colors",
+                  'flex flex-col gap-3 rounded-card border border-joyna-border bg-white p-4 transition-colors',
                   dragOverGroupId === group.id &&
-                    "border-2 border-dashed border-joyna-periwinkle bg-joyna-periwinkle/5",
+                    'border-2 border-dashed border-joyna-periwinkle bg-joyna-periwinkle/5',
                 )}
               >
                 <div className="flex items-center justify-between gap-3">
@@ -397,7 +433,8 @@ function NetworkManage() {
                   </h3>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-joyna-ink-faint">
-                      {group.members.length} {group.members.length === 1 ? "person" : "people"}
+                      {group.members.length}{' '}
+                      {group.members.length === 1 ? 'person' : 'people'}
                     </span>
                     <button
                       type="button"
@@ -427,7 +464,9 @@ function NetworkManage() {
                         isDragging={draggedContactId === member.contactId}
                         onDragStart={handleDragStart(member.contactId)}
                         onDragEnd={handleDragEnd}
-                        onRemove={() => moveContactToGroup(member.contactId, undefined)}
+                        onRemove={() =>
+                          moveContactToGroup(member.contactId, undefined)
+                        }
                       />
                     ))
                   )}
@@ -445,7 +484,11 @@ function NetworkManage() {
         <DialogContent className="max-w-[280px] rounded-2xl text-center font-body">
           <DialogHeader className="items-center">
             <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-joyna-red/10">
-              <HugeiconsIcon icon={Delete02Icon} className="h-5 w-5 text-joyna-red" strokeWidth={2} />
+              <HugeiconsIcon
+                icon={Delete02Icon}
+                className="h-5 w-5 text-joyna-red"
+                strokeWidth={2}
+              />
             </div>
             <DialogTitle className="font-display text-[15px]">
               Delete &ldquo;{groupPendingDeletion?.name}&rdquo;?
@@ -459,9 +502,11 @@ function NetworkManage() {
               variant="destructive"
               className="h-11 w-full rounded-control font-display text-sm"
               disabled={isDeletingGroup}
-              onClick={() => groupPendingDeletion && handleDeleteGroup(groupPendingDeletion)}
+              onClick={() =>
+                groupPendingDeletion && handleDeleteGroup(groupPendingDeletion)
+              }
             >
-              {isDeletingGroup ? "Deleting…" : "Delete group"}
+              {isDeletingGroup ? 'Deleting…' : 'Delete group'}
             </Button>
             <Button
               variant="secondary"

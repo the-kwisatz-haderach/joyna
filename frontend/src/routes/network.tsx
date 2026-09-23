@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react"
-import { Link } from "react-router"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowRight01Icon, UserAdd01Icon } from "@hugeicons/core-free-icons"
+import {useEffect, useMemo, useState} from 'react'
+import {Link} from 'react-router'
+import {HugeiconsIcon} from '@hugeicons/react'
+import {ArrowRight01Icon, UserAdd01Icon} from '@hugeicons/core-free-icons'
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { GuestAvatar } from "../../components/joyna/guest-avatar"
+import {Button} from '@/components/ui/button'
+import {Input} from '@/components/ui/input'
+import {GuestAvatar} from '../../components/joyna/guest-avatar'
 
 type NetworkConnection = {
   contactId: string
@@ -25,10 +25,10 @@ type PotentialConnection = {
   sharedEventCount: number
 }
 
-const DEFAULT_GROUP_NAME = "Acquaintances"
+const DEFAULT_GROUP_NAME = 'Acquaintances'
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, { credentials: "include" })
+  const response = await fetch(url, {credentials: 'include'})
   if (!response.ok) {
     throw new Error(`failed to load ${url}`)
   }
@@ -54,14 +54,18 @@ function SearchIcon() {
 
 function FavoriteBadge() {
   return (
-    <span aria-label="favorite" title="Favorite" className="text-joyna-sunflower-dark">
+    <span
+      aria-label="favorite"
+      title="Favorite"
+      className="text-joyna-sunflower-dark"
+    >
       ★
     </span>
   )
 }
 
 function eventsTogetherLabel(count: number): string {
-  return `${count} ${count === 1 ? "event" : "events"} together`
+  return `${count} ${count === 1 ? 'event' : 'events'} together`
 }
 
 function matchesQuery(connection: NetworkConnection, query: string): boolean {
@@ -70,17 +74,20 @@ function matchesQuery(connection: NetworkConnection, query: string): boolean {
   }
   const needle = query.trim().toLowerCase()
   const groupName = (connection.groupName ?? DEFAULT_GROUP_NAME).toLowerCase()
-  return connection.contactName.toLowerCase().includes(needle) || groupName.includes(needle)
+  return (
+    connection.contactName.toLowerCase().includes(needle) ||
+    groupName.includes(needle)
+  )
 }
 
 function groupConnections(connections: NetworkConnection[]) {
   const groups = new Map<
     string,
-    { name: string; isFavorite: boolean; members: NetworkConnection[] }
+    {name: string; isFavorite: boolean; members: NetworkConnection[]}
   >()
 
   for (const connection of connections) {
-    const key = connection.groupId ?? "default"
+    const key = connection.groupId ?? 'default'
     const existing = groups.get(key)
     if (existing) {
       existing.members.push(connection)
@@ -111,9 +118,15 @@ function EmptyNetworkState() {
   return (
     <div className="mx-auto flex max-w-sm flex-col items-center gap-3 px-6 py-20 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-joyna-periwinkle/10 text-joyna-periwinkle">
-        <HugeiconsIcon icon={UserAdd01Icon} className="h-8 w-8" strokeWidth={1.8} />
+        <HugeiconsIcon
+          icon={UserAdd01Icon}
+          className="h-8 w-8"
+          strokeWidth={1.8}
+        />
       </div>
-      <h2 className="font-display text-lg font-semibold text-joyna-ink">Your network is empty</h2>
+      <h2 className="font-display text-lg font-semibold text-joyna-ink">
+        Your network is empty
+      </h2>
       <p className="text-sm text-joyna-ink-soft">
         Add someone by email, or check the suggestions below.
       </p>
@@ -121,14 +134,18 @@ function EmptyNetworkState() {
         render={<Link to="/network/add" />}
         className="mt-2 h-11 rounded-control px-6 font-display text-sm"
       >
-        <HugeiconsIcon icon={UserAdd01Icon} className="h-4 w-4" strokeWidth={2} />
+        <HugeiconsIcon
+          icon={UserAdd01Icon}
+          className="h-4 w-4"
+          strokeWidth={2}
+        />
         Add by email
       </Button>
     </div>
   )
 }
 
-function ContactRow({ contact }: { contact: NetworkConnection }) {
+function ContactRow({contact}: {contact: NetworkConnection}) {
   return (
     <li>
       <Link
@@ -144,7 +161,11 @@ function ContactRow({ contact }: { contact: NetworkConnection }) {
         </div>
         <div className="flex shrink-0 items-center gap-1.5 text-xs text-joyna-ink-faint">
           {eventsTogetherLabel(contact.eventsTogetherCount)}
-          <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
+          <HugeiconsIcon
+            icon={ArrowRight01Icon}
+            className="h-4 w-4"
+            strokeWidth={2}
+          />
         </div>
       </Link>
     </li>
@@ -192,7 +213,10 @@ function PotentialNetwork({
   return (
     <ul className="flex flex-col">
       {potentialConnections.map((candidate) => (
-        <li key={candidate.userId} className="flex items-center gap-2.5 py-2 text-sm">
+        <li
+          key={candidate.userId}
+          className="flex items-center gap-2.5 py-2 text-sm"
+        >
           <GuestAvatar name={candidate.name} />
           <span className="flex-1 truncate font-display font-semibold text-joyna-ink">
             {candidate.name}
@@ -207,7 +231,11 @@ function PotentialNetwork({
             onClick={() => onAdd(candidate.userId)}
             className="ml-2 flex shrink-0 items-center gap-1 rounded-full bg-joyna-periwinkle/10 px-2.5 py-1 text-[10.5px] font-semibold text-joyna-periwinkle-dark transition-transform active:scale-90 disabled:opacity-50"
           >
-            <HugeiconsIcon icon={UserAdd01Icon} className="h-3 w-3" strokeWidth={2.2} />{" "}
+            <HugeiconsIcon
+              icon={UserAdd01Icon}
+              className="h-3 w-3"
+              strokeWidth={2.2}
+            />{' '}
             Add
           </button>
         </li>
@@ -224,14 +252,14 @@ function Network() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [pendingUserId, setPendingUserId] = useState<string | null>(null)
-  const [query, setQuery] = useState("")
+  const [query, setQuery] = useState('')
 
   async function loadNetwork() {
     setError(null)
     try {
       const [currentNetwork, potential] = await Promise.all([
-        fetchJson<NetworkConnection[]>("/api/network"),
-        fetchJson<PotentialConnection[]>("/api/network/potential"),
+        fetchJson<NetworkConnection[]>('/api/network'),
+        fetchJson<PotentialConnection[]>('/api/network/potential'),
       ])
       setConnections(currentNetwork)
       setPotentialConnections(potential)
@@ -247,7 +275,10 @@ function Network() {
   }, [])
 
   const groups = useMemo(
-    () => groupConnections(connections.filter((connection) => matchesQuery(connection, query))),
+    () =>
+      groupConnections(
+        connections.filter((connection) => matchesQuery(connection, query)),
+      ),
     [connections, query],
   )
 
@@ -255,14 +286,14 @@ function Network() {
     setPendingUserId(userId)
     setError(null)
     try {
-      const response = await fetch("/api/network", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ contactId: userId }),
+      const response = await fetch('/api/network', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        credentials: 'include',
+        body: JSON.stringify({contactId: userId}),
       })
       if (!response.ok) {
-        throw new Error("failed to add connection")
+        throw new Error('failed to add connection')
       }
       await loadNetwork()
     } catch {
@@ -273,7 +304,7 @@ function Network() {
   }
 
   const addByEmailLink = (
-    <Link to="/network/add" className="text-sm font-semibold text-joyna-coral">
+    <Link to="/network/add" className="text-xs font-semibold text-joyna-coral">
       + Add by email
     </Link>
   )
@@ -300,7 +331,9 @@ function Network() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-joyna-ink-faint">Loading your network&hellip;</p>
+        <p className="text-sm text-joyna-ink-faint">
+          Loading your network&hellip;
+        </p>
       ) : connections.length === 0 ? (
         <div className="flex flex-col gap-8">
           <EmptyNetworkState />
@@ -329,13 +362,18 @@ function Network() {
             <div className="flex flex-col gap-3">
               {groups.length === 0 ? (
                 <>
-                  <div className="flex items-center justify-end">{addByEmailLink}</div>
+                  <div className="flex items-center justify-end">
+                    {addByEmailLink}
+                  </div>
                   <p className="text-sm text-joyna-ink-faint">
                     No matches for &ldquo;{query}&rdquo;.
                   </p>
                 </>
               ) : (
-                <NetworkGroups groups={groups} addByEmailSlot={addByEmailLink} />
+                <NetworkGroups
+                  groups={groups}
+                  addByEmailSlot={addByEmailLink}
+                />
               )}
             </div>
 

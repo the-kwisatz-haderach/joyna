@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { Camera01Icon, ArrowRight01Icon } from '@hugeicons/core-free-icons'
+import {useEffect, useState} from 'react'
+import {useNavigate} from 'react-router'
+import {HugeiconsIcon} from '@hugeicons/react'
+import {Camera01Icon, ArrowRight01Icon} from '@hugeicons/core-free-icons'
 
-import { useAuth } from '../auth-context'
+import {useAuth} from '../auth-context'
 
 type StatKey = 'hosted' | 'attended' | 'network'
 
@@ -18,16 +18,20 @@ function initials(name: string) {
 }
 
 async function fetchCount(url: string): Promise<number> {
-  const response = await fetch(url, { credentials: 'include' })
+  const response = await fetch(url, {credentials: 'include'})
   if (!response.ok) return 0
   const data = (await response.json()) as unknown[]
   return data.length
 }
 
 function Profile() {
-  const { user, logout } = useAuth()
+  const {user, logout} = useAuth()
   const navigate = useNavigate()
-  const [stats, setStats] = useState<Record<StatKey, number>>({ hosted: 0, attended: 0, network: 0 })
+  const [stats, setStats] = useState<Record<StatKey, number>>({
+    hosted: 0,
+    attended: 0,
+    network: 0,
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -35,8 +39,8 @@ function Profile() {
     async function loadStats() {
       const [hostedEvents, invitedEvents, network] = await Promise.all([
         fetchCount('/api/events?scope=owned'),
-        fetch('/api/events?scope=invited', { credentials: 'include' }).then((r) =>
-          r.ok ? (r.json() as Promise<{ date: string }[]>) : [],
+        fetch('/api/events?scope=invited', {credentials: 'include'}).then(
+          (r) => (r.ok ? (r.json() as Promise<{date: string}[]>) : []),
         ),
         fetchCount('/api/network'),
       ])
@@ -45,8 +49,10 @@ function Profile() {
       // "Attended" is approximated as past events the user was invited to —
       // the events list endpoint doesn't expose per-invite status, so this
       // can't be narrowed to accepted-only invites (see the integration plan).
-      const attended = invitedEvents.filter((e) => new Date(e.date).getTime() < now).length
-      setStats({ hosted: hostedEvents, attended, network })
+      const attended = invitedEvents.filter(
+        (e) => new Date(e.date).getTime() < now,
+      ).length
+      setStats({hosted: hostedEvents, attended, network})
     }
 
     loadStats()
@@ -56,7 +62,7 @@ function Profile() {
   }, [])
 
   async function handleLogout() {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    await fetch('/api/auth/logout', {method: 'POST', credentials: 'include'})
     logout()
   }
 
@@ -70,14 +76,23 @@ function Profile() {
             {initials(user.name)}
           </div>
           <div className="absolute bottom-0 right-0 flex h-6 w-6 items-center justify-center rounded-full border-2 border-joyna-cream bg-joyna-coral text-white">
-            <HugeiconsIcon icon={Camera01Icon} className="h-3 w-3" strokeWidth={2.5} />
+            <HugeiconsIcon
+              icon={Camera01Icon}
+              className="h-3 w-3"
+              strokeWidth={2.5}
+            />
           </div>
         </div>
         <div className="text-center">
-          <p className="font-display text-lg font-semibold text-joyna-ink">{user.name}</p>
+          <p className="font-display text-lg font-semibold text-joyna-ink">
+            {user.name}
+          </p>
           <p className="text-sm text-joyna-ink-soft">{user.email}</p>
           {user.address && (
-            <p data-testid="profile-location" className="text-sm text-joyna-ink-soft">
+            <p
+              data-testid="profile-location"
+              className="text-xs mt-0.5 text-joyna-ink-faint"
+            >
               {user.address}
             </p>
           )}
@@ -92,8 +107,13 @@ function Profile() {
             ['network', 'Network'],
           ] as const
         ).map(([key, label]) => (
-          <div key={key} className="flex flex-col items-center gap-0.5 rounded-card border border-joyna-border bg-white py-3">
-            <span className="font-display text-lg font-semibold text-joyna-ink">{stats[key]}</span>
+          <div
+            key={key}
+            className="flex flex-col items-center gap-0.5 rounded-card border border-joyna-border bg-white py-3"
+          >
+            <span className="font-display text-lg font-semibold text-joyna-ink">
+              {stats[key]}
+            </span>
             <span className="text-[11px] text-joyna-ink-faint">{label}</span>
           </div>
         ))}
@@ -106,7 +126,11 @@ function Profile() {
           onClick={() => navigate('/profile/edit')}
         >
           Edit profile
-          <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
+          <HugeiconsIcon
+            icon={ArrowRight01Icon}
+            className="h-4 w-4"
+            strokeWidth={2}
+          />
         </button>
         <button
           type="button"
@@ -114,7 +138,11 @@ function Profile() {
           onClick={() => navigate('/profile/notifications')}
         >
           Notification settings
-          <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
+          <HugeiconsIcon
+            icon={ArrowRight01Icon}
+            className="h-4 w-4"
+            strokeWidth={2}
+          />
         </button>
         <button
           type="button"
