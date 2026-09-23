@@ -45,15 +45,15 @@ function eventCardTone(
   event: Pick<EventListItem, 'isOwner' | 'viewerInviteStatus'>,
 ): string {
   if (event.isOwner) {
-    return 'border-joyna-sunflower'
+    return 'border-joyna-sunflower bg-white'
   }
   if (event.viewerInviteStatus === 'accepted') {
-    return 'border-joyna-mint'
+    return 'border-joyna-mint bg-joyna-mint/10'
   }
   if (event.viewerInviteStatus === 'declined') {
-    return 'border-joyna-bubblegum'
+    return 'border-joyna-bubblegum bg-joyna-bubblegum/10'
   }
-  return 'border-joyna-border'
+  return 'border-joyna-border bg-white'
 }
 
 export function EventCard({
@@ -69,7 +69,7 @@ export function EventCard({
     <Link
       to={`/events/${event.id}`}
       className={cn(
-        'flex items-center justify-between gap-3 rounded-card border p-4 transition-opacity bg-white',
+        'flex items-center justify-between gap-3 rounded-card border p-4 transition-opacity',
         eventCardTone(event),
         dimmed && 'opacity-60 hover:opacity-80',
       )}
