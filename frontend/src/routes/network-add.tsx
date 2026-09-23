@@ -1,10 +1,10 @@
-import { useEffect, useState, type FormEvent } from "react"
-import { useNavigate } from "react-router"
+import {useEffect, useState, type FormEvent} from 'react'
+import {useNavigate} from 'react-router'
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { useAuth } from "../auth-context"
-import { GuestAvatar } from "../../components/joyna/guest-avatar"
+import {Button} from '@/components/ui/button'
+import {Input} from '@/components/ui/input'
+import {useAuth} from '../auth-context'
+import {GuestAvatar} from '../../components/joyna/guest-avatar'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -18,7 +18,7 @@ type LookupResult = {
   email: string
 }
 
-type LookupStatus = "idle" | "loading" | "found" | "not-found" | "error"
+type LookupStatus = 'idle' | 'loading' | 'found' | 'not-found' | 'error'
 
 type NetworkGroupOption = {
   id: string
@@ -26,24 +26,24 @@ type NetworkGroupOption = {
 }
 
 async function fetchGroupOptions(): Promise<NetworkGroupOption[]> {
-  const response = await fetch("/api/groups", { credentials: "include" })
+  const response = await fetch('/api/groups', {credentials: 'include'})
   if (!response.ok) {
     return []
   }
-  const groups = (await response.json()) as { id: string; name: string }[]
+  const groups = (await response.json()) as {id: string; name: string}[]
   return groups
-    .map(({ id, name }) => ({ id, name }))
+    .map(({id, name}) => ({id, name}))
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
 function NetworkAdd() {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const [email, setEmail] = useState("")
-  const [status, setStatus] = useState<LookupStatus>("idle")
+  const {user} = useAuth()
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState<LookupStatus>('idle')
   const [result, setResult] = useState<LookupResult | null>(null)
   const [groupOptions, setGroupOptions] = useState<NetworkGroupOption[]>([])
-  const [groupId, setGroupId] = useState("")
+  const [groupId, setGroupId] = useState('')
   const [isAdding, setIsAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
   const [invitedEmail, setInvitedEmail] = useState<string | null>(null)
@@ -57,7 +57,7 @@ function NetworkAdd() {
     setResult(null)
     setAddError(null)
     if (!trimmed || !isValidEmail(trimmed)) {
-      setStatus("idle")
+      setStatus('idle')
       return
     }
     // Only clear the "invite sent" confirmation once the user starts a new
@@ -68,32 +68,32 @@ function NetworkAdd() {
     // A user can't add themselves to their own network — treat their own
     // email as a no-op "no result" without even hitting the lookup API.
     if (user && trimmed.toLowerCase() === user.email.toLowerCase()) {
-      setStatus("not-found")
+      setStatus('not-found')
       return
     }
 
     let cancelled = false
-    setStatus("loading")
+    setStatus('loading')
     const timeout = setTimeout(async () => {
       try {
         const response = await fetch(
           `/api/network/lookup?email=${encodeURIComponent(trimmed)}`,
-          { credentials: "include" },
+          {credentials: 'include'},
         )
         if (cancelled) return
         if (response.status === 404) {
-          setStatus("not-found")
+          setStatus('not-found')
           return
         }
         if (!response.ok) {
-          setStatus("error")
+          setStatus('error')
           return
         }
         setResult((await response.json()) as LookupResult)
-        setStatus("found")
+        setStatus('found')
       } catch {
         if (!cancelled) {
-          setStatus("error")
+          setStatus('error')
         }
       }
     }, 400)
@@ -107,52 +107,57 @@ function NetworkAdd() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    if (status === "found") {
+    if (status === 'found') {
       if (!result) return
       setIsAdding(true)
       setAddError(null)
       try {
-        const response = await fetch("/api/network", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ contactId: result.userId, groupId: groupId || undefined }),
+        const response = await fetch('/api/network', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'include',
+          body: JSON.stringify({
+            contactId: result.userId,
+            groupId: groupId || undefined,
+          }),
         })
         if (!response.ok) {
-          throw new Error("failed to add connection")
+          throw new Error('failed to add connection')
         }
-        navigate("/network")
+        navigate('/network')
       } catch {
-        setAddError("Couldn't add that person to your network. Please try again.")
+        setAddError(
+          "Couldn't add that person to your network. Please try again.",
+        )
       } finally {
         setIsAdding(false)
       }
       return
     }
 
-    if (status === "not-found") {
+    if (status === 'not-found') {
       const trimmed = email.trim()
       if (!trimmed) return
       setIsAdding(true)
       setAddError(null)
       try {
-        const response = await fetch("/api/network/invite", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ email: trimmed }),
+        const response = await fetch('/api/network/invite', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'include',
+          body: JSON.stringify({email: trimmed}),
         })
         if (response.status === 409) {
           setAddError(
-            "Someone just registered with that email — search again to add them directly.",
+            'Someone just registered with that email — search again to add them directly.',
           )
           return
         }
         if (!response.ok) {
-          throw new Error("failed to send invite")
+          throw new Error('failed to send invite')
         }
         setInvitedEmail(trimmed)
-        setEmail("")
+        setEmail('')
       } catch {
         setAddError("Couldn't send that invite. Please try again.")
       } finally {
@@ -161,7 +166,7 @@ function NetworkAdd() {
     }
   }
 
-  const showCard = status === "found" || status === "not-found"
+  const showCard = status === 'found' || status === 'not-found'
 
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-6 px-5 py-6">
@@ -175,16 +180,16 @@ function NetworkAdd() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="priya@example.com"
+          placeholder="oliver@twist.com"
           className="h-11 rounded-control bg-white"
           autoFocus
         />
       </label>
 
-      {status === "loading" && (
+      {status === 'loading' && (
         <p className="text-sm text-joyna-ink-faint">Searching&hellip;</p>
       )}
-      {status === "error" && (
+      {status === 'error' && (
         <p role="alert" className="text-sm text-joyna-red-dark">
           Couldn&apos;t search for that email. Please try again.
         </p>
@@ -196,18 +201,23 @@ function NetworkAdd() {
           className="flex flex-col gap-4 rounded-card border border-joyna-border bg-white p-4"
         >
           <div className="flex items-center gap-3">
-            <GuestAvatar name={status === "found" ? result!.name : email.trim()} variant="stranger" />
+            <GuestAvatar
+              name={status === 'found' ? result!.name : email.trim()}
+              variant="stranger"
+            />
             <div className="min-w-0">
               <p className="truncate font-display text-sm font-semibold text-joyna-ink">
-                {status === "found" ? result!.name : email.trim()}
+                {status === 'found' ? result!.name : email.trim()}
               </p>
-              {status === "found" && (
-                <p className="truncate text-xs text-joyna-ink-faint">{result!.email}</p>
+              {status === 'found' && (
+                <p className="truncate text-xs text-joyna-ink-faint">
+                  {result!.email}
+                </p>
               )}
             </div>
           </div>
 
-          {status === "found" ? (
+          {status === 'found' ? (
             <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
               Add to group (optional)
               <select
@@ -235,14 +245,18 @@ function NetworkAdd() {
             </p>
           )}
 
-          <Button type="submit" disabled={isAdding} className="h-11 rounded-control font-display text-sm">
-            {status === "found"
+          <Button
+            type="submit"
+            disabled={isAdding}
+            className="h-11 rounded-control font-display text-sm"
+          >
+            {status === 'found'
               ? isAdding
-                ? "Adding…"
-                : "Add to network"
+                ? 'Adding…'
+                : 'Add to network'
               : isAdding
-                ? "Sending…"
-                : "Invite to Joyna"}
+                ? 'Sending…'
+                : 'Invite to Joyna'}
           </Button>
         </form>
       )}
