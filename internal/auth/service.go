@@ -24,13 +24,21 @@ type inviteResolver interface {
 	ResolvePendingInvites(ctx context.Context, userID, email string) error
 }
 
+// templateSeeder is satisfied structurally by *eventtemplate.Service so a
+// freshly registered user gets a starter set of event templates. Optional:
+// nil is a valid no-op seeder.
+type templateSeeder interface {
+	SeedDefaultTemplates(ctx context.Context, ownerID string) error
+}
+
 type Service struct {
 	repo     repository
 	resolver inviteResolver
+	seeder   templateSeeder
 }
 
-func NewService(repo repository, resolver inviteResolver) *Service {
-	return &Service{repo: repo, resolver: resolver}
+func NewService(repo repository, resolver inviteResolver, seeder templateSeeder) *Service {
+	return &Service{repo: repo, resolver: resolver, seeder: seeder}
 }
 
 func (s *Service) Register(ctx context.Context, name, email, password string, address *string) (User, error) {
@@ -50,6 +58,14 @@ func (s *Service) Register(ctx context.Context, name, email, password string, ad
 			// A failed auto-connect must not fail registration — the
 			// account already exists at this point.
 			slog.Error("failed to resolve pending network invites", "error", err, "userId", user.Id)
+		}
+	}
+
+	if s.seeder != nil {
+		if err := s.seeder.SeedDefaultTemplates(ctx, user.Id); err != nil {
+			// Same reasoning as the resolver above: missing default
+			// templates shouldn't fail an otherwise-successful registration.
+			slog.Error("failed to seed default event templates", "error", err, "userId", user.Id)
 		}
 	}
 
