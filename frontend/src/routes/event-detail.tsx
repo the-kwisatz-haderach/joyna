@@ -158,7 +158,9 @@ function StaticGuestList({
         (status) =>
           grouped[status].length > 0 && (
             <div key={status}>
-              <GuestGroupLabel>{STATUS_LABEL[status]}</GuestGroupLabel>
+              {STATUS_LABEL[status] && (
+                <GuestGroupLabel>{STATUS_LABEL[status]}</GuestGroupLabel>
+              )}
               {grouped[status].map((g) => (
                 <GuestRow
                   key={g.id}
@@ -217,16 +219,17 @@ function EventDetail() {
 
   const guests: Guest[] = useMemo(() => {
     return attendees.map((attendee) => {
+      const isViewer = attendee.userId === user?.id
+      const name = isViewer ? 'You' : attendee.name
       if (attendee.isOwner) {
-        return {id: attendee.userId, name: attendee.name, isHost: true}
+        return {id: attendee.userId, name, isHost: true}
       }
       const connection = connections.find(
         (c) => c.contactId === attendee.userId,
       )
-      const isViewer = attendee.userId === user?.id
       return {
         id: attendee.userId,
-        name: attendee.name,
+        name,
         status: inviteStatusToGuestStatus(attendee.status),
         group: isViewer
           ? undefined

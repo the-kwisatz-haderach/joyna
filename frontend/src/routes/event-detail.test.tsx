@@ -53,8 +53,20 @@ describe('EventDetail', () => {
       screen.getByRole('link', { name: /edit details/i }),
     ).toHaveAttribute('href', '/events/c1a2b3c4-1111-4a1a-8a1a-000000000001/edit')
 
-    expect(await screen.findByText('Ada Lovelace')).toBeInTheDocument()
+    expect(await screen.findByText('You')).toBeInTheDocument()
     expect(await screen.findByText('Margaret Hamilton')).toBeInTheDocument()
+    expect(screen.queryByText('Ada Lovelace')).not.toBeInTheDocument()
+  })
+
+  it('shows an attending guest without a "Going" heading, but keeps the "Not attending" heading', async () => {
+    loginAsMockUser()
+    renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000001')
+
+    await screen.findByText('Margaret Hamilton')
+    await screen.findByText('Hedy Lamarr')
+
+    expect(screen.queryByText('Going')).not.toBeInTheDocument()
+    expect(screen.getByText('Not attending')).toBeInTheDocument()
   })
 
   it('counts only the host and accepted guests as attending, excluding pending and declined invites', async () => {

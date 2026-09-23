@@ -151,7 +151,7 @@ export function GuestRow({
   )
 }
 
-/** Small caption used above each status cluster: "Going" / "Pending" / "Not attending" */
+/** Small caption used above a status cluster: "Pending" / "Not attending" */
 export function GuestGroupLabel({children}: {children: React.ReactNode}) {
   return (
     <div className="mt-3 mb-1 text-xs font-semibold text-joyna-ink-faint">
@@ -160,8 +160,11 @@ export function GuestGroupLabel({children}: {children: React.ReactNode}) {
   )
 }
 
-export const STATUS_LABEL: Record<GuestStatus, string> = {
-  going: 'Going',
+/**
+ * No entry for "going" — attending guests are listed directly below the
+ * host without a heading, so only "pending"/"not_attending" get a label.
+ */
+export const STATUS_LABEL: Partial<Record<GuestStatus, string>> = {
   pending: 'Pending',
   not_attending: 'Not attending',
 }
