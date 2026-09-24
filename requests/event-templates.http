@@ -18,7 +18,8 @@ Content-Type: application/json
   "dateOption": "today",
   "timeOfDay": "17:00",
   "location": "Ye ol' pub",
-  "rsvpDeadlineOption": "none",
+  "rsvpDeadlineAmount": 2,
+  "rsvpDeadlineUnit": "week",
   "mood": "chill",
   "description": ""
 }
@@ -59,7 +60,16 @@ Content-Type: application/json
 
 {
   "clearTimeOfDay": true,
-  "clearMood": true
+  "clearMood": true,
+  "clearRsvpDeadline": true
+}
+
+### Update event template — invalid rsvp deadline (amount without unit), expect 400
+PATCH {{baseUrl}}/event-templates/{{createTemplate.response.body.$.id}}
+Content-Type: application/json
+
+{
+  "rsvpDeadlineAmount": 3
 }
 
 ### Update event template — invalid id, expect 400

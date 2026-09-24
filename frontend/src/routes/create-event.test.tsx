@@ -193,7 +193,6 @@ describe('CreateEvent', () => {
       dateOption: 'today',
       timeOfDay: '17:00',
       location: "Ye ol' pub",
-      rsvpDeadlineOption: 'none',
       mood: 'chill',
       description: 'Casual after-work hangout.',
     })
@@ -206,7 +205,7 @@ describe('CreateEvent', () => {
     expect(screen.getByText(/using the .afterwork today. template/i)).toBeInTheDocument()
   })
 
-  it('pre-fills the RSVP deadline amount/unit from the template\'s rsvpDeadlineOption', () => {
+  it('pre-fills the RSVP deadline amount/unit from the template', () => {
     renderCreateEventWithTemplate({
       id: 'template-2',
       name: 'Birthday party',
@@ -214,7 +213,8 @@ describe('CreateEvent', () => {
       title: 'Birthday party',
       dateOption: 'none',
       location: '',
-      rsvpDeadlineOption: '1_week_before',
+      rsvpDeadlineAmount: 1,
+      rsvpDeadlineUnit: 'week',
       mood: 'party',
       description: '',
     })

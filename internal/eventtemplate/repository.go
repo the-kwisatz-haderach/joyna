@@ -39,9 +39,9 @@ func (r *Repository) ListTemplates(ctx context.Context, ownerID string) ([]Event
 
 func (r *Repository) CreateTemplate(ctx context.Context, payload CreateEventTemplatePayload, ownerID string) (EventTemplate, error) {
 	rows, err := r.pool.Query(ctx,
-		`INSERT INTO event_templates (owner_id, name, icon, title, date_option, time_of_day, location, rsvp_deadline_option, mood, description)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
-		ownerID, payload.Name, payload.Icon, payload.Title, payload.DateOption, payload.TimeOfDay, payload.Location, payload.RsvpDeadlineOption, payload.Mood, payload.Description,
+		`INSERT INTO event_templates (owner_id, name, icon, title, date_option, time_of_day, location, rsvp_deadline_amount, rsvp_deadline_unit, mood, description)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+		ownerID, payload.Name, payload.Icon, payload.Title, payload.DateOption, payload.TimeOfDay, payload.Location, payload.RsvpDeadlineAmount, payload.RsvpDeadlineUnit, payload.Mood, payload.Description,
 	)
 	if err != nil {
 		return EventTemplate{}, fmt.Errorf("inserting event template: %w", err)
@@ -65,15 +65,16 @@ func (r *Repository) UpdateTemplate(ctx context.Context, templateUpdate UpdateEv
 			date_option = COALESCE($6, date_option),
 			time_of_day = CASE WHEN $9 THEN NULL ELSE COALESCE($7, time_of_day) END,
 			location = COALESCE($8, location),
-			rsvp_deadline_option = COALESCE($10, rsvp_deadline_option),
-			mood = CASE WHEN $11 THEN NULL ELSE COALESCE($12, mood) END,
-			description = COALESCE($13, description)
+			rsvp_deadline_amount = CASE WHEN $10 THEN NULL ELSE COALESCE($11, rsvp_deadline_amount) END,
+			rsvp_deadline_unit = CASE WHEN $10 THEN NULL ELSE COALESCE($12, rsvp_deadline_unit) END,
+			mood = CASE WHEN $13 THEN NULL ELSE COALESCE($14, mood) END,
+			description = COALESCE($15, description)
 		WHERE id = $1 AND owner_id = $2
 		RETURNING *`,
 		templateID, ownerID,
 		templateUpdate.Name, templateUpdate.Icon, templateUpdate.Title, templateUpdate.DateOption,
 		templateUpdate.TimeOfDay, templateUpdate.Location, templateUpdate.ClearTimeOfDay,
-		templateUpdate.RsvpDeadlineOption,
+		templateUpdate.ClearRsvpDeadline, templateUpdate.RsvpDeadlineAmount, templateUpdate.RsvpDeadlineUnit,
 		templateUpdate.ClearMood, templateUpdate.Mood,
 		templateUpdate.Description,
 	)

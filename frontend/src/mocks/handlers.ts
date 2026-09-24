@@ -524,7 +524,8 @@ export const handlers = [
       dateOption: body.dateOption ?? "none",
       timeOfDay: body.timeOfDay,
       location: body.location?.trim() ?? "",
-      rsvpDeadlineOption: body.rsvpDeadlineOption ?? "none",
+      rsvpDeadlineAmount: body.rsvpDeadlineAmount,
+      rsvpDeadlineUnit: body.rsvpDeadlineUnit,
       mood: body.mood,
       description: body.description?.trim() ?? "",
     }
@@ -541,6 +542,7 @@ export const handlers = [
     }
     const body = (await request.json()) as Partial<MockEventTemplate> & {
       clearTimeOfDay?: boolean
+      clearRsvpDeadline?: boolean
       clearMood?: boolean
     }
     const updated = { ...eventTemplates[index] }
@@ -554,7 +556,13 @@ export const handlers = [
       updated.timeOfDay = body.timeOfDay
     }
     if (body.location !== undefined) updated.location = body.location.trim()
-    if (body.rsvpDeadlineOption !== undefined) updated.rsvpDeadlineOption = body.rsvpDeadlineOption
+    if (body.clearRsvpDeadline) {
+      updated.rsvpDeadlineAmount = undefined
+      updated.rsvpDeadlineUnit = undefined
+    } else {
+      if (body.rsvpDeadlineAmount !== undefined) updated.rsvpDeadlineAmount = body.rsvpDeadlineAmount
+      if (body.rsvpDeadlineUnit !== undefined) updated.rsvpDeadlineUnit = body.rsvpDeadlineUnit
+    }
     if (body.clearMood) {
       updated.mood = undefined
     } else if (body.mood !== undefined) {

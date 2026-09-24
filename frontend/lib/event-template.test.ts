@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  resolveTemplateDate,
-  resolveTemplateTime,
-  summarizeTemplate,
-  templateRsvpAmountAndUnit,
-  type EventTemplate,
-} from './event-template'
+import { resolveTemplateDate, resolveTemplateTime, summarizeTemplate, type EventTemplate } from './event-template'
 
 // A Wednesday.
 const NOW = new Date('2026-09-23T12:00:00Z')
@@ -52,18 +46,6 @@ describe('resolveTemplateTime', () => {
   })
 })
 
-describe('templateRsvpAmountAndUnit', () => {
-  it('returns undefined for "none"', () => {
-    expect(templateRsvpAmountAndUnit('none')).toBeUndefined()
-  })
-
-  it('maps each option to an amount/unit pair', () => {
-    expect(templateRsvpAmountAndUnit('1_day_before')).toEqual({ amount: 1, unit: 'day' })
-    expect(templateRsvpAmountAndUnit('3_days_before')).toEqual({ amount: 3, unit: 'day' })
-    expect(templateRsvpAmountAndUnit('1_week_before')).toEqual({ amount: 1, unit: 'week' })
-  })
-})
-
 function template(overrides: Partial<EventTemplate> = {}): EventTemplate {
   return {
     id: 'template-1',
@@ -72,7 +54,6 @@ function template(overrides: Partial<EventTemplate> = {}): EventTemplate {
     title: 'Test event',
     dateOption: 'none',
     location: '',
-    rsvpDeadlineOption: 'none',
     description: '',
     ...overrides,
   }
@@ -87,8 +68,13 @@ describe('summarizeTemplate', () => {
   })
 
   it('falls back to the RSVP deadline when there is no date', () => {
-    const summary = summarizeTemplate(template({ mood: 'party', rsvpDeadlineOption: '1_week_before' }))
+    const summary = summarizeTemplate(template({ mood: 'party', rsvpDeadlineAmount: 1, rsvpDeadlineUnit: 'week' }))
     expect(summary).toBe('Party · RSVP 1 week before')
+  })
+
+  it('pluralizes the RSVP deadline unit when the amount is not 1', () => {
+    const summary = summarizeTemplate(template({ mood: 'party', rsvpDeadlineAmount: 2, rsvpDeadlineUnit: 'month' }))
+    expect(summary).toBe('Party · RSVP 2 months before')
   })
 
   it('shows a bare time when there is no date option but a timeOfDay is set', () => {

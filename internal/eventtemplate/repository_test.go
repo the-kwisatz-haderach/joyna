@@ -20,11 +20,10 @@ import (
 // valid enum values explicitly instead of relying on Go's zero value.
 func minimalPayload(name, icon, title string) CreateEventTemplatePayload {
 	return CreateEventTemplatePayload{
-		Name:               name,
-		Icon:               icon,
-		Title:              title,
-		DateOption:         DateOptionNone,
-		RsvpDeadlineOption: RsvpDeadlineOptionNone,
+		Name:       name,
+		Icon:       icon,
+		Title:      title,
+		DateOption: DateOptionNone,
 	}
 }
 
@@ -83,6 +82,18 @@ func TestEventTemplateRepository(t *testing.T) {
 		require.ErrorIs(t, err, ErrInvalidMood)
 	})
 
+	t.Run("CreateTemplate and ListTemplates with rsvp deadline", func(t *testing.T) {
+		amount := 2
+		unit := RsvpDeadlineUnitWeek
+		payload := minimalPayload("Birthday party", "🥳", "Birthday party")
+		payload.RsvpDeadlineAmount = &amount
+		payload.RsvpDeadlineUnit = &unit
+		created, err := repo.CreateTemplate(ctx, payload, owner.Id)
+		require.NoError(t, err)
+		require.Equal(t, 2, *created.RsvpDeadlineAmount)
+		require.Equal(t, RsvpDeadlineUnitWeek, *created.RsvpDeadlineUnit)
+	})
+
 	t.Run("UpdateTemplate", func(t *testing.T) {
 		created, err := repo.CreateTemplate(ctx, minimalPayload("To rename", "🎲", "Board games"), owner.Id)
 		require.NoError(t, err)
@@ -96,16 +107,34 @@ func TestEventTemplateRepository(t *testing.T) {
 	t.Run("UpdateTemplate clears optional fields", func(t *testing.T) {
 		timeOfDay := "14:00"
 		mood := "chill"
+		amount := 1
+		unit := RsvpDeadlineUnitDay
 		payload := minimalPayload("Has optional fields", "🎲", "Board games")
 		payload.TimeOfDay = &timeOfDay
 		payload.Mood = &mood
+		payload.RsvpDeadlineAmount = &amount
+		payload.RsvpDeadlineUnit = &unit
 		created, err := repo.CreateTemplate(ctx, payload, owner.Id)
 		require.NoError(t, err)
 
-		updated, err := repo.UpdateTemplate(ctx, UpdateEventTemplatePayload{ClearTimeOfDay: true, ClearMood: true}, created.ID, owner.Id)
+		updated, err := repo.UpdateTemplate(ctx, UpdateEventTemplatePayload{ClearTimeOfDay: true, ClearMood: true, ClearRsvpDeadline: true}, created.ID, owner.Id)
 		require.NoError(t, err)
 		require.Nil(t, updated.TimeOfDay)
 		require.Nil(t, updated.Mood)
+		require.Nil(t, updated.RsvpDeadlineAmount)
+		require.Nil(t, updated.RsvpDeadlineUnit)
+	})
+
+	t.Run("UpdateTemplate sets rsvp deadline", func(t *testing.T) {
+		created, err := repo.CreateTemplate(ctx, minimalPayload("No deadline yet", "🎲", "Board games"), owner.Id)
+		require.NoError(t, err)
+
+		amount := 3
+		unit := RsvpDeadlineUnitMonth
+		updated, err := repo.UpdateTemplate(ctx, UpdateEventTemplatePayload{RsvpDeadlineAmount: &amount, RsvpDeadlineUnit: &unit}, created.ID, owner.Id)
+		require.NoError(t, err)
+		require.Equal(t, 3, *updated.RsvpDeadlineAmount)
+		require.Equal(t, RsvpDeadlineUnitMonth, *updated.RsvpDeadlineUnit)
 	})
 
 	t.Run("UpdateTemplate not found", func(t *testing.T) {
