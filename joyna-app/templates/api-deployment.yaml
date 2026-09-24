@@ -99,3 +99,8 @@ spec:
                 configMapKeyRef:
                   name: '{{.Release.Name}}-configmap'
                   key: VAPID_SUBJECT
+            - name: COOKIE_SECURE
+              valueFrom:
+                configMapKeyRef:
+                  name: '{{.Release.Name}}-configmap'
+                  key: COOKIE_SECURE

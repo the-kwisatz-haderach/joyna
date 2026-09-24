@@ -41,7 +41,20 @@ frontend:
 
 # Base URL of the deployed frontend — used to build the registration link
 # sent in network-invite emails (internal/platform/mail).
-frontendURL: http://34.2.48.78
+frontendURL: https://joyna-dev.mogva.dev
+
+# Gateway hostname/TLS. staticIPName/certName reference GCP resources
+# provisioned out-of-band (gcloud compute addresses / certificate-manager
+# certificates — not managed by this chart, since they're one-time,
+# long-lived infra rather than per-release state). certName must be a
+# *regional* Certificate Manager certificate in the same region as the
+# cluster — gke-l7-regional-external-managed doesn't support certificate
+# maps (that's global-Gateway-only); the listener references the cert by
+# name directly instead (see gateway.yaml's tls.options).
+gateway:
+  hostname: joyna-dev.mogva.dev
+  staticIPName: joyna-dev-ip
+  certName: joyna-dev-cert
 
 # Non-secret SMTP settings for network-invite emails. Host/user/password
 # live in values.secret.yaml (gitignored) since they're credentials.

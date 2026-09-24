@@ -14,3 +14,7 @@ data:
   FRONTEND_URL: {{ required "frontendURL is required" .Values.frontendURL | quote}}
   VAPID_PUBLIC_KEY: {{.Values.push.publicKey | quote}}
   VAPID_SUBJECT: {{.Values.push.subject | quote}}
+  # Every environment deployed via this chart is served over HTTPS through
+  # the Gateway (see gateway.yaml) — unlike local dev, which sets neither
+  # this nor APP_ENV=production and keeps COOKIE_SECURE's default (false).
+  COOKIE_SECURE: "true"

@@ -1,6 +1,10 @@
 import {Link} from 'react-router'
 import {HugeiconsIcon} from '@hugeicons/react'
-import {ArrowRight01Icon, Tick02Icon, Cancel01Icon} from '@hugeicons/core-free-icons'
+import {
+  ArrowRight01Icon,
+  Tick02Icon,
+  Cancel01Icon,
+} from '@hugeicons/core-free-icons'
 import {format, isSameYear} from 'date-fns'
 
 import {cn} from '@/lib/utils'
@@ -73,7 +77,11 @@ function EventCardStatusIcon({
         aria-label="Attending"
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-joyna-border-strong text-joyna-mint"
       >
-        <HugeiconsIcon icon={Tick02Icon} className="h-4 w-4" strokeWidth={2.5} />
+        <HugeiconsIcon
+          icon={Tick02Icon}
+          className="h-4 w-4"
+          strokeWidth={2.5}
+        />
       </span>
     )
   }
@@ -84,13 +92,21 @@ function EventCardStatusIcon({
         aria-label="Not attending"
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-joyna-border-strong text-joyna-red"
       >
-        <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" strokeWidth={2.5} />
+        <HugeiconsIcon
+          icon={Cancel01Icon}
+          className="h-4 w-4"
+          strokeWidth={2.5}
+        />
       </span>
     )
   }
   return (
     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-joyna-border-strong text-joyna-ink-soft">
-      <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
+      <HugeiconsIcon
+        icon={ArrowRight01Icon}
+        className="h-4 w-4"
+        strokeWidth={2}
+      />
     </span>
   )
 }
@@ -108,7 +124,7 @@ export function EventCard({
     <Link
       to={`/events/${event.id}`}
       className={cn(
-        'flex items-center justify-between gap-3 rounded-card border p-4 transition-opacity',
+        'flex items-center justify-between gap-3 rounded-card border-[1.5px] p-4 transition-opacity',
         eventCardTone(event),
         dimmed && 'opacity-60 hover:opacity-80',
       )}
