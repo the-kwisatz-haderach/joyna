@@ -7,6 +7,9 @@ metadata:
 spec:
   parentRefs:
     - name: '{{.Release.Name}}-gw'
+      sectionName: '{{.Release.Name}}-gw-https'
+  hostnames:
+    - '{{.Values.gateway.hostname}}'
   rules:
     - backendRefs:
         - name: {{include "joyna.frontendServiceName" .}}
@@ -20,6 +23,9 @@ metadata:
 spec:
   parentRefs:
     - name: '{{.Release.Name}}-gw'
+      sectionName: '{{.Release.Name}}-gw-https'
+  hostnames:
+    - '{{.Values.gateway.hostname}}'
   rules:
     - matches:
         - path:
@@ -34,3 +40,24 @@ spec:
       backendRefs:
         - name: {{include "joyna.apiServiceName" .}}
           port: {{.Values.api.port}}
+---
+# Redirects plain-HTTP requests to HTTPS. Scoped to the HTTP listener via
+# sectionName so it doesn't also try to match (and redirect) HTTPS traffic.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: '{{.Release.Name}}-https-redirect'
+  namespace: {{.Release.Namespace}}
+  labels: {{- include "joyna.selectorLabels" . | nindent 4}}
+spec:
+  parentRefs:
+    - name: '{{.Release.Name}}-gw'
+      sectionName: '{{.Release.Name}}-gw-http'
+  hostnames:
+    - '{{.Values.gateway.hostname}}'
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301

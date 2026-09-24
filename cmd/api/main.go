@@ -48,6 +48,7 @@ func main() {
 	sessionManager.Store = pgxstore.New(pool)
 
 	sessionManager.Lifetime = 24 * time.Hour
+	sessionManager.Cookie.Secure = cfg.CookieSecure
 
 	mailer := mail.NewSMTPMailer(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPassword, cfg.SMTPFrom)
 

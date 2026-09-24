@@ -22,6 +22,15 @@ type Config struct {
 	// FrontendURL builds the registration link sent in invite emails.
 	FrontendURL string `env:"FRONTEND_URL" envDefault:"http://localhost:5173"`
 
+	// CookieSecure marks the session cookie Secure (HTTPS-only). Defaults
+	// to false so local dev (plain HTTP) keeps working; deployed
+	// environments set COOKIE_SECURE=true via the Helm chart once they're
+	// served over HTTPS. Not tied to AppEnv — the api process never
+	// terminates TLS itself (the Gateway does) and can't infer this from
+	// its own listening socket, and AppEnv=development is also what the
+	// deployed dev environment runs today, so it can't be reused for this.
+	CookieSecure bool `env:"COOKIE_SECURE" envDefault:"false"`
+
 	// VAPID_* configure web push notifications (see internal/platform/push).
 	// Optional, same reasoning as SMTP_* — the app boots without them, push
 	// just doesn't send until they're set. Generate a keypair once with

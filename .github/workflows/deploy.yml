@@ -101,7 +101,7 @@ jobs:
     environment:
       name: dev
       deployment: true
-      url: http://${{ steps.gateway.outputs.ip }}
+      url: https://joyna-dev.mogva.dev
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -123,12 +123,6 @@ jobs:
           cluster_name: ${{ vars.GCP_GKE_CLUSTER }}
           location: ${{ vars.GCP_GKE_REGION }}
           project_id: ${{ vars.GCP_PROJECT_ID }}
-
-      - name: Get Gateway IP
-        id: gateway
-        run: |
-          ip=$(kubectl get gateway joyna-gw -n joyna -o jsonpath='{.status.addresses[0].value}')
-          echo "ip=$ip" >> "$GITHUB_OUTPUT"
 
       - name: Setup helm
         uses: azure/setup-helm@v5
