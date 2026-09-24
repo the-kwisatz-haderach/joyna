@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Calendar } from '@/components/ui/calendar'
 import { MoodPicker } from '../../components/joyna/mood-picker'
+import { IconPicker } from '../../components/joyna/icon-picker'
 import { LocationField, type LocationCoordinates } from '../../components/joyna/location-field'
 import { resolveTemplateDate, resolveTemplateTime, type EventTemplate } from '@/lib/event-template'
 import { useAuth } from '../auth-context'
@@ -52,6 +53,7 @@ function CreateEvent() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [name, setName] = useState(template?.title ?? '')
+  const [icon, setIcon] = useState(template?.icon ?? '')
   const [date, setDate] = useState<Date | undefined>(() => template && resolveTemplateDate(template.dateOption))
   const [time, setTime] = useState(() => resolveTemplateTime(template?.timeOfDay))
   // Pre-fills from a chosen template's location, falling back to the
@@ -63,7 +65,7 @@ function CreateEvent() {
   const [hasRsvpDeadline, setHasRsvpDeadline] = useState(hasRsvpFromTemplate)
   const [rsvpAmount, setRsvpAmount] = useState(template?.rsvpDeadlineAmount ?? 1)
   const [rsvpUnit, setRsvpUnit] = useState<RsvpUnit>(template?.rsvpDeadlineUnit ?? 'day')
-  const [moodId, setMoodId] = useState(template?.mood ?? '')
+  const [moods, setMoods] = useState<string[]>(template?.mood ?? [])
   const [description, setDescription] = useState(template?.description ?? '')
 
   const eventDate = useMemo(() => (date ? combineDateAndTime(date, time) : undefined), [date, time])
@@ -101,7 +103,8 @@ function CreateEvent() {
           type: DEFAULT_EVENT_TYPE,
           rsvpDeadline: rsvpDeadline?.toISOString(),
           defaultSpreadAllowed: 0,
-          mood: moodId || undefined,
+          mood: moods,
+          icon: icon || undefined,
           latitude: coordinates?.lat,
           longitude: coordinates?.lng,
         }),
@@ -143,6 +146,16 @@ function CreateEvent() {
             className="h-10 rounded-xl bg-white"
           />
         </label>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-joyna-ink-soft">Icon</span>
+          <IconPicker value={icon} onChange={setIcon} />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-joyna-ink-soft">Mood</span>
+          <MoodPicker value={moods} onChange={setMoods} />
+        </div>
 
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-joyna-ink-soft">Date &amp; time</span>
@@ -224,11 +237,6 @@ function CreateEvent() {
           coordinates={coordinates}
           onCoordinatesChange={setCoordinates}
         />
-
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-joyna-ink-soft">Mood</span>
-          <MoodPicker value={moodId} onChange={setMoodId} />
-        </div>
 
         <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
           Description

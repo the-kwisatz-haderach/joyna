@@ -20,7 +20,8 @@ type Event struct {
 	RsvpDeadline         *time.Time `json:"rsvpDeadline,omitempty" db:"rsvp_deadline"`
 	Type                 EventType  `json:"type" db:"type"`
 	DefaultSpreadAllowed int        `json:"defaultSpreadAllowed" db:"default_spread_allowed"`
-	Mood                 *Mood      `json:"mood,omitempty" db:"mood"`
+	Mood                 []Mood     `json:"mood,omitempty" db:"mood"`
+	Icon                 *string    `json:"icon,omitempty" db:"icon"`
 	Latitude             *float64   `json:"latitude,omitempty" db:"latitude"`
 	Longitude            *float64   `json:"longitude,omitempty" db:"longitude"`
 }
@@ -98,7 +99,8 @@ type CreateEventPayload struct {
 	RsvpDeadline         *time.Time `json:"rsvpDeadline,omitempty"`
 	Type                 EventType  `json:"type"`
 	DefaultSpreadAllowed int        `json:"defaultSpreadAllowed"`
-	Mood                 *Mood      `json:"mood,omitempty"`
+	Mood                 []Mood     `json:"mood,omitempty"`
+	Icon                 *string    `json:"icon,omitempty"`
 	Latitude             *float64   `json:"latitude,omitempty"`
 	Longitude            *float64   `json:"longitude,omitempty"`
 }
@@ -114,6 +116,10 @@ func (p *CreateEventPayload) Sanitize() {
 	p.Name = strings.TrimSpace(p.Name)
 	p.Description = strings.TrimSpace(p.Description)
 	p.Location = strings.TrimSpace(p.Location)
+	if p.Icon != nil {
+		trimmed := strings.TrimSpace(*p.Icon)
+		p.Icon = &trimmed
+	}
 }
 
 func (p CreateEventPayload) Validate() error {
@@ -163,9 +169,16 @@ type UpdateEventPayload struct {
 	RsvpDeadline         *time.Time `json:"rsvpDeadline,omitempty"`
 	Type                 *EventType `json:"type,omitempty"`
 	DefaultSpreadAllowed *int       `json:"defaultSpreadAllowed,omitempty"`
-	Mood                 *Mood      `json:"mood,omitempty"`
-	Latitude             *float64   `json:"latitude,omitempty"`
-	Longitude            *float64   `json:"longitude,omitempty"`
+	// Mood is nil when omitted (leaving moods unchanged) and a non-nil,
+	// possibly-empty slice when the client sent an explicit mood list
+	// (including clearing every mood) — encoding/json already distinguishes
+	// an absent key from `"mood": []` this way, so no separate Clear flag
+	// is needed the way ClearIcon is for the *string Icon field below.
+	Mood      []Mood   `json:"mood,omitempty"`
+	Icon      *string  `json:"icon,omitempty"`
+	ClearIcon bool     `json:"clearIcon,omitempty"`
+	Latitude  *float64 `json:"latitude,omitempty"`
+	Longitude *float64 `json:"longitude,omitempty"`
 }
 
 func (p UpdateEventPayload) Validate() error {

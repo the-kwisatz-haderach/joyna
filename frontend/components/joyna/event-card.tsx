@@ -19,6 +19,7 @@ export type EventListItem = {
   rsvpDeadline?: string
   isOwner: boolean
   viewerInviteStatus?: EventInviteStatus
+  icon?: string
 }
 
 export function formatEventDate(date: string): string {
@@ -74,7 +75,12 @@ export function EventCard({
         dimmed && 'opacity-60 hover:opacity-80',
       )}
     >
-      <div className="flex min-w-0 flex-col gap-1">
+      {event.icon && (
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-joyna-sunflower/20 text-xl">
+          {event.icon}
+        </span>
+      )}
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-center gap-1.5 font-display text-sm font-semibold text-joyna-ink">
           <span className="truncate">{event.name}</span>
           {event.isOwner ? <HostBadge label="Hosting" /> : null}

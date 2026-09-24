@@ -48,24 +48,44 @@ func TestEventRepository(t *testing.T) {
 
 	t.Run("CreateEvent and UpdateEvent with mood", func(t *testing.T) {
 		owner := authtest.CreateUser(t, pool)
-		mood := Mood("chill")
-		createdEvent, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(24 * time.Hour), Mood: &mood}, owner.Id)
+		moods := []Mood{"chill", "cozy"}
+		createdEvent, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(24 * time.Hour), Mood: moods}, owner.Id)
 		require.NoError(t, err)
-		require.NotNil(t, createdEvent.Mood)
-		require.Equal(t, mood, *createdEvent.Mood)
+		require.Equal(t, moods, createdEvent.Mood)
 
-		newMood := Mood("party")
-		updatedEvent, err := repo.UpdateEvent(ctx, UpdateEventPayload{Mood: &newMood}, createdEvent.ID, owner.Id)
+		newMoods := []Mood{"party"}
+		updatedEvent, err := repo.UpdateEvent(ctx, UpdateEventPayload{Mood: newMoods}, createdEvent.ID, owner.Id)
 		require.NoError(t, err)
-		require.NotNil(t, updatedEvent.Mood)
-		require.Equal(t, newMood, *updatedEvent.Mood)
+		require.Equal(t, newMoods, updatedEvent.Mood)
+
+		clearedEvent, err := repo.UpdateEvent(ctx, UpdateEventPayload{Mood: []Mood{}}, createdEvent.ID, owner.Id)
+		require.NoError(t, err)
+		require.Empty(t, clearedEvent.Mood)
 	})
 
 	t.Run("CreateEvent with invalid mood", func(t *testing.T) {
 		owner := authtest.CreateUser(t, pool)
-		invalidMood := Mood("nonexistent")
-		_, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(24 * time.Hour), Mood: &invalidMood}, owner.Id)
+		_, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(24 * time.Hour), Mood: []Mood{"nonexistent"}}, owner.Id)
 		require.ErrorIs(t, err, ErrInvalidEventMood)
+	})
+
+	t.Run("CreateEvent and UpdateEvent with icon", func(t *testing.T) {
+		owner := authtest.CreateUser(t, pool)
+		icon := "🍻"
+		createdEvent, err := repo.CreateEvent(ctx, CreateEventPayload{Type: "dinner", Date: time.Now().Add(24 * time.Hour), Icon: &icon}, owner.Id)
+		require.NoError(t, err)
+		require.NotNil(t, createdEvent.Icon)
+		require.Equal(t, icon, *createdEvent.Icon)
+
+		newIcon := "🎲"
+		updatedEvent, err := repo.UpdateEvent(ctx, UpdateEventPayload{Icon: &newIcon}, createdEvent.ID, owner.Id)
+		require.NoError(t, err)
+		require.NotNil(t, updatedEvent.Icon)
+		require.Equal(t, newIcon, *updatedEvent.Icon)
+
+		clearedEvent, err := repo.UpdateEvent(ctx, UpdateEventPayload{ClearIcon: true}, createdEvent.ID, owner.Id)
+		require.NoError(t, err)
+		require.Nil(t, clearedEvent.Icon)
 	})
 
 	t.Run("CreateEvent and UpdateEvent with coordinates", func(t *testing.T) {

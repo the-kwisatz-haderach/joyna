@@ -19,6 +19,7 @@ var (
 
 const pgUniqueViolation = "23505"
 const pgForeignKeyViolation = "23503"
+const pgCheckViolation = "23514"
 
 func GetSentinelError(err error, fallback error) error {
 	var pgError *pgconn.PgError
@@ -26,7 +27,7 @@ func GetSentinelError(err error, fallback error) error {
 		switch {
 		case pgError.Code == pgForeignKeyViolation && pgError.ConstraintName == "events_type_fkey":
 			return ErrInvalidEventType
-		case pgError.Code == pgForeignKeyViolation && pgError.ConstraintName == "events_mood_fkey":
+		case pgError.Code == pgCheckViolation && pgError.ConstraintName == "events_mood_check":
 			return ErrInvalidEventMood
 		case pgError.Code == pgForeignKeyViolation && pgError.ConstraintName == "events_owner_id_fkey":
 			return ErrEventOwnerNotFound

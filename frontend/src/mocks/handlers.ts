@@ -316,6 +316,7 @@ export const handlers = [
       type: body.type ?? "party",
       defaultSpreadAllowed: body.defaultSpreadAllowed ?? 0,
       mood: body.mood,
+      icon: body.icon,
       latitude: body.latitude,
       longitude: body.longitude,
     }
@@ -328,9 +329,13 @@ export const handlers = [
     if (index === -1) {
       return new HttpResponse("event not found", { status: 404 })
     }
-    const body = (await request.json()) as Partial<MockEvent>
-    events[index] = { ...events[index], ...body }
-    return HttpResponse.json(events[index])
+    const body = (await request.json()) as Partial<MockEvent> & { clearIcon?: boolean }
+    const updated = { ...events[index], ...body }
+    if (body.clearIcon) {
+      updated.icon = undefined
+    }
+    events[index] = updated
+    return HttpResponse.json(updated)
   }),
 
   http.get("/api/events/:id", ({ params }) => {
@@ -508,9 +513,6 @@ export const handlers = [
     if (!body.name?.trim()) {
       return new HttpResponse("template name must not be empty", { status: 400 })
     }
-    if (!body.icon?.trim()) {
-      return new HttpResponse("template icon must not be empty", { status: 400 })
-    }
     if (!body.title?.trim()) {
       return new HttpResponse("template title must not be empty", { status: 400 })
     }
@@ -518,7 +520,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       ownerId: currentUser.id,
       name: body.name.trim(),
-      icon: body.icon.trim(),
+      icon: body.icon?.trim() || undefined,
       createdAt: new Date().toISOString(),
       title: body.title.trim(),
       dateOption: body.dateOption ?? "none",
@@ -543,11 +545,15 @@ export const handlers = [
     const body = (await request.json()) as Partial<MockEventTemplate> & {
       clearTimeOfDay?: boolean
       clearRsvpDeadline?: boolean
-      clearMood?: boolean
+      clearIcon?: boolean
     }
     const updated = { ...eventTemplates[index] }
     if (body.name !== undefined) updated.name = body.name.trim()
-    if (body.icon !== undefined) updated.icon = body.icon.trim()
+    if (body.clearIcon) {
+      updated.icon = undefined
+    } else if (body.icon !== undefined) {
+      updated.icon = body.icon.trim()
+    }
     if (body.title !== undefined) updated.title = body.title.trim()
     if (body.dateOption !== undefined) updated.dateOption = body.dateOption
     if (body.clearTimeOfDay) {
@@ -563,11 +569,7 @@ export const handlers = [
       if (body.rsvpDeadlineAmount !== undefined) updated.rsvpDeadlineAmount = body.rsvpDeadlineAmount
       if (body.rsvpDeadlineUnit !== undefined) updated.rsvpDeadlineUnit = body.rsvpDeadlineUnit
     }
-    if (body.clearMood) {
-      updated.mood = undefined
-    } else if (body.mood !== undefined) {
-      updated.mood = body.mood
-    }
+    if (body.mood !== undefined) updated.mood = body.mood
     if (body.description !== undefined) updated.description = body.description.trim()
     eventTemplates = eventTemplates.map((template, i) => (i === index ? updated : template))
     return HttpResponse.json(updated)

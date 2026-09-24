@@ -21,7 +21,7 @@ import (
 func minimalPayload(name, icon, title string) CreateEventTemplatePayload {
 	return CreateEventTemplatePayload{
 		Name:       name,
-		Icon:       icon,
+		Icon:       strPtr(icon),
 		Title:      title,
 		DateOption: DateOptionNone,
 	}
@@ -50,12 +50,11 @@ func TestEventTemplateRepository(t *testing.T) {
 	t.Run("CreateTemplate and ListTemplates", func(t *testing.T) {
 		listOwner := authtest.CreateUser(t, pool)
 		timeOfDay := "17:00"
-		mood := "chill"
 		afterwork := minimalPayload("Afterwork today", "🍻", "Afterwork drinks")
 		afterwork.DateOption = DateOptionToday
 		afterwork.TimeOfDay = &timeOfDay
 		afterwork.Location = "Ye ol' pub"
-		afterwork.Mood = &mood
+		afterwork.Mood = []string{"chill", "cozy"}
 		_, err := repo.CreateTemplate(ctx, afterwork, listOwner.Id)
 		require.NoError(t, err)
 
@@ -69,15 +68,23 @@ func TestEventTemplateRepository(t *testing.T) {
 		require.Equal(t, listOwner.Id, templates[0].OwnerID)
 		require.Equal(t, DateOptionToday, templates[0].DateOption)
 		require.Equal(t, "17:00", *templates[0].TimeOfDay)
-		require.Equal(t, "chill", *templates[0].Mood)
+		require.Equal(t, []string{"chill", "cozy"}, templates[0].Mood)
 		require.False(t, templates[0].CreatedAt.IsZero())
 		require.Equal(t, "Movie night", templates[1].Name)
+		require.Empty(t, templates[1].Mood)
+	})
+
+	t.Run("CreateTemplate no icon", func(t *testing.T) {
+		payload := minimalPayload("No icon", "", "No icon")
+		payload.Icon = nil
+		created, err := repo.CreateTemplate(ctx, payload, owner.Id)
+		require.NoError(t, err)
+		require.Nil(t, created.Icon)
 	})
 
 	t.Run("CreateTemplate invalid mood", func(t *testing.T) {
-		mood := "not-a-real-mood"
 		payload := minimalPayload("Bad mood", "😬", "Bad mood")
-		payload.Mood = &mood
+		payload.Mood = []string{"not-a-real-mood"}
 		_, err := repo.CreateTemplate(ctx, payload, owner.Id)
 		require.ErrorIs(t, err, ErrInvalidMood)
 	})
@@ -106,21 +113,26 @@ func TestEventTemplateRepository(t *testing.T) {
 
 	t.Run("UpdateTemplate clears optional fields", func(t *testing.T) {
 		timeOfDay := "14:00"
-		mood := "chill"
 		amount := 1
 		unit := RsvpDeadlineUnitDay
 		payload := minimalPayload("Has optional fields", "🎲", "Board games")
 		payload.TimeOfDay = &timeOfDay
-		payload.Mood = &mood
+		payload.Mood = []string{"chill"}
 		payload.RsvpDeadlineAmount = &amount
 		payload.RsvpDeadlineUnit = &unit
 		created, err := repo.CreateTemplate(ctx, payload, owner.Id)
 		require.NoError(t, err)
 
-		updated, err := repo.UpdateTemplate(ctx, UpdateEventTemplatePayload{ClearTimeOfDay: true, ClearMood: true, ClearRsvpDeadline: true}, created.ID, owner.Id)
+		updated, err := repo.UpdateTemplate(ctx, UpdateEventTemplatePayload{
+			ClearTimeOfDay:    true,
+			ClearIcon:         true,
+			Mood:              []string{},
+			ClearRsvpDeadline: true,
+		}, created.ID, owner.Id)
 		require.NoError(t, err)
 		require.Nil(t, updated.TimeOfDay)
-		require.Nil(t, updated.Mood)
+		require.Nil(t, updated.Icon)
+		require.Empty(t, updated.Mood)
 		require.Nil(t, updated.RsvpDeadlineAmount)
 		require.Nil(t, updated.RsvpDeadlineUnit)
 	})

@@ -31,9 +31,11 @@ export function TemplateCard({
         className,
       )}
     >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-joyna-sunflower/20 text-xl">
-        {template.icon}
-      </span>
+      {template.icon && (
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-joyna-sunflower/20 text-xl">
+          {template.icon}
+        </span>
+      )}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate font-display text-sm font-semibold text-joyna-ink">
           {template.name}

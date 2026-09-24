@@ -22,7 +22,7 @@ import {
   type Guest,
   type GuestStatus,
 } from '../../components/joyna/guest-row'
-import {DEFAULT_MOODS} from '../../components/joyna/mood-picker'
+import {DEFAULT_MOODS, type Mood} from '../../components/joyna/mood-picker'
 import {useAuth} from '../auth-context'
 import {cn} from '@/lib/utils'
 
@@ -40,7 +40,8 @@ type EventDetailData = {
   viewerInviteStatus?: ViewerInviteStatus
   viewerSpreadAllowed?: number
   viewerDeclineReason?: string
-  mood?: string
+  mood?: string[]
+  icon?: string
 }
 
 type Attendee = {
@@ -370,7 +371,9 @@ function EventDetail() {
     event.rsvpDeadline && new Date(event.rsvpDeadline).getTime() < Date.now(),
   )
   const rsvpLabel = formatRsvpDeadline(event.rsvpDeadline)
-  const mood = DEFAULT_MOODS.find((m) => m.id === event.mood)
+  const moods = (event.mood ?? [])
+    .map((id) => DEFAULT_MOODS.find((m) => m.id === id))
+    .filter((m): m is Mood => m !== undefined)
   const canAddGuests =
     !event.isOwner &&
     event.viewerInviteStatus === 'accepted' &&
@@ -408,18 +411,18 @@ function EventDetail() {
               {event.location}
             </span>
           )}
-          {rsvpClosed || rsvpLabel || mood ? (
+          {rsvpClosed || rsvpLabel || moods.length > 0 ? (
             <div className="flex flex-wrap items-center gap-2">
               {rsvpClosed ? (
                 <Pill tone="muted">🔒 RSVP closed</Pill>
               ) : (
                 rsvpLabel && <Pill tone="sunflower">{rsvpLabel}</Pill>
               )}
-              {mood && (
-                <Pill tone="periwinkle">
-                  {mood.emoji} {mood.label} mood
+              {moods.map((mood) => (
+                <Pill key={mood.id} tone="periwinkle">
+                  {mood.label} mood
                 </Pill>
-              )}
+              ))}
             </div>
           ) : null}
           <span className="flex items-center gap-2">

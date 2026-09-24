@@ -13,12 +13,13 @@ var (
 )
 
 const pgForeignKeyViolation = "23503"
+const pgCheckViolation = "23514"
 
 func GetSentinelError(err error, fallback error) error {
 	var pgError *pgconn.PgError
 	if errors.As(err, &pgError) {
 		switch {
-		case pgError.Code == pgForeignKeyViolation && pgError.ConstraintName == "event_templates_mood_fkey":
+		case pgError.Code == pgCheckViolation && pgError.ConstraintName == "event_templates_mood_check":
 			return ErrInvalidMood
 		case pgError.Code == pgForeignKeyViolation && pgError.ConstraintName == "event_templates_owner_id_fkey":
 			return ErrTemplateOwnerNotFound

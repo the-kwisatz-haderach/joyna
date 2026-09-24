@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { MoodPicker } from '../../components/joyna/mood-picker'
+import { IconPicker } from '../../components/joyna/icon-picker'
 import { LocationField, type LocationCoordinates } from '../../components/joyna/location-field'
 
 type RsvpUnit = 'day' | 'week' | 'month'
@@ -53,7 +54,8 @@ type EventDetailData = {
   location: string
   rsvpDeadline?: string
   isOwner: boolean
-  mood?: string
+  mood?: string[]
+  icon?: string
   latitude?: number
   longitude?: number
 }
@@ -68,6 +70,8 @@ function EditEvent() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
 
   const [name, setName] = useState('')
+  const [icon, setIcon] = useState('')
+  const [initialIcon, setInitialIcon] = useState('')
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [time, setTime] = useState('18:00')
   const [location, setLocation] = useState('')
@@ -75,7 +79,7 @@ function EditEvent() {
   const [hasRsvpDeadline, setHasRsvpDeadline] = useState(false)
   const [rsvpAmount, setRsvpAmount] = useState(1)
   const [rsvpUnit, setRsvpUnit] = useState<RsvpUnit>('day')
-  const [moodId, setMoodId] = useState('')
+  const [moods, setMoods] = useState<string[]>([])
   const [description, setDescription] = useState('')
 
   useEffect(() => {
@@ -100,7 +104,9 @@ function EditEvent() {
           : null,
       )
       setDescription(event.description)
-      setMoodId(event.mood ?? '')
+      setIcon(event.icon ?? '')
+      setInitialIcon(event.icon ?? '')
+      setMoods(event.mood ?? [])
       if (event.rsvpDeadline) {
         const deadline = new Date(event.rsvpDeadline)
         const diffMs = eventDate.getTime() - deadline.getTime()
@@ -146,7 +152,9 @@ function EditEvent() {
           location,
           description,
           rsvpDeadline: rsvpDeadline?.toISOString(),
-          mood: moodId || undefined,
+          mood: moods,
+          icon: icon || undefined,
+          clearIcon: !icon && Boolean(initialIcon),
           latitude: coordinates?.lat,
           longitude: coordinates?.lng,
         }),
@@ -193,6 +201,16 @@ function EditEvent() {
           Title
           <Input value={name} onChange={(e) => setName(e.target.value)} required className="h-10 rounded-xl bg-white" />
         </label>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-joyna-ink-soft">Icon</span>
+          <IconPicker value={icon} onChange={setIcon} />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-joyna-ink-soft">Mood</span>
+          <MoodPicker value={moods} onChange={setMoods} />
+        </div>
 
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-joyna-ink-soft">Date &amp; time</span>
@@ -264,11 +282,6 @@ function EditEvent() {
           coordinates={coordinates}
           onCoordinatesChange={setCoordinates}
         />
-
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-joyna-ink-soft">Mood</span>
-          <MoodPicker value={moodId} onChange={setMoodId} />
-        </div>
 
         <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">
           Description

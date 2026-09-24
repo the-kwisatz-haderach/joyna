@@ -20,7 +20,7 @@ type EventTemplate struct {
 	ID                 string            `json:"id" db:"id"`
 	OwnerID            string            `json:"ownerId" db:"owner_id"`
 	Name               string            `json:"name" db:"name"`
-	Icon               string            `json:"icon" db:"icon"`
+	Icon               *string           `json:"icon,omitempty" db:"icon"`
 	CreatedAt          time.Time         `json:"createdAt" db:"created_at"`
 	Title              string            `json:"title" db:"title"`
 	DateOption         DateOption        `json:"dateOption" db:"date_option"`
@@ -28,7 +28,7 @@ type EventTemplate struct {
 	Location           string            `json:"location" db:"location"`
 	RsvpDeadlineAmount *int              `json:"rsvpDeadlineAmount,omitempty" db:"rsvp_deadline_amount"`
 	RsvpDeadlineUnit   *RsvpDeadlineUnit `json:"rsvpDeadlineUnit,omitempty" db:"rsvp_deadline_unit"`
-	Mood               *string           `json:"mood,omitempty" db:"mood"`
+	Mood               []string          `json:"mood,omitempty" db:"mood"`
 	Description        string            `json:"description" db:"description"`
 }
 
@@ -92,7 +92,6 @@ func validTimeOfDay(s string) bool {
 
 var (
 	ErrTemplateNameRequired           = errors.New("template name must not be empty")
-	ErrTemplateIconRequired           = errors.New("template icon must not be empty")
 	ErrTemplateTitleRequired          = errors.New("template title must not be empty")
 	ErrInvalidDateOption              = errors.New("invalid date option supplied")
 	ErrInvalidRsvpDeadlineUnit        = errors.New("invalid rsvp deadline unit supplied")
@@ -118,20 +117,23 @@ func validateRsvpDeadline(amount *int, unit *RsvpDeadlineUnit) error {
 
 type CreateEventTemplatePayload struct {
 	Name               string            `json:"name"`
-	Icon               string            `json:"icon"`
+	Icon               *string           `json:"icon,omitempty"`
 	Title              string            `json:"title"`
 	DateOption         DateOption        `json:"dateOption"`
 	TimeOfDay          *string           `json:"timeOfDay,omitempty"`
 	Location           string            `json:"location"`
 	RsvpDeadlineAmount *int              `json:"rsvpDeadlineAmount,omitempty"`
 	RsvpDeadlineUnit   *RsvpDeadlineUnit `json:"rsvpDeadlineUnit,omitempty"`
-	Mood               *string           `json:"mood,omitempty"`
+	Mood               []string          `json:"mood,omitempty"`
 	Description        string            `json:"description"`
 }
 
 func (p *CreateEventTemplatePayload) Sanitize() {
 	p.Name = strings.TrimSpace(p.Name)
-	p.Icon = strings.TrimSpace(p.Icon)
+	if p.Icon != nil {
+		trimmed := strings.TrimSpace(*p.Icon)
+		p.Icon = &trimmed
+	}
 	p.Title = strings.TrimSpace(p.Title)
 	p.Location = strings.TrimSpace(p.Location)
 	p.Description = strings.TrimSpace(p.Description)
@@ -143,9 +145,6 @@ func (p *CreateEventTemplatePayload) Sanitize() {
 func (p CreateEventTemplatePayload) Validate() error {
 	if p.Name == "" {
 		return ErrTemplateNameRequired
-	}
-	if p.Icon == "" {
-		return ErrTemplateIconRequired
 	}
 	if p.Title == "" {
 		return ErrTemplateTitleRequired
@@ -163,19 +162,23 @@ func (p CreateEventTemplatePayload) Validate() error {
 }
 
 type UpdateEventTemplatePayload struct {
-	Name               *string           `json:"name,omitempty"`
-	Icon               *string           `json:"icon,omitempty"`
-	Title              *string           `json:"title,omitempty"`
-	DateOption         *DateOption       `json:"dateOption,omitempty"`
-	TimeOfDay          *string           `json:"timeOfDay,omitempty"`
+	Name       *string     `json:"name,omitempty"`
+	Icon       *string     `json:"icon,omitempty"`
+	ClearIcon  bool        `json:"clearIcon,omitempty"`
+	Title      *string     `json:"title,omitempty"`
+	DateOption *DateOption `json:"dateOption,omitempty"`
+	TimeOfDay  *string     `json:"timeOfDay,omitempty"`
 	ClearTimeOfDay     bool              `json:"clearTimeOfDay,omitempty"`
 	Location           *string           `json:"location,omitempty"`
 	RsvpDeadlineAmount *int              `json:"rsvpDeadlineAmount,omitempty"`
 	RsvpDeadlineUnit   *RsvpDeadlineUnit `json:"rsvpDeadlineUnit,omitempty"`
 	ClearRsvpDeadline  bool              `json:"clearRsvpDeadline,omitempty"`
-	Mood               *string           `json:"mood,omitempty"`
-	ClearMood          bool              `json:"clearMood,omitempty"`
-	Description        *string           `json:"description,omitempty"`
+	// Mood is nil when omitted and a non-nil, possibly-empty slice when the
+	// client sent an explicit mood list (including clearing every mood) —
+	// encoding/json distinguishes an absent key from `"mood": []` this way,
+	// so no ClearMood flag is needed anymore now that mood is a list.
+	Mood        []string `json:"mood,omitempty"`
+	Description *string  `json:"description,omitempty"`
 }
 
 func (p *UpdateEventTemplatePayload) Sanitize() {
@@ -205,9 +208,6 @@ func (p UpdateEventTemplatePayload) Validate() error {
 	if p.Name != nil && *p.Name == "" {
 		return ErrTemplateNameRequired
 	}
-	if p.Icon != nil && *p.Icon == "" {
-		return ErrTemplateIconRequired
-	}
 	if p.Title != nil && *p.Title == "" {
 		return ErrTemplateTitleRequired
 	}
@@ -235,38 +235,38 @@ func DefaultTemplates() []CreateEventTemplatePayload {
 	return []CreateEventTemplatePayload{
 		{
 			Name:       "Afterwork today",
-			Icon:       "🍻",
+			Icon:       strPtr("🍻"),
 			Title:      "Afterwork drinks",
 			DateOption: DateOptionToday,
 			TimeOfDay:  strPtr("17:00"),
 			Location:   "Ye ol' pub",
-			Mood:       strPtr("chill"),
+			Mood:       []string{"chill"},
 		},
 		{
 			Name:       "Weekend board games",
-			Icon:       "🎲",
+			Icon:       strPtr("🎲"),
 			Title:      "Board game night",
 			DateOption: DateOptionSaturday,
 			TimeOfDay:  strPtr("14:00"),
-			Mood:       strPtr("competitive"),
+			Mood:       []string{"competitive"},
 		},
 		{
 			Name:               "Birthday party",
-			Icon:               "🥳",
+			Icon:               strPtr("🥳"),
 			Title:              "Birthday party",
 			DateOption:         DateOptionNone,
 			RsvpDeadlineAmount: intPtr(1),
 			RsvpDeadlineUnit:   rsvpUnitPtr(RsvpDeadlineUnitWeek),
-			Mood:               strPtr("party"),
+			Mood:               []string{"party"},
 		},
 		{
 			Name:       "Movie night",
-			Icon:       "🍿",
+			Icon:       strPtr("🍿"),
 			Title:      "Movie night",
 			DateOption: DateOptionNone,
 			TimeOfDay:  strPtr("evening"),
 			Location:   "at home",
-			Mood:       strPtr("cozy"),
+			Mood:       []string{"cozy"},
 		},
 	}
 }

@@ -57,6 +57,7 @@ function TemplateForm() {
 
   const [name, setName] = useState('')
   const [icon, setIcon] = useState('')
+  const [initialIcon, setInitialIcon] = useState('')
   const [title, setTitle] = useState('')
   const [dateOption, setDateOption] = useState<TemplateDateOption>('none')
   const [timeOfDay, setTimeOfDay] = useState('')
@@ -65,7 +66,7 @@ function TemplateForm() {
   const [hasRsvpDeadline, setHasRsvpDeadline] = useState(false)
   const [rsvpAmount, setRsvpAmount] = useState(1)
   const [rsvpUnit, setRsvpUnit] = useState<TemplateRsvpDeadlineUnit>('day')
-  const [moodId, setMoodId] = useState('')
+  const [moods, setMoods] = useState<string[]>([])
   const [description, setDescription] = useState('')
 
   function handleRemoveRsvpDeadline() {
@@ -86,7 +87,8 @@ function TemplateForm() {
           return
         }
         setName(found.name)
-        setIcon(found.icon)
+        setIcon(found.icon ?? '')
+        setInitialIcon(found.icon ?? '')
         setTitle(found.title)
         setDateOption(found.dateOption)
         setTimeOfDay(found.timeOfDay ?? '')
@@ -94,7 +96,7 @@ function TemplateForm() {
         setHasRsvpDeadline(Boolean(found.rsvpDeadlineAmount && found.rsvpDeadlineUnit))
         setRsvpAmount(found.rsvpDeadlineAmount ?? 1)
         setRsvpUnit(found.rsvpDeadlineUnit ?? 'day')
-        setMoodId(found.mood ?? '')
+        setMoods(found.mood ?? [])
         setDescription(found.description)
       })
       .catch(() => {
@@ -115,11 +117,16 @@ function TemplateForm() {
     try {
       const body: Record<string, unknown> = {
         name,
-        icon,
         title,
         dateOption,
         location,
         description,
+        mood: moods,
+      }
+      if (icon) {
+        body.icon = icon
+      } else if (isEditing && initialIcon) {
+        body.clearIcon = true
       }
       if (timeOfDay.trim()) {
         body.timeOfDay = timeOfDay.trim()
@@ -131,11 +138,6 @@ function TemplateForm() {
         body.rsvpDeadlineUnit = rsvpUnit
       } else if (isEditing) {
         body.clearRsvpDeadline = true
-      }
-      if (moodId) {
-        body.mood = moodId
-      } else if (isEditing) {
-        body.clearMood = true
       }
 
       const response = await fetch(
@@ -216,6 +218,11 @@ function TemplateForm() {
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-joyna-ink-soft">Icon</span>
           <IconPicker value={icon} onChange={setIcon} />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-joyna-ink-soft">Mood</span>
+          <MoodPicker value={moods} onChange={setMoods} />
         </div>
 
         <hr className="border-joyna-border" />
@@ -313,11 +320,6 @@ function TemplateForm() {
               Add deadline
             </Button>
           )}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-joyna-ink-soft">Mood</span>
-          <MoodPicker value={moodId} onChange={setMoodId} />
         </div>
 
         <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">

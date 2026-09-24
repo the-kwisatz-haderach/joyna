@@ -14,14 +14,14 @@ export type TemplateRsvpDeadlineUnit = 'day' | 'week' | 'month'
 export type EventTemplate = {
   id: string
   name: string
-  icon: string
+  icon?: string
   title: string
   dateOption: TemplateDateOption
   timeOfDay?: string
   location: string
   rsvpDeadlineAmount?: number
   rsvpDeadlineUnit?: TemplateRsvpDeadlineUnit
-  mood?: string
+  mood?: string[]
   description: string
 }
 
@@ -85,8 +85,8 @@ function formatRsvpDeadlineLabel(amount: number, unit: TemplateRsvpDeadlineUnit)
 /** Short " · "-joined summary shown on a template card, e.g. "Chill · Saturday, 14:00 · Ye ol' pub". */
 export function summarizeTemplate(template: EventTemplate): string {
   const parts: string[] = []
-  if (template.mood) {
-    parts.push(template.mood.charAt(0).toUpperCase() + template.mood.slice(1))
+  if (template.mood && template.mood.length > 0) {
+    parts.push(template.mood.map((mood) => mood.charAt(0).toUpperCase() + mood.slice(1)).join(', '))
   }
 
   const dateLabel = template.dateOption !== 'none' ? DATE_OPTION_LABELS[template.dateOption] : undefined

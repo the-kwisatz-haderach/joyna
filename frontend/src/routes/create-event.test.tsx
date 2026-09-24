@@ -193,7 +193,7 @@ describe('CreateEvent', () => {
       dateOption: 'today',
       timeOfDay: '17:00',
       location: "Ye ol' pub",
-      mood: 'chill',
+      mood: ['chill'],
       description: 'Casual after-work hangout.',
     })
 
@@ -215,7 +215,7 @@ describe('CreateEvent', () => {
       location: '',
       rsvpDeadlineAmount: 1,
       rsvpDeadlineUnit: 'week',
-      mood: 'party',
+      mood: ['party'],
       description: '',
     })
 

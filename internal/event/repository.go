@@ -19,10 +19,18 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 }
 
 func (r *Repository) CreateEvent(ctx context.Context, payload CreateEventPayload, ownerID string) (Event, error) {
+	// The mood column is NOT NULL (DEFAULT '{}'), but pgx encodes a nil Go
+	// slice as SQL NULL rather than an empty array — so a caller that leaves
+	// Mood unset (e.g. a repository test using the payload's zero value)
+	// must still produce a valid empty array here.
+	mood := payload.Mood
+	if mood == nil {
+		mood = []Mood{}
+	}
 	rows, err := r.pool.Query(ctx,
-		`INSERT INTO events (owner_id, name, description, date, location, rsvp_deadline, type, default_spread_allowed, mood, latitude, longitude)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-		ownerID, payload.Name, payload.Description, payload.Date, payload.Location, payload.RsvpDeadline, payload.Type, payload.DefaultSpreadAllowed, payload.Mood, payload.Latitude, payload.Longitude,
+		`INSERT INTO events (owner_id, name, description, date, location, rsvp_deadline, type, default_spread_allowed, mood, icon, latitude, longitude)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+		ownerID, payload.Name, payload.Description, payload.Date, payload.Location, payload.RsvpDeadline, payload.Type, payload.DefaultSpreadAllowed, mood, payload.Icon, payload.Latitude, payload.Longitude,
 	)
 	if err != nil {
 		return Event{}, fmt.Errorf("inserting event: %w", err)
@@ -51,6 +59,10 @@ func (r *Repository) DeleteEvent(ctx context.Context, eventID, ownerID string) e
 }
 
 func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate UpdateEventPayload, eventID, ownerID string) (Event, error) {
+	// ClearIcon lets a caller explicitly null out the icon; a nil Icon on its
+	// own is ambiguous with "field omitted" the way plain pointer fields are
+	// everywhere else in this codebase (see UpdateEventPayload's Icon/ClearIcon
+	// doc comment).
 	var event Event
 	rows, err := r.pool.Query(ctx,
 		`UPDATE events SET
@@ -62,11 +74,12 @@ func (r *Repository) UpdateEvent(ctx context.Context, eventUpdate UpdateEventPay
 			type = COALESCE($8, type),
 			default_spread_allowed = COALESCE($9, default_spread_allowed),
 			mood = COALESCE($10, mood),
-			latitude = COALESCE($11, latitude),
-			longitude = COALESCE($12, longitude)
+			icon = CASE WHEN $11 THEN NULL ELSE COALESCE($12, icon) END,
+			latitude = COALESCE($13, latitude),
+			longitude = COALESCE($14, longitude)
 		WHERE id = $1 AND owner_id = $2
 		RETURNING *`,
-		eventID, ownerID, eventUpdate.Name, eventUpdate.Description, eventUpdate.Date, eventUpdate.Location, eventUpdate.RsvpDeadline, eventUpdate.Type, eventUpdate.DefaultSpreadAllowed, eventUpdate.Mood, eventUpdate.Latitude, eventUpdate.Longitude,
+		eventID, ownerID, eventUpdate.Name, eventUpdate.Description, eventUpdate.Date, eventUpdate.Location, eventUpdate.RsvpDeadline, eventUpdate.Type, eventUpdate.DefaultSpreadAllowed, eventUpdate.Mood, eventUpdate.ClearIcon, eventUpdate.Icon, eventUpdate.Latitude, eventUpdate.Longitude,
 	)
 	if err != nil {
 		return Event{}, fmt.Errorf("updating event: %w", err)
