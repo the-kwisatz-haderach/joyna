@@ -11,10 +11,8 @@ type NetworkConnection = {
   contactId: string
   contactName: string
   contactEmail: string
-  isFavorite: boolean
   groupId?: string
   groupName?: string
-  groupIsFavorite?: boolean
   eventsTogetherCount: number
 }
 
@@ -52,18 +50,6 @@ function SearchIcon() {
   )
 }
 
-function FavoriteBadge() {
-  return (
-    <span
-      aria-label="favorite"
-      title="Favorite"
-      className="text-joyna-sunflower-dark"
-    >
-      ★
-    </span>
-  )
-}
-
 function eventsTogetherLabel(count: number): string {
   return `${count} ${count === 1 ? 'event' : 'events'} together`
 }
@@ -83,7 +69,7 @@ function matchesQuery(connection: NetworkConnection, query: string): boolean {
 function groupConnections(connections: NetworkConnection[]) {
   const groups = new Map<
     string,
-    {name: string; isFavorite: boolean; members: NetworkConnection[]}
+    {name: string; members: NetworkConnection[]}
   >()
 
   for (const connection of connections) {
@@ -94,7 +80,6 @@ function groupConnections(connections: NetworkConnection[]) {
     } else {
       groups.set(key, {
         name: connection.groupName ?? DEFAULT_GROUP_NAME,
-        isFavorite: connection.groupIsFavorite ?? false,
         members: [connection],
       })
     }
@@ -156,7 +141,6 @@ function ContactRow({contact}: {contact: NetworkConnection}) {
           <GuestAvatar name={contact.contactName} />
           <span className="flex items-center gap-1.5 truncate font-display text-sm font-semibold text-joyna-ink">
             {contact.contactName}
-            {contact.isFavorite && <FavoriteBadge />}
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-1.5 text-xs text-joyna-ink-faint">
@@ -186,7 +170,6 @@ function NetworkGroups({
           <div className="flex items-center justify-between gap-3">
             <h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wide text-joyna-ink-faint uppercase">
               {group.name}
-              {group.isFavorite && <FavoriteBadge />}
             </h3>
             {index === 0 && addByEmailSlot}
           </div>
