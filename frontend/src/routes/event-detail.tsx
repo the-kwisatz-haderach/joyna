@@ -243,8 +243,9 @@ function EventDetail() {
     return attendees.map((attendee) => {
       const isViewer = attendee.userId === user?.id
       const name = isViewer ? 'You' : attendee.name
+      const avatarName = isViewer ? attendee.name : undefined
       if (attendee.isOwner) {
-        return {id: attendee.userId, name, isHost: true}
+        return {id: attendee.userId, name, avatarName, isHost: true}
       }
       const connection = connections.find(
         (c) => c.contactId === attendee.userId,
@@ -252,6 +253,7 @@ function EventDetail() {
       return {
         id: attendee.userId,
         name,
+        avatarName,
         status: inviteStatusToGuestStatus(attendee.status),
         group: isViewer
           ? undefined
@@ -393,7 +395,7 @@ function EventDetail() {
           {event.icon && <span aria-hidden="true">{event.icon}</span>}
           {event.name}
         </h1>
-        <div className="mt-3 flex flex-col gap-3 text-sm text-joyna-ink">
+        <div className="mt-4 flex flex-col gap-4 text-sm text-joyna-ink">
           <span className="flex items-center gap-2">
             <HugeiconsIcon
               icon={Calendar01Icon}

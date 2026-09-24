@@ -43,4 +43,19 @@ describe('GuestRow', () => {
     expect(screen.getByText('Grace Hopper')).toBeInTheDocument()
     expect(screen.queryByText(/plans/)).not.toBeInTheDocument()
   })
+
+  it("derives avatar initials from avatarName, not the displayed name, when both are set", () => {
+    const guest: Guest = {
+      id: '5',
+      name: 'You',
+      avatarName: 'Grace Hopper',
+      status: 'going',
+      group: 'Bandmates',
+    }
+    render(<GuestRow guest={guest} />)
+
+    expect(screen.getByText('You')).toBeInTheDocument()
+    expect(screen.getByText('GH')).toBeInTheDocument()
+    expect(screen.queryByText('Y')).not.toBeInTheDocument()
+  })
 })
