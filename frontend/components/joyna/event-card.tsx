@@ -44,7 +44,7 @@ export function formatRsvpDeadline(rsvpDeadline?: string): string | null {
 
 function eventCardTone(event: Pick<EventListItem, 'isOwner'>): string {
   if (event.isOwner) {
-    return 'border-joyna-sunflower bg-white'
+    return 'border-joyna-sunflower bg-joyna-sunflower/10'
   }
   return 'border-joyna-border bg-white'
 }
