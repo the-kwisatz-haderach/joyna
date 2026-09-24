@@ -34,13 +34,13 @@ describe("Network", () => {
     localStorage.clear()
   })
 
-  it("shows the current network grouped, with a favorite indicator and events-together counts", async () => {
+  it("shows the current network grouped, with events-together counts", async () => {
     renderNetwork()
 
     const groupHeading = await screen.findByRole("heading", {
       name: /close friends/i,
     })
-    expect(within(groupHeading).getByLabelText("favorite")).toBeInTheDocument()
+    expect(within(groupHeading).queryByLabelText("favorite")).not.toBeInTheDocument()
     expect(screen.getByText("Alan Turing")).toBeInTheDocument()
     expect(screen.getByText("4 events together")).toBeInTheDocument()
 
