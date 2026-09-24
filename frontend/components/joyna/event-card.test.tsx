@@ -30,7 +30,7 @@ describe('EventCard', () => {
     const link = renderCard(makeEvent({ isOwner: true })).getByRole('link')
 
     expect(within(link).getByLabelText('Hosting')).toBeInTheDocument()
-    expect(link).toHaveClass('border-joyna-sunflower', 'bg-white')
+    expect(link).toHaveClass('border-joyna-sunflower', 'bg-joyna-sunflower/10')
   })
 
   it('shows a green checkmark for an accepted invite, with the default border and white background', () => {
