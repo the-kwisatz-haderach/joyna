@@ -1,11 +1,11 @@
 import {Link} from 'react-router'
 import {HugeiconsIcon} from '@hugeicons/react'
-import {ArrowRight01Icon} from '@hugeicons/core-free-icons'
+import {ArrowRight01Icon, Tick02Icon, Cancel01Icon} from '@hugeicons/core-free-icons'
 import {format, isSameYear} from 'date-fns'
 
 import {cn} from '@/lib/utils'
 import {Pill} from './pill'
-import {HostBadge} from './host-badge'
+import {CrownIcon} from './host-badge'
 
 export type EventInviteStatus = 'pending' | 'accepted' | 'declined'
 
@@ -42,19 +42,57 @@ export function formatRsvpDeadline(rsvpDeadline?: string): string | null {
   return `RSVP in ${diffDays} day${diffDays === 1 ? '' : 's'}`
 }
 
-function eventCardTone(
-  event: Pick<EventListItem, 'isOwner' | 'viewerInviteStatus'>,
-): string {
+function eventCardTone(event: Pick<EventListItem, 'isOwner'>): string {
   if (event.isOwner) {
     return 'border-joyna-sunflower bg-white'
   }
+  return 'border-joyna-border bg-white'
+}
+
+/** Right-side circle: crown for the host, otherwise the viewer's RSVP state (falling back to the "view" arrow). */
+function EventCardStatusIcon({
+  event,
+}: {
+  event: Pick<EventListItem, 'isOwner' | 'viewerInviteStatus'>
+}) {
+  if (event.isOwner) {
+    return (
+      <span
+        role="img"
+        aria-label="Hosting"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-joyna-sunflower bg-joyna-sunflower/10 text-joyna-sunflower-dark"
+      >
+        <CrownIcon className="h-4 w-4" />
+      </span>
+    )
+  }
   if (event.viewerInviteStatus === 'accepted') {
-    return 'border-joyna-mint bg-joyna-mint/10'
+    return (
+      <span
+        role="img"
+        aria-label="Attending"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-joyna-border-strong text-joyna-mint"
+      >
+        <HugeiconsIcon icon={Tick02Icon} className="h-4 w-4" strokeWidth={2.5} />
+      </span>
+    )
   }
   if (event.viewerInviteStatus === 'declined') {
-    return 'border-joyna-bubblegum bg-joyna-bubblegum/10'
+    return (
+      <span
+        role="img"
+        aria-label="Not attending"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-joyna-border-strong text-joyna-red"
+      >
+        <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" strokeWidth={2.5} />
+      </span>
+    )
   }
-  return 'border-joyna-border bg-white'
+  return (
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-joyna-border-strong text-joyna-ink-soft">
+      <HugeiconsIcon icon={ArrowRight01Icon} className="h-4 w-4" strokeWidth={2} />
+    </span>
+  )
 }
 
 export function EventCard({
@@ -83,7 +121,6 @@ export function EventCard({
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-center gap-1.5 font-display text-sm font-semibold text-joyna-ink">
           <span className="truncate">{event.name}</span>
-          {event.isOwner ? <HostBadge label="Hosting" /> : null}
         </span>
         <div className="flex items-center gap-1.5 text-xs">
           <span className="text-joyna-ink-soft min-w-fit">
@@ -104,13 +141,7 @@ export function EventCard({
           </Pill>
         )}
       </div>
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-joyna-border-strong text-joyna-ink-soft">
-        <HugeiconsIcon
-          icon={ArrowRight01Icon}
-          className="h-4 w-4"
-          strokeWidth={2}
-        />
-      </span>
+      <EventCardStatusIcon event={event} />
     </Link>
   )
 }

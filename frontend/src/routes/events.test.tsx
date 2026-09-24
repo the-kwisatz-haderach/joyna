@@ -64,21 +64,22 @@ describe('Events', () => {
     expect(link).toHaveAttribute('href', '/events/c1a2b3c4-1111-4a1a-8a1a-000000000002')
   })
 
-  it('styles an accepted invite card with the attending tone', async () => {
+  it('shows a green checkmark for an accepted invite, with the default card tone', async () => {
     loginAsMockUser()
     renderEvents()
 
     const link = await screen.findByRole('link', { name: /quiz night/i })
-    expect(within(link).queryByLabelText('Attending')).not.toBeInTheDocument()
-    expect(link).toHaveClass('border-joyna-mint', 'bg-joyna-mint/10')
+    expect(within(link).getByLabelText('Attending')).toBeInTheDocument()
+    expect(link).toHaveClass('border-joyna-border', 'bg-white')
   })
 
-  it('styles a declined invite card with the not-attending tone', async () => {
+  it('shows a red cross for a declined invite, with the default card tone', async () => {
     loginAsMockUser()
     renderEvents()
 
     const link = await screen.findByRole('link', { name: /new year kickoff/i })
-    expect(link).toHaveClass('border-joyna-bubblegum', 'bg-joyna-bubblegum/10')
+    expect(within(link).getByLabelText('Not attending')).toBeInTheDocument()
+    expect(link).toHaveClass('border-joyna-border', 'bg-white')
   })
 
   it('shows only hosted events when the Hosting filter is selected', async () => {
