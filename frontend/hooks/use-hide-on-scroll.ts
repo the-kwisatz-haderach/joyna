@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import {useEffect, useRef, useState} from 'react'
 
-const SHOW_NEAR_TOP_THRESHOLD = 16
+const SHOW_NEAR_TOP_THRESHOLD = 24
 const DIRECTION_THRESHOLD = 8
 
 /**
@@ -31,7 +31,7 @@ export function useHideOnScroll(): boolean {
       lastScrollY.current = currentScrollY
     }
 
-    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('scroll', handleScroll, {passive: true})
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 

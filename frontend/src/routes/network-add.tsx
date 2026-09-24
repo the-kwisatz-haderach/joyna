@@ -113,7 +113,7 @@ function NetworkAdd() {
           setStatus('error')
         }
       }
-    }, 400)
+    }, 1500)
 
     return () => {
       cancelled = true
