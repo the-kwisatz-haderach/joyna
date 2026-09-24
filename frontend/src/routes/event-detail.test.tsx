@@ -56,6 +56,11 @@ describe('EventDetail', () => {
     expect(await screen.findByText('You')).toBeInTheDocument()
     expect(await screen.findByText('Margaret Hamilton')).toBeInTheDocument()
     expect(screen.queryByText('Ada Lovelace')).not.toBeInTheDocument()
+
+    // The viewer's row is labeled "You", but their avatar should still show
+    // initials derived from their real name ("Ada Lovelace" -> "AL"), not "Y".
+    expect(await screen.findByText('AL')).toBeInTheDocument()
+    expect(screen.queryByText('Y')).not.toBeInTheDocument()
   })
 
   it("prefixes the event title with the event's icon when one is set", async () => {

@@ -21,6 +21,12 @@ export interface Guest {
   /** Optional decline reason, shown under the name for not_attending guests. */
   reason?: string
   avatarSrc?: string
+  /**
+   * Name to derive avatar initials from, when it differs from the
+   * displayed `name` (e.g. the viewer's own row shows "You" but the
+   * avatar should still reflect their real name). Defaults to `name`.
+   */
+  avatarName?: string
 }
 
 interface GuestRowProps {
@@ -119,7 +125,7 @@ export function GuestRow({
       )}
     >
       <GuestAvatar
-        name={guest.name}
+        name={guest.avatarName ?? guest.name}
         variant={avatarVariant}
         src={guest.avatarSrc}
       />
