@@ -44,6 +44,14 @@ type CreatedEvent = {
   id: string
 }
 
+function TemplateSparkleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className={className}>
+      <path d="M9.94 15.5a2 2 0 0 0-1.44-1.44L2.36 12.48a.5.5 0 0 1 0-.96l6.14-1.58a2 2 0 0 0 1.44-1.44L11.52 2.36a.5.5 0 0 1 .96 0l1.58 6.14a2 2 0 0 0 1.44 1.44l6.14 1.58a.5.5 0 0 1 0 .96l-6.14 1.58a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z" />
+    </svg>
+  )
+}
+
 function CreateEvent() {
   const navigate = useNavigate()
   const { user } = useAuth()
@@ -127,12 +135,13 @@ function CreateEvent() {
 
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-6 px-5 py-6 font-body">
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-3">
         <h1 className="font-display text-xl font-semibold text-joyna-ink">Create event</h1>
         {template && (
-          <p className="text-sm text-joyna-ink-faint">
-            {template.icon} Using the &ldquo;{template.name}&rdquo; template
-          </p>
+          <div className="flex items-center gap-2 rounded-full border border-dashed border-joyna-periwinkle bg-joyna-periwinkle/10 px-4 py-2.5 text-sm font-medium text-joyna-periwinkle-dark">
+            <TemplateSparkleIcon className="h-4 w-4 shrink-0" />
+            Using &ldquo;{template.name}&rdquo; template
+          </div>
         )}
       </div>
 

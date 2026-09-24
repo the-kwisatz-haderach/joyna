@@ -202,7 +202,7 @@ describe('CreateEvent', () => {
     expect(screen.getByPlaceholderText(/search for a place/i)).toHaveValue("Ye ol' pub")
     expect(screen.getByLabelText(/description/i)).toHaveValue('Casual after-work hangout.')
     expect(screen.getByRole('button', { name: /chill/i })).toHaveClass('border-joyna-periwinkle')
-    expect(screen.getByText(/using the .afterwork today. template/i)).toBeInTheDocument()
+    expect(screen.getByText(/using .afterwork today. template/i)).toBeInTheDocument()
   })
 
   it('pre-fills the RSVP deadline amount/unit from the template', () => {
