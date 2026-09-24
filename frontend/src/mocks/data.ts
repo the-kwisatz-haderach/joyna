@@ -18,7 +18,8 @@ export type MockEvent = {
   rsvpDeadline?: string
   type: string
   defaultSpreadAllowed: number
-  mood?: string
+  mood?: string[]
+  icon?: string
   latitude?: number
   longitude?: number
 }
@@ -40,7 +41,7 @@ export type MockEventTemplate = {
   id: string
   ownerId: string
   name: string
-  icon: string
+  icon?: string
   createdAt: string
   title: string
   dateOption: TemplateDateOption
@@ -48,7 +49,7 @@ export type MockEventTemplate = {
   location: string
   rsvpDeadlineAmount?: number
   rsvpDeadlineUnit?: TemplateRsvpDeadlineUnit
-  mood?: string
+  mood?: string[]
   description: string
 }
 
@@ -140,7 +141,7 @@ export function createDefaultEventTemplates(ownerId: string): MockEventTemplate[
       dateOption: 'today',
       timeOfDay: '17:00',
       location: "Ye ol' pub",
-      mood: 'chill',
+      mood: ['chill'],
       description: '',
     },
     {
@@ -153,7 +154,7 @@ export function createDefaultEventTemplates(ownerId: string): MockEventTemplate[
       dateOption: 'saturday',
       timeOfDay: '14:00',
       location: '',
-      mood: 'competitive',
+      mood: ['competitive'],
       description: '',
     },
     {
@@ -167,7 +168,7 @@ export function createDefaultEventTemplates(ownerId: string): MockEventTemplate[
       location: '',
       rsvpDeadlineAmount: 1,
       rsvpDeadlineUnit: 'week',
-      mood: 'party',
+      mood: ['party'],
       description: '',
     },
     {
@@ -180,7 +181,7 @@ export function createDefaultEventTemplates(ownerId: string): MockEventTemplate[
       dateOption: 'none',
       timeOfDay: 'evening',
       location: 'at home',
-      mood: 'cozy',
+      mood: ['cozy'],
       description: '',
     },
   ]
@@ -200,7 +201,7 @@ export const mockEventTemplates: MockEventTemplate[] = [
     dateOption: 'today',
     timeOfDay: '17:00',
     location: "Ye ol' pub",
-    mood: 'chill',
+    mood: ['chill'],
     description: '',
   },
   {
@@ -213,7 +214,7 @@ export const mockEventTemplates: MockEventTemplate[] = [
     dateOption: 'saturday',
     timeOfDay: '14:00',
     location: '',
-    mood: 'competitive',
+    mood: ['competitive'],
     description: '',
   },
   {
@@ -227,7 +228,7 @@ export const mockEventTemplates: MockEventTemplate[] = [
     location: '',
     rsvpDeadlineAmount: 1,
     rsvpDeadlineUnit: 'week',
-    mood: 'party',
+    mood: ['party'],
     description: '',
   },
   {
@@ -240,7 +241,7 @@ export const mockEventTemplates: MockEventTemplate[] = [
     dateOption: 'none',
     timeOfDay: 'evening',
     location: 'at home',
-    mood: 'cozy',
+    mood: ['cozy'],
     description: '',
   },
 ]
@@ -257,7 +258,8 @@ export const mockEvents: MockEvent[] = [
     rsvpDeadline: daysFromNow(25),
     type: 'party',
     defaultSpreadAllowed: 2,
-    mood: 'party',
+    mood: ['party'],
+    icon: '🎉',
   },
   {
     id: 'c1a2b3c4-1111-4a1a-8a1a-000000000002',
@@ -269,6 +271,7 @@ export const mockEvents: MockEvent[] = [
     location: "Ada's place",
     type: 'gathering',
     defaultSpreadAllowed: 1,
+    icon: '🎲',
   },
   {
     id: 'c1a2b3c4-1111-4a1a-8a1a-000000000004',
@@ -307,6 +310,7 @@ export const mockEvents: MockEvent[] = [
     location: 'The Library Bar',
     type: 'gathering',
     defaultSpreadAllowed: 0,
+    icon: '🧠',
   },
   {
     id: 'c1a2b3c4-1111-4a1a-8a1a-000000000006',
@@ -318,7 +322,8 @@ export const mockEvents: MockEvent[] = [
     location: "Ada's rooftop",
     type: 'party',
     defaultSpreadAllowed: 1,
-    mood: 'chill',
+    mood: ['chill', 'cozy'],
+    icon: '🍿',
   },
   {
     id: 'c1a2b3c4-1111-4a1a-8a1a-000000000007',
@@ -353,7 +358,8 @@ export const mockEvents: MockEvent[] = [
     location: 'Backyard',
     type: 'party',
     defaultSpreadAllowed: 2,
-    mood: 'party',
+    mood: ['party'],
+    icon: '🍗',
   },
   {
     id: 'c1a2b3c4-1111-4a1a-8a1a-000000000010',

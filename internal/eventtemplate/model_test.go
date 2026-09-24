@@ -9,7 +9,7 @@ import (
 func validPayload() CreateEventTemplatePayload {
 	return CreateEventTemplatePayload{
 		Name:       "Afterwork today",
-		Icon:       "🍻",
+		Icon:       strPtr("🍻"),
 		Title:      "Afterwork drinks",
 		DateOption: DateOptionNone,
 	}
@@ -18,7 +18,7 @@ func validPayload() CreateEventTemplatePayload {
 func TestCreateEventTemplatePayload_Sanitize_TrimsFieldsAndDefaultsOptions(t *testing.T) {
 	payload := CreateEventTemplatePayload{
 		Name:        "  Afterwork today  ",
-		Icon:        "  🍻  ",
+		Icon:        strPtr("  🍻  "),
 		Title:       "  Afterwork drinks  ",
 		Location:    "  Ye ol' pub  ",
 		Description: "  chill  ",
@@ -26,7 +26,7 @@ func TestCreateEventTemplatePayload_Sanitize_TrimsFieldsAndDefaultsOptions(t *te
 	payload.Sanitize()
 
 	require.Equal(t, "Afterwork today", payload.Name)
-	require.Equal(t, "🍻", payload.Icon)
+	require.Equal(t, "🍻", *payload.Icon)
 	require.Equal(t, "Afterwork drinks", payload.Title)
 	require.Equal(t, "Ye ol' pub", payload.Location)
 	require.Equal(t, "chill", payload.Description)
@@ -45,10 +45,10 @@ func TestCreateEventTemplatePayload_Validate_MissingName(t *testing.T) {
 	require.ErrorIs(t, payload.Validate(), ErrTemplateNameRequired)
 }
 
-func TestCreateEventTemplatePayload_Validate_MissingIcon(t *testing.T) {
+func TestCreateEventTemplatePayload_Validate_NoIcon(t *testing.T) {
 	payload := validPayload()
-	payload.Icon = ""
-	require.ErrorIs(t, payload.Validate(), ErrTemplateIconRequired)
+	payload.Icon = nil
+	require.NoError(t, payload.Validate())
 }
 
 func TestCreateEventTemplatePayload_Validate_MissingTitle(t *testing.T) {

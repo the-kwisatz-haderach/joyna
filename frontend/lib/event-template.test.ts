@@ -62,24 +62,29 @@ function template(overrides: Partial<EventTemplate> = {}): EventTemplate {
 describe('summarizeTemplate', () => {
   it('joins mood, date+time and location', () => {
     const summary = summarizeTemplate(
-      template({ mood: 'chill', dateOption: 'today', timeOfDay: '17:00', location: "Ye ol' pub" }),
+      template({ mood: ['chill'], dateOption: 'today', timeOfDay: '17:00', location: "Ye ol' pub" }),
     )
     expect(summary).toBe("Chill · today, 17:00 · Ye ol' pub")
   })
 
+  it('joins multiple moods with a comma', () => {
+    const summary = summarizeTemplate(template({ mood: ['chill', 'cozy'], location: 'at home' }))
+    expect(summary).toBe('Chill, Cozy · at home')
+  })
+
   it('falls back to the RSVP deadline when there is no date', () => {
-    const summary = summarizeTemplate(template({ mood: 'party', rsvpDeadlineAmount: 1, rsvpDeadlineUnit: 'week' }))
+    const summary = summarizeTemplate(template({ mood: ['party'], rsvpDeadlineAmount: 1, rsvpDeadlineUnit: 'week' }))
     expect(summary).toBe('Party · RSVP 1 week before')
   })
 
   it('pluralizes the RSVP deadline unit when the amount is not 1', () => {
-    const summary = summarizeTemplate(template({ mood: 'party', rsvpDeadlineAmount: 2, rsvpDeadlineUnit: 'month' }))
+    const summary = summarizeTemplate(template({ mood: ['party'], rsvpDeadlineAmount: 2, rsvpDeadlineUnit: 'month' }))
     expect(summary).toBe('Party · RSVP 2 months before')
   })
 
   it('shows a bare time when there is no date option but a timeOfDay is set', () => {
     const summary = summarizeTemplate(
-      template({ mood: 'cozy', timeOfDay: 'evening', location: 'at home' }),
+      template({ mood: ['cozy'], timeOfDay: 'evening', location: 'at home' }),
     )
     expect(summary).toBe('Cozy · evening · at home')
   })

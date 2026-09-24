@@ -38,10 +38,18 @@ func (r *Repository) ListTemplates(ctx context.Context, ownerID string) ([]Event
 }
 
 func (r *Repository) CreateTemplate(ctx context.Context, payload CreateEventTemplatePayload, ownerID string) (EventTemplate, error) {
+	// The mood column is NOT NULL (DEFAULT '{}'), but pgx encodes a nil Go
+	// slice as SQL NULL rather than an empty array — so a caller that leaves
+	// Mood unset (e.g. a repository test using the payload's zero value)
+	// must still produce a valid empty array here.
+	mood := payload.Mood
+	if mood == nil {
+		mood = []string{}
+	}
 	rows, err := r.pool.Query(ctx,
 		`INSERT INTO event_templates (owner_id, name, icon, title, date_option, time_of_day, location, rsvp_deadline_amount, rsvp_deadline_unit, mood, description)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-		ownerID, payload.Name, payload.Icon, payload.Title, payload.DateOption, payload.TimeOfDay, payload.Location, payload.RsvpDeadlineAmount, payload.RsvpDeadlineUnit, payload.Mood, payload.Description,
+		ownerID, payload.Name, payload.Icon, payload.Title, payload.DateOption, payload.TimeOfDay, payload.Location, payload.RsvpDeadlineAmount, payload.RsvpDeadlineUnit, mood, payload.Description,
 	)
 	if err != nil {
 		return EventTemplate{}, fmt.Errorf("inserting event template: %w", err)
@@ -60,23 +68,22 @@ func (r *Repository) UpdateTemplate(ctx context.Context, templateUpdate UpdateEv
 	rows, err := r.pool.Query(ctx,
 		`UPDATE event_templates SET
 			name = COALESCE($3, name),
-			icon = COALESCE($4, icon),
+			icon = CASE WHEN $15 THEN NULL ELSE COALESCE($4, icon) END,
 			title = COALESCE($5, title),
 			date_option = COALESCE($6, date_option),
 			time_of_day = CASE WHEN $9 THEN NULL ELSE COALESCE($7, time_of_day) END,
 			location = COALESCE($8, location),
 			rsvp_deadline_amount = CASE WHEN $10 THEN NULL ELSE COALESCE($11, rsvp_deadline_amount) END,
 			rsvp_deadline_unit = CASE WHEN $10 THEN NULL ELSE COALESCE($12, rsvp_deadline_unit) END,
-			mood = CASE WHEN $13 THEN NULL ELSE COALESCE($14, mood) END,
-			description = COALESCE($15, description)
+			mood = COALESCE($13, mood),
+			description = COALESCE($14, description)
 		WHERE id = $1 AND owner_id = $2
 		RETURNING *`,
 		templateID, ownerID,
 		templateUpdate.Name, templateUpdate.Icon, templateUpdate.Title, templateUpdate.DateOption,
 		templateUpdate.TimeOfDay, templateUpdate.Location, templateUpdate.ClearTimeOfDay,
 		templateUpdate.ClearRsvpDeadline, templateUpdate.RsvpDeadlineAmount, templateUpdate.RsvpDeadlineUnit,
-		templateUpdate.ClearMood, templateUpdate.Mood,
-		templateUpdate.Description,
+		templateUpdate.Mood, templateUpdate.Description, templateUpdate.ClearIcon,
 	)
 	if err != nil {
 		return EventTemplate{}, fmt.Errorf("updating event template: %w", err)

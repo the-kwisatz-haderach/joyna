@@ -3,43 +3,54 @@ import { cn } from "@/lib/utils";
 export interface Mood {
   id: string;
   label: string;
-  emoji: string;
 }
 
 export const DEFAULT_MOODS: Mood[] = [
-  { id: "chill", label: "Chill", emoji: "😌" },
-  { id: "fun", label: "Fun", emoji: "🎉" },
-  { id: "party", label: "Party", emoji: "🥳" },
-  { id: "cozy", label: "Cozy", emoji: "☕" },
-  { id: "adventure", label: "Adventure", emoji: "🧭" },
-  { id: "romantic", label: "Romantic", emoji: "💕" },
-  { id: "competitive", label: "Competitive", emoji: "🏆" },
-  { id: "low-key", label: "Low-key", emoji: "😴" },
+  { id: "chill", label: "Chill" },
+  { id: "fun", label: "Fun" },
+  { id: "party", label: "Party" },
+  { id: "cozy", label: "Cozy" },
+  { id: "adventure", label: "Adventure" },
+  { id: "romantic", label: "Romantic" },
+  { id: "competitive", label: "Competitive" },
+  { id: "low-key", label: "Low-key" },
+  { id: "social", label: "Social" },
+  { id: "celebration", label: "Celebration" },
+  { id: "formal", label: "Formal" },
+  { id: "learning", label: "Learning" },
 ];
 
 interface MoodPickerProps {
-  value: string;
-  onChange: (moodId: string) => void;
+  value: string[];
+  onChange: (moodIds: string[]) => void;
   moods?: Mood[];
 }
 
-/** 4-column grid, every tile the same fixed size regardless of label length. */
+/** Wrapping row of toggleable chips — any number of moods can be selected at once. */
 export function MoodPicker({ value, onChange, moods = DEFAULT_MOODS }: MoodPickerProps) {
+  function toggle(moodId: string) {
+    if (value.includes(moodId)) {
+      onChange(value.filter((id) => id !== moodId));
+    } else {
+      onChange([...value, moodId]);
+    }
+  }
+
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="flex flex-wrap gap-2">
       {moods.map((m) => {
-        const selected = m.id === value;
+        const selected = value.includes(m.id);
         return (
           <button
             key={m.id}
             type="button"
-            onClick={() => onChange(m.id)}
+            aria-pressed={selected}
+            onClick={() => toggle(m.id)}
             className={cn(
-              "flex h-[68px] flex-col items-center justify-center gap-1 rounded-2xl border-[1.5px] border-joyna-border-strong bg-white px-1 text-center text-[11px] leading-tight text-joyna-ink-soft",
-              selected && "border-joyna-periwinkle bg-joyna-periwinkle/10 font-semibold text-joyna-periwinkle-dark"
+              "rounded-full border-[1.5px] border-joyna-border-strong bg-white px-4 py-2 font-display text-sm font-semibold text-joyna-ink-soft",
+              selected && "border-joyna-periwinkle bg-joyna-periwinkle text-white"
             )}
           >
-            <span className="text-lg">{m.emoji}</span>
             {m.label}
           </button>
         );

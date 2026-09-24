@@ -913,7 +913,21 @@ components:
 
     Mood:
       type: string
-      enum: [chill, fun, party, cozy, adventure, romantic, competitive, low-key]
+      enum:
+        [
+          chill,
+          fun,
+          party,
+          cozy,
+          adventure,
+          romantic,
+          competitive,
+          low-key,
+          social,
+          celebration,
+          formal,
+          learning,
+        ]
 
     EventInviteStatus:
       type: string
@@ -964,7 +978,13 @@ components:
         defaultSpreadAllowed:
           type: integer
         mood:
-          $ref: '#/components/schemas/Mood'
+          type: array
+          items:
+            $ref: '#/components/schemas/Mood'
+        icon:
+          type: string
+          description: A single emoji. Optional.
+          nullable: true
       required:
         [
           id,
@@ -1000,7 +1020,12 @@ components:
           type: integer
           minimum: 0
         mood:
-          $ref: '#/components/schemas/Mood'
+          type: array
+          items:
+            $ref: '#/components/schemas/Mood'
+        icon:
+          type: string
+          description: A single emoji. Optional.
       required: [name, description, date, location, type, defaultSpreadAllowed]
 
     UpdateEventPayload:
@@ -1026,7 +1051,15 @@ components:
           type: integer
           minimum: 0
         mood:
-          $ref: '#/components/schemas/Mood'
+          type: array
+          items:
+            $ref: '#/components/schemas/Mood'
+        icon:
+          type: string
+          description: A single emoji.
+        clearIcon:
+          type: boolean
+          description: Set true to remove the event's icon. Ignored if `icon` is also set.
 
     EventInvite:
       type: object
