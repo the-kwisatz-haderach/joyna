@@ -162,12 +162,12 @@ func (p CreateEventTemplatePayload) Validate() error {
 }
 
 type UpdateEventTemplatePayload struct {
-	Name       *string     `json:"name,omitempty"`
-	Icon       *string     `json:"icon,omitempty"`
-	ClearIcon  bool        `json:"clearIcon,omitempty"`
-	Title      *string     `json:"title,omitempty"`
-	DateOption *DateOption `json:"dateOption,omitempty"`
-	TimeOfDay  *string     `json:"timeOfDay,omitempty"`
+	Name               *string           `json:"name,omitempty"`
+	Icon               *string           `json:"icon,omitempty"`
+	ClearIcon          bool              `json:"clearIcon,omitempty"`
+	Title              *string           `json:"title,omitempty"`
+	DateOption         *DateOption       `json:"dateOption,omitempty"`
+	TimeOfDay          *string           `json:"timeOfDay,omitempty"`
 	ClearTimeOfDay     bool              `json:"clearTimeOfDay,omitempty"`
 	Location           *string           `json:"location,omitempty"`
 	RsvpDeadlineAmount *int              `json:"rsvpDeadlineAmount,omitempty"`
