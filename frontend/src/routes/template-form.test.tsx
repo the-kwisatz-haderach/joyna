@@ -43,7 +43,7 @@ describe('TemplateForm', () => {
     loginAsMockUser()
     renderTemplateForm('/events/templates/new')
 
-    await user.type(screen.getByLabelText(/icon/i), '🎉')
+    await user.click(screen.getByRole('radio', { name: '🍻 icon' }))
     await user.type(screen.getByLabelText(/template name/i), 'Trivia night')
     await user.type(screen.getByLabelText(/event title/i), 'Trivia night')
 
@@ -59,6 +59,59 @@ describe('TemplateForm', () => {
     expect(await screen.findByDisplayValue('Afterwork today')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Afterwork drinks')).toBeInTheDocument()
     expect(screen.getByDisplayValue("Ye ol' pub")).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: '🍻 icon' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('offers a grid of emoji to pick the icon from', async () => {
+    const user = userEvent.setup()
+    loginAsMockUser()
+    renderTemplateForm('/events/templates/new')
+
+    const beerIcon = screen.getByRole('radio', { name: '🍻 icon' })
+    const cakeIcon = screen.getByRole('radio', { name: '🎂 icon' })
+    expect(beerIcon).toHaveAttribute('aria-checked', 'false')
+
+    await user.click(beerIcon)
+    expect(beerIcon).toHaveAttribute('aria-checked', 'true')
+    expect(cakeIcon).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('shows help text below the date field explaining the date is resolved on use', () => {
+    loginAsMockUser()
+    renderTemplateForm('/events/templates/new')
+
+    expect(
+      screen.getByText(/the exact date is worked out each time you use this template/i),
+    ).toBeInTheDocument()
+  })
+
+  it('uses the same location field (with map preview) as the event form', () => {
+    loginAsMockUser()
+    renderTemplateForm('/events/templates/new')
+
+    expect(screen.getByPlaceholderText(/search for a place/i)).toBeInTheDocument()
+    expect(screen.getByText(/map preview/i)).toBeInTheDocument()
+  })
+
+  it('hides the RSVP deadline fields behind an "Add deadline" button by default', () => {
+    loginAsMockUser()
+    renderTemplateForm('/events/templates/new')
+
+    expect(screen.queryByRole('button', { name: /remove rsvp deadline/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /add deadline/i })).toBeInTheDocument()
+  })
+
+  it('lets the RSVP deadline be added and removed, using the event form\'s toggle UI', async () => {
+    const user = userEvent.setup()
+    loginAsMockUser()
+    renderTemplateForm('/events/templates/new')
+
+    await user.click(screen.getByRole('button', { name: /add deadline/i }))
+    expect(screen.getByText(/before/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /add deadline/i })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /remove rsvp deadline/i }))
+    expect(screen.getByRole('button', { name: /add deadline/i })).toBeInTheDocument()
   })
 
   it('deletes a template after confirming', async () => {
