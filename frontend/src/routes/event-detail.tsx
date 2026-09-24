@@ -389,7 +389,8 @@ function EventDetail() {
       )}
 
       <div>
-        <h1 className="font-display text-xl font-semibold text-joyna-ink">
+        <h1 className="flex items-center gap-2 font-display text-xl font-semibold text-joyna-ink">
+          {event.icon && <span aria-hidden="true">{event.icon}</span>}
           {event.name}
         </h1>
         <div className="mt-3 flex flex-col gap-3 text-sm text-joyna-ink">

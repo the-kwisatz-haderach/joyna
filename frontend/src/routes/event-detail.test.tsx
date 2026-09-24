@@ -58,6 +58,26 @@ describe('EventDetail', () => {
     expect(screen.queryByText('Ada Lovelace')).not.toBeInTheDocument()
   })
 
+  it("prefixes the event title with the event's icon when one is set", async () => {
+    loginAsMockUser()
+    renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000001')
+
+    const heading = await screen.findByRole('heading', {
+      name: /summer rooftop party/i,
+    })
+    expect(heading).toHaveTextContent('🎉Summer Rooftop Party')
+  })
+
+  it('shows the event title without a prefix when no icon is set', async () => {
+    loginAsMockUser()
+    renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000004')
+
+    const heading = await screen.findByRole('heading', {
+      name: /turing award dinner/i,
+    })
+    expect(heading).toHaveTextContent(/^Turing Award Dinner$/)
+  })
+
   it('shows an attending guest without a "Going" heading, but keeps the "Not attending" heading', async () => {
     loginAsMockUser()
     renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000001')
