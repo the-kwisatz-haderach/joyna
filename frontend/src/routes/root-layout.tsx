@@ -56,7 +56,10 @@ function getBackTarget(pathname: string): {to: string; label: string} | null {
   if (pathname === '/events/new/blank') {
     return {to: '/events/new', label: 'New event'}
   }
-  if (pathname === '/events/templates/new' || /^\/events\/templates\/[^/]+$/.test(pathname)) {
+  if (
+    pathname === '/events/templates/new' ||
+    /^\/events\/templates\/[^/]+$/.test(pathname)
+  ) {
     return {to: '/events/templates', label: 'Templates'}
   }
   if (
@@ -94,7 +97,7 @@ function TopMenu() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-10 flex items-center justify-between border-b border-joyna-border bg-joyna-cream px-5 py-4 transition-transform duration-300 ease-in-out',
+        'sticky top-0 z-20 flex items-center justify-between border-b border-joyna-border bg-joyna-cream px-5 py-4 transition-transform duration-300 ease-in-out',
         hidden ? '-translate-y-full' : 'translate-y-0',
       )}
     >
