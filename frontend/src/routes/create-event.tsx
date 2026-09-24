@@ -9,12 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Calendar } from '@/components/ui/calendar'
 import { MoodPicker } from '../../components/joyna/mood-picker'
 import { LocationField, type LocationCoordinates } from '../../components/joyna/location-field'
-import {
-  resolveTemplateDate,
-  resolveTemplateTime,
-  templateRsvpAmountAndUnit,
-  type EventTemplate,
-} from '@/lib/event-template'
+import { resolveTemplateDate, resolveTemplateTime, type EventTemplate } from '@/lib/event-template'
 import { useAuth } from '../auth-context'
 
 type RsvpUnit = 'day' | 'week' | 'month'
@@ -64,10 +59,10 @@ function CreateEvent() {
   // pre-fill the location when you create events") — still fully editable.
   const [eventLocation, setEventLocation] = useState(template?.location || user?.address || '')
   const [coordinates, setCoordinates] = useState<LocationCoordinates | null>(null)
-  const rsvpFromTemplate = template && templateRsvpAmountAndUnit(template.rsvpDeadlineOption)
-  const [hasRsvpDeadline, setHasRsvpDeadline] = useState(Boolean(rsvpFromTemplate))
-  const [rsvpAmount, setRsvpAmount] = useState(rsvpFromTemplate?.amount ?? 1)
-  const [rsvpUnit, setRsvpUnit] = useState<RsvpUnit>(rsvpFromTemplate?.unit ?? 'day')
+  const hasRsvpFromTemplate = Boolean(template?.rsvpDeadlineAmount && template?.rsvpDeadlineUnit)
+  const [hasRsvpDeadline, setHasRsvpDeadline] = useState(hasRsvpFromTemplate)
+  const [rsvpAmount, setRsvpAmount] = useState(template?.rsvpDeadlineAmount ?? 1)
+  const [rsvpUnit, setRsvpUnit] = useState<RsvpUnit>(template?.rsvpDeadlineUnit ?? 'day')
   const [moodId, setMoodId] = useState(template?.mood ?? '')
   const [description, setDescription] = useState(template?.description ?? '')
 

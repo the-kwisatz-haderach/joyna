@@ -9,7 +9,7 @@ export type TemplateDateOption =
   | 'saturday'
   | 'sunday'
 
-export type TemplateRsvpDeadlineOption = 'none' | '1_day_before' | '3_days_before' | '1_week_before'
+export type TemplateRsvpDeadlineUnit = 'day' | 'week' | 'month'
 
 export type EventTemplate = {
   id: string
@@ -19,7 +19,8 @@ export type EventTemplate = {
   dateOption: TemplateDateOption
   timeOfDay?: string
   location: string
-  rsvpDeadlineOption: TemplateRsvpDeadlineOption
+  rsvpDeadlineAmount?: number
+  rsvpDeadlineUnit?: TemplateRsvpDeadlineUnit
   mood?: string
   description: string
 }
@@ -65,21 +66,6 @@ export function resolveTemplateTime(timeOfDay: string | undefined, fallback = '1
   return PERIOD_TIMES[timeOfDay] ?? fallback
 }
 
-export function templateRsvpAmountAndUnit(
-  option: TemplateRsvpDeadlineOption,
-): { amount: number; unit: 'day' | 'week' } | undefined {
-  switch (option) {
-    case 'none':
-      return undefined
-    case '1_day_before':
-      return { amount: 1, unit: 'day' }
-    case '3_days_before':
-      return { amount: 3, unit: 'day' }
-    case '1_week_before':
-      return { amount: 1, unit: 'week' }
-  }
-}
-
 const DATE_OPTION_LABELS: Record<Exclude<TemplateDateOption, 'none'>, string> = {
   today: 'today',
   monday: 'Monday',
@@ -91,10 +77,9 @@ const DATE_OPTION_LABELS: Record<Exclude<TemplateDateOption, 'none'>, string> = 
   sunday: 'Sunday',
 }
 
-const RSVP_OPTION_LABELS: Record<Exclude<TemplateRsvpDeadlineOption, 'none'>, string> = {
-  '1_day_before': 'RSVP 1 day before',
-  '3_days_before': 'RSVP 3 days before',
-  '1_week_before': 'RSVP 1 week before',
+/** e.g. "RSVP 2 weeks before" — pluralizes the unit when the amount isn't 1. */
+function formatRsvpDeadlineLabel(amount: number, unit: TemplateRsvpDeadlineUnit): string {
+  return `RSVP ${amount} ${unit}${amount === 1 ? '' : 's'} before`
 }
 
 /** Short " · "-joined summary shown on a template card, e.g. "Chill · Saturday, 14:00 · Ye ol' pub". */
@@ -111,8 +96,8 @@ export function summarizeTemplate(template: EventTemplate): string {
     parts.push(dateLabel)
   } else if (template.timeOfDay) {
     parts.push(template.timeOfDay)
-  } else if (template.rsvpDeadlineOption !== 'none') {
-    parts.push(RSVP_OPTION_LABELS[template.rsvpDeadlineOption])
+  } else if (template.rsvpDeadlineAmount && template.rsvpDeadlineUnit) {
+    parts.push(formatRsvpDeadlineLabel(template.rsvpDeadlineAmount, template.rsvpDeadlineUnit))
   }
 
   if (template.location) {

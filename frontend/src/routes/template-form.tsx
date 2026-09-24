@@ -17,7 +17,7 @@ import {
 import { MoodPicker } from '../../components/joyna/mood-picker'
 import { IconPicker } from '../../components/joyna/icon-picker'
 import { LocationField, type LocationCoordinates } from '../../components/joyna/location-field'
-import type { EventTemplate, TemplateDateOption, TemplateRsvpDeadlineOption } from '@/lib/event-template'
+import type { EventTemplate, TemplateDateOption, TemplateRsvpDeadlineUnit } from '@/lib/event-template'
 
 const DATE_OPTIONS: { value: TemplateDateOption; label: string }[] = [
   { value: 'none', label: 'No preset date' },
@@ -31,11 +31,10 @@ const DATE_OPTIONS: { value: TemplateDateOption; label: string }[] = [
   { value: 'sunday', label: 'Coming Sunday' },
 ]
 
-const RSVP_DEADLINE_OPTIONS: { value: Exclude<TemplateRsvpDeadlineOption, 'none'>; label: string }[] = [
-  { value: '1_day_before', label: '1 day' },
-  { value: '3_days_before', label: '3 days' },
-  { value: '1_week_before', label: '1 week' },
-]
+// Mirrors the amount+unit RSVP deadline picker on the event creation form
+// (see create-event.tsx) so templates can express the same deadlines
+// ("2 weeks before") instead of a fixed set of presets.
+const RSVP_AMOUNTS = [1, 2, 3, 4, 5, 6, 7]
 
 async function fetchTemplates(): Promise<EventTemplate[]> {
   const response = await fetch('/api/event-templates', { credentials: 'include' })
@@ -63,12 +62,16 @@ function TemplateForm() {
   const [timeOfDay, setTimeOfDay] = useState('')
   const [location, setLocation] = useState('')
   const [coordinates, setCoordinates] = useState<LocationCoordinates | null>(null)
-  const [rsvpDeadlineOption, setRsvpDeadlineOption] = useState<TemplateRsvpDeadlineOption>('none')
+  const [hasRsvpDeadline, setHasRsvpDeadline] = useState(false)
+  const [rsvpAmount, setRsvpAmount] = useState(1)
+  const [rsvpUnit, setRsvpUnit] = useState<TemplateRsvpDeadlineUnit>('day')
   const [moodId, setMoodId] = useState('')
   const [description, setDescription] = useState('')
 
   function handleRemoveRsvpDeadline() {
-    setRsvpDeadlineOption('none')
+    setHasRsvpDeadline(false)
+    setRsvpAmount(1)
+    setRsvpUnit('day')
   }
 
   useEffect(() => {
@@ -88,7 +91,9 @@ function TemplateForm() {
         setDateOption(found.dateOption)
         setTimeOfDay(found.timeOfDay ?? '')
         setLocation(found.location)
-        setRsvpDeadlineOption(found.rsvpDeadlineOption)
+        setHasRsvpDeadline(Boolean(found.rsvpDeadlineAmount && found.rsvpDeadlineUnit))
+        setRsvpAmount(found.rsvpDeadlineAmount ?? 1)
+        setRsvpUnit(found.rsvpDeadlineUnit ?? 'day')
         setMoodId(found.mood ?? '')
         setDescription(found.description)
       })
@@ -114,13 +119,18 @@ function TemplateForm() {
         title,
         dateOption,
         location,
-        rsvpDeadlineOption,
         description,
       }
       if (timeOfDay.trim()) {
         body.timeOfDay = timeOfDay.trim()
       } else if (isEditing) {
         body.clearTimeOfDay = true
+      }
+      if (hasRsvpDeadline) {
+        body.rsvpDeadlineAmount = rsvpAmount
+        body.rsvpDeadlineUnit = rsvpUnit
+      } else if (isEditing) {
+        body.clearRsvpDeadline = true
       }
       if (moodId) {
         body.mood = moodId
@@ -261,16 +271,7 @@ function TemplateForm() {
 
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-joyna-ink-soft">RSVP deadline</span>
-          {rsvpDeadlineOption === 'none' ? (
-            <Button
-              type="button"
-              variant="secondary"
-              className="h-10 w-fit rounded-xl px-4 font-display text-sm"
-              onClick={() => setRsvpDeadlineOption('1_day_before')}
-            >
-              Add deadline
-            </Button>
-          ) : (
+          {hasRsvpDeadline ? (
             <div className="flex items-center gap-2 text-sm text-joyna-ink">
               <button
                 type="button"
@@ -281,18 +282,36 @@ function TemplateForm() {
                 <HugeiconsIcon icon={Cancel01Icon} className="h-4 w-4" strokeWidth={2} />
               </button>
               <select
-                value={rsvpDeadlineOption}
-                onChange={(e) => setRsvpDeadlineOption(e.target.value as TemplateRsvpDeadlineOption)}
+                value={rsvpAmount}
+                onChange={(e) => setRsvpAmount(Number(e.target.value))}
                 className="h-10 rounded-xl border border-joyna-border-strong bg-white px-2 text-sm"
               >
-                {RSVP_DEADLINE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                {RSVP_AMOUNTS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
                   </option>
                 ))}
               </select>
+              <select
+                value={rsvpUnit}
+                onChange={(e) => setRsvpUnit(e.target.value as TemplateRsvpDeadlineUnit)}
+                className="h-10 rounded-xl border border-joyna-border-strong bg-white px-2 text-sm"
+              >
+                <option value="day">day(s)</option>
+                <option value="week">week(s)</option>
+                <option value="month">month(s)</option>
+              </select>
               <span>before</span>
             </div>
+          ) : (
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-10 w-fit rounded-xl px-4 font-display text-sm"
+              onClick={() => setHasRsvpDeadline(true)}
+            >
+              Add deadline
+            </Button>
           )}
         </div>
 

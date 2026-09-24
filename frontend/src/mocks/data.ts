@@ -34,7 +34,7 @@ export type TemplateDateOption =
   | 'saturday'
   | 'sunday'
 
-export type TemplateRsvpDeadlineOption = 'none' | '1_day_before' | '3_days_before' | '1_week_before'
+export type TemplateRsvpDeadlineUnit = 'day' | 'week' | 'month'
 
 export type MockEventTemplate = {
   id: string
@@ -46,7 +46,8 @@ export type MockEventTemplate = {
   dateOption: TemplateDateOption
   timeOfDay?: string
   location: string
-  rsvpDeadlineOption: TemplateRsvpDeadlineOption
+  rsvpDeadlineAmount?: number
+  rsvpDeadlineUnit?: TemplateRsvpDeadlineUnit
   mood?: string
   description: string
 }
@@ -139,7 +140,6 @@ export function createDefaultEventTemplates(ownerId: string): MockEventTemplate[
       dateOption: 'today',
       timeOfDay: '17:00',
       location: "Ye ol' pub",
-      rsvpDeadlineOption: 'none',
       mood: 'chill',
       description: '',
     },
@@ -153,7 +153,6 @@ export function createDefaultEventTemplates(ownerId: string): MockEventTemplate[
       dateOption: 'saturday',
       timeOfDay: '14:00',
       location: '',
-      rsvpDeadlineOption: 'none',
       mood: 'competitive',
       description: '',
     },
@@ -166,7 +165,8 @@ export function createDefaultEventTemplates(ownerId: string): MockEventTemplate[
       title: 'Birthday party',
       dateOption: 'none',
       location: '',
-      rsvpDeadlineOption: '1_week_before',
+      rsvpDeadlineAmount: 1,
+      rsvpDeadlineUnit: 'week',
       mood: 'party',
       description: '',
     },
@@ -180,7 +180,6 @@ export function createDefaultEventTemplates(ownerId: string): MockEventTemplate[
       dateOption: 'none',
       timeOfDay: 'evening',
       location: 'at home',
-      rsvpDeadlineOption: 'none',
       mood: 'cozy',
       description: '',
     },
@@ -201,7 +200,6 @@ export const mockEventTemplates: MockEventTemplate[] = [
     dateOption: 'today',
     timeOfDay: '17:00',
     location: "Ye ol' pub",
-    rsvpDeadlineOption: 'none',
     mood: 'chill',
     description: '',
   },
@@ -215,7 +213,6 @@ export const mockEventTemplates: MockEventTemplate[] = [
     dateOption: 'saturday',
     timeOfDay: '14:00',
     location: '',
-    rsvpDeadlineOption: 'none',
     mood: 'competitive',
     description: '',
   },
@@ -228,7 +225,8 @@ export const mockEventTemplates: MockEventTemplate[] = [
     title: 'Birthday party',
     dateOption: 'none',
     location: '',
-    rsvpDeadlineOption: '1_week_before',
+    rsvpDeadlineAmount: 1,
+    rsvpDeadlineUnit: 'week',
     mood: 'party',
     description: '',
   },
@@ -242,7 +240,6 @@ export const mockEventTemplates: MockEventTemplate[] = [
     dateOption: 'none',
     timeOfDay: 'evening',
     location: 'at home',
-    rsvpDeadlineOption: 'none',
     mood: 'cozy',
     description: '',
   },
