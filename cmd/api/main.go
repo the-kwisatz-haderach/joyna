@@ -97,6 +97,7 @@ func main() {
 	mux.HandleFunc("POST /auth/login", authHandler.Login)
 	mux.HandleFunc("POST /auth/logout", authHandler.Logout)
 	mux.HandleFunc("PATCH /me", authHandler.Middleware(authHandler.UpdateUser))
+	mux.HandleFunc("DELETE /me", authHandler.Middleware(authHandler.DeleteUser))
 
 	// Event handlers
 	mux.HandleFunc("GET /events", authHandler.Middleware(eventHandler.GetEvents))

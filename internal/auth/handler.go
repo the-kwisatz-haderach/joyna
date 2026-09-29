@@ -115,6 +115,29 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updated)
 }
 
+func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	userID, ok := UserIDFromContext(r.Context())
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := h.service.DeleteUser(r.Context(), userID); err != nil {
+		if errors.Is(err, ErrUserNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		slog.Error("failed to delete user", "error", err)
+		http.Error(w, "failed to delete user", http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.sessionManager.Destroy(r.Context()); err != nil {
+		slog.Error("failed to destroy session after account deletion", "error", err)
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	if err := h.sessionManager.Destroy(r.Context()); err != nil {
 		slog.Error("logout failed", "error", err)

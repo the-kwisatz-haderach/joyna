@@ -14,6 +14,7 @@ type repository interface {
 	CreateUser(ctx context.Context, name, email, passwordHash string, address *string) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, string, error)
 	UpdateUser(ctx context.Context, userUpdate UpdateUserPayload, userID string) (User, error)
+	DeleteUser(ctx context.Context, userID string) error
 }
 
 // inviteResolver is satisfied structurally by *network.Service (no import of
@@ -74,6 +75,10 @@ func (s *Service) Register(ctx context.Context, name, email, password string, ad
 
 func (s *Service) UpdateUser(ctx context.Context, userUpdate UpdateUserPayload, userID string) (User, error) {
 	return s.repo.UpdateUser(ctx, userUpdate, userID)
+}
+
+func (s *Service) DeleteUser(ctx context.Context, userID string) error {
+	return s.repo.DeleteUser(ctx, userID)
 }
 
 func (s *Service) Authenticate(ctx context.Context, email, password string) (User, error) {

@@ -13,6 +13,11 @@ type fakeRepository struct {
 	createUserFunc     func(ctx context.Context, name, email, passwordHash string, address *string) (User, error)
 	getUserByEmailFunc func(ctx context.Context, email string) (User, string, error)
 	updateUserFunc     func(ctx context.Context, userUpdate UpdateUserPayload, userID string) (User, error)
+	deleteUserFunc     func(ctx context.Context, userID string) error
+}
+
+func (f *fakeRepository) DeleteUser(ctx context.Context, userID string) error {
+	return f.deleteUserFunc(ctx, userID)
 }
 
 func (f *fakeRepository) CreateUser(ctx context.Context, name, email, passwordHash string, address *string) (User, error) {
@@ -219,4 +224,23 @@ func TestAuthenticate_UserNotFound(t *testing.T) {
 	service := NewService(repo, nil, nil)
 	_, err = service.Authenticate(context.Background(), "email", password)
 	require.ErrorIs(t, err, ErrInvalidCredentials)
+}
+
+func TestDeleteUser(t *testing.T) {
+	var got string
+	repo := &fakeRepository{deleteUserFunc: func(ctx context.Context, userID string) error {
+		got = userID
+		return nil
+	}}
+	service := NewService(repo, nil, nil)
+	require.NoError(t, service.DeleteUser(context.Background(), "u1"))
+	require.Equal(t, "u1", got)
+}
+
+func TestDeleteUser_NotFound(t *testing.T) {
+	repo := &fakeRepository{deleteUserFunc: func(ctx context.Context, userID string) error {
+		return ErrUserNotFound
+	}}
+	service := NewService(repo, nil, nil)
+	require.ErrorIs(t, service.DeleteUser(context.Background(), "u1"), ErrUserNotFound)
 }
