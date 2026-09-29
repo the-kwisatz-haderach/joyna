@@ -18,6 +18,7 @@ import {
 import { MoodPicker } from '../../components/joyna/mood-picker'
 import { IconPicker } from '../../components/joyna/icon-picker'
 import { LocationField, type LocationCoordinates } from '../../components/joyna/location-field'
+import { useAuth } from '../auth-context'
 
 type RsvpUnit = 'day' | 'week' | 'month'
 
@@ -63,6 +64,7 @@ type EventDetailData = {
 function EditEvent() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -281,6 +283,7 @@ function EditEvent() {
           onChange={setLocation}
           coordinates={coordinates}
           onCoordinatesChange={setCoordinates}
+          userAddress={user?.address}
         />
 
         <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">

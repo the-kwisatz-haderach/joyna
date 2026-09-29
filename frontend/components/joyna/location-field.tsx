@@ -1,9 +1,10 @@
 /// <reference types="google.maps" />
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { APIProvider, Map, AdvancedMarker, useMapsLibrary } from '@vis.gl/react-google-maps'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Location01Icon } from '@hugeicons/core-free-icons'
 
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 export interface LocationCoordinates {
@@ -16,7 +17,11 @@ interface LocationFieldProps {
   onChange: (location: string) => void
   coordinates: LocationCoordinates | null
   onCoordinatesChange: (coordinates: LocationCoordinates | null) => void
+  /** Address stored in the user's profile, used by the "Use my address" button. */
+  userAddress?: string
 }
+
+const NO_ADDRESS_HINT = 'Update your user profile with an address to use this functionality.'
 
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 const MAP_ID = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID'
@@ -79,6 +84,14 @@ function PlaceSearchInput({
   const containerRef = useRef<HTMLDivElement>(null)
   const hydratedRef = useRef(false)
   const justSelectedRef = useRef(false)
+  const elementRef = useRef<HTMLElement | null>(null)
+
+  // Push externally-set values (e.g. "Use my address") into the widget's
+  // internal <input>. Typed values already match, so this is a no-op then.
+  useEffect(() => {
+    const internalInput = elementRef.current?.querySelector('input')
+    if (internalInput && internalInput.value !== value) internalInput.value = value
+  }, [value, placesLib])
 
   useEffect(() => {
     const container = containerRef.current
@@ -87,6 +100,7 @@ function PlaceSearchInput({
     const element = new placesLib.PlaceAutocompleteElement()
     element.className = 'w-full'
     container.appendChild(element)
+    elementRef.current = element
 
     // PlaceAutocompleteElement has no documented API to set its initial
     // displayed text (see visgl/react-google-maps discussion #256) — reach
@@ -129,6 +143,7 @@ function PlaceSearchInput({
       element.removeEventListener('input', handleInput)
       element.removeEventListener('gmp-select', handleSelect)
       container.removeChild(element)
+      elementRef.current = null
     }
     // Only re-run when the places library first loads — value/onChange/
     // onCoordinatesChange are intentionally read via closures captured once
@@ -138,6 +153,55 @@ function PlaceSearchInput({
   }, [placesLib])
 
   return <div ref={containerRef} />
+}
+
+interface UseMyAddressButtonProps {
+  userAddress?: string
+  onChange: (location: string) => void
+  onCoordinatesChange: (coordinates: LocationCoordinates | null) => void
+  geocode?: (address: string) => Promise<LocationCoordinates | null>
+}
+
+function UseMyAddressButton({ userAddress, onChange, onCoordinatesChange, geocode }: UseMyAddressButtonProps) {
+  const [showHint, setShowHint] = useState(false)
+
+  async function handleClick() {
+    if (!userAddress) {
+      setShowHint(true)
+      return
+    }
+    setShowHint(false)
+    onChange(userAddress)
+    onCoordinatesChange(null)
+    if (geocode) onCoordinatesChange(await geocode(userAddress))
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Button type="button" variant="outline" size="sm" className="self-start" onClick={handleClick}>
+        Use my address
+      </Button>
+      {showHint && <p className="text-xs text-joyna-ink-faint">{NO_ADDRESS_HINT}</p>}
+    </div>
+  )
+}
+
+/** Geocodes the address so the map pin matches it; must render inside APIProvider. */
+function GeocodingAddressButton(props: Omit<UseMyAddressButtonProps, 'geocode'>) {
+  const geocodingLib = useMapsLibrary('geocoding')
+
+  async function geocode(address: string) {
+    if (!geocodingLib) return null
+    try {
+      const { results } = await new geocodingLib.Geocoder().geocode({ address })
+      const loc = results[0]?.geometry.location
+      return loc ? { lat: loc.lat(), lng: loc.lng() } : null
+    } catch {
+      return null
+    }
+  }
+
+  return <UseMyAddressButton {...props} geocode={geocode} />
 }
 
 /**
@@ -151,7 +215,13 @@ function PlaceSearchInput({
  * VITE_GOOGLE_MAPS_API_KEY is configured, so local dev/tests without a key
  * (and CI) don't need one.
  */
-export function LocationField({ value, onChange, coordinates, onCoordinatesChange }: LocationFieldProps) {
+export function LocationField({
+  value,
+  onChange,
+  coordinates,
+  onCoordinatesChange,
+  userAddress,
+}: LocationFieldProps) {
   if (!API_KEY) {
     return (
       <div className="flex flex-col gap-2">
@@ -162,6 +232,7 @@ export function LocationField({ value, onChange, coordinates, onCoordinatesChang
           onChange={(e) => onChange(e.target.value)}
           className="h-10 rounded-xl bg-white"
         />
+        <UseMyAddressButton userAddress={userAddress} onChange={onChange} onCoordinatesChange={onCoordinatesChange} />
         <MapPreviewPlaceholder />
         <LocationReadout location={value} />
       </div>
@@ -173,6 +244,11 @@ export function LocationField({ value, onChange, coordinates, onCoordinatesChang
       <span className="text-sm font-medium text-joyna-ink-soft">Location</span>
       <APIProvider apiKey={API_KEY}>
         <PlaceSearchInput value={value} onChange={onChange} onCoordinatesChange={onCoordinatesChange} />
+        <GeocodingAddressButton
+          userAddress={userAddress}
+          onChange={onChange}
+          onCoordinatesChange={onCoordinatesChange}
+        />
         {coordinates ? <LocationMap coordinates={coordinates} /> : <MapPreviewPlaceholder />}
       </APIProvider>
       <LocationReadout location={value} />

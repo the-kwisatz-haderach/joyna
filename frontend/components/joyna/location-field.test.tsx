@@ -58,3 +58,36 @@ describe('LocationField (no API key configured)', () => {
     expect(document.querySelector('svg')).toBeNull()
   })
 })
+
+describe('LocationField "Use my address" button', () => {
+  it('fills the location with the profile address', () => {
+    const handleChange = vi.fn()
+    const handleCoordinates = vi.fn()
+    render(
+      <LocationField
+        value=""
+        onChange={handleChange}
+        coordinates={null}
+        onCoordinatesChange={handleCoordinates}
+        userAddress="1 Main St, Springfield"
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /use my address/i }))
+
+    expect(handleChange).toHaveBeenCalledWith('1 Main St, Springfield')
+    expect(handleCoordinates).toHaveBeenCalledWith(null)
+  })
+
+  it('shows a hint and leaves the location alone when no address is stored', () => {
+    const handleChange = vi.fn()
+    render(<LocationField value="" onChange={handleChange} coordinates={null} onCoordinatesChange={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /use my address/i }))
+
+    expect(
+      screen.getByText('Update your user profile with an address to use this functionality.'),
+    ).toBeInTheDocument()
+    expect(handleChange).not.toHaveBeenCalled()
+  })
+})
