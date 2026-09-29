@@ -245,6 +245,7 @@ function CreateEvent() {
           onChange={setEventLocation}
           coordinates={coordinates}
           onCoordinatesChange={setCoordinates}
+          userAddress={user?.address}
         />
 
         <label className="flex flex-col gap-1.5 text-sm font-medium text-joyna-ink-soft">

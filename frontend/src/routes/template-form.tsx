@@ -18,6 +18,7 @@ import { MoodPicker } from '../../components/joyna/mood-picker'
 import { IconPicker } from '../../components/joyna/icon-picker'
 import { LocationField, type LocationCoordinates } from '../../components/joyna/location-field'
 import type { EventTemplate, TemplateDateOption, TemplateRsvpDeadlineUnit } from '@/lib/event-template'
+import { useAuth } from '../auth-context'
 
 const DATE_OPTIONS: { value: TemplateDateOption; label: string }[] = [
   { value: 'none', label: 'No preset date' },
@@ -47,6 +48,7 @@ async function fetchTemplates(): Promise<EventTemplate[]> {
 function TemplateForm() {
   const navigate = useNavigate()
   const { id } = useParams()
+  const { user } = useAuth()
   const isEditing = Boolean(id)
 
   const [isLoading, setIsLoading] = useState(isEditing)
@@ -274,6 +276,7 @@ function TemplateForm() {
           onChange={setLocation}
           coordinates={coordinates}
           onCoordinatesChange={setCoordinates}
+          userAddress={user?.address}
         />
 
         <div className="flex flex-col gap-2">
