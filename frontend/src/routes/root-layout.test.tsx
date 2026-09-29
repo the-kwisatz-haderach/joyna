@@ -234,6 +234,23 @@ describe('RootLayout', () => {
     expect(profileLink.className).toMatch(/bg-joyna-ink/)
   })
 
+  it('shows a "Profile" back link, hides the bottom nav and marks profile active on the notification settings route', () => {
+    loginAsMockUser()
+
+    renderRootLayout(['/profile/notifications'])
+
+    const header = screen.getByRole('banner')
+    const backLink = header.querySelector('a[href="/profile"]:not([aria-label])')
+    expect(backLink).not.toBeNull()
+    expect(backLink).toHaveTextContent('Profile')
+    expect(
+      screen.queryByRole('navigation', {name: 'Primary'}),
+    ).not.toBeInTheDocument()
+    const accountNav = within(screen.getByRole('navigation', {name: 'Account'}))
+    const profileLink = accountNav.getByRole('link', {name: /^profile$/i})
+    expect(profileLink.className).toMatch(/bg-joyna-ink/)
+  })
+
   it('shows the bottom nav with an active but clickable Events link on the all events route', () => {
     loginAsMockUser()
 

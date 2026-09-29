@@ -1,7 +1,4 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
 
 import { Switch } from "@/components/ui/switch"
 import { isPushSupported, urlBase64ToUint8Array } from "@/lib/push"
@@ -14,7 +11,6 @@ async function fetchExistingSubscription(): Promise<PushSubscription | null> {
 }
 
 function NotificationsSettings() {
-  const navigate = useNavigate()
   const [status, setStatus] = useState<Status>(() => (isPushSupported() ? "loading" : "unsupported"))
   const [isToggling, setIsToggling] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -118,17 +114,7 @@ function NotificationsSettings() {
 
   return (
     <section className="mx-auto flex max-w-sm flex-col gap-6 px-5 py-6 font-body">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => navigate("/profile")}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-joyna-border text-joyna-ink-soft"
-          aria-label="Back to profile"
-        >
-          <HugeiconsIcon icon={ArrowLeft01Icon} className="h-4 w-4" strokeWidth={2} />
-        </button>
-        <h1 className="font-display text-xl font-semibold text-joyna-ink">Notification settings</h1>
-      </div>
+      <h1 className="font-display text-xl font-semibold text-joyna-ink">Notification settings</h1>
 
       {status === "unsupported" ? (
         <p className="text-sm text-joyna-ink-faint">
