@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -201,8 +201,14 @@ describe('EventDetail', () => {
 
     await screen.findByRole('heading', { name: /turing award dinner/i })
     await screen.findByText('Guest list')
+
+    // Another guest (Hedy Lamarr) is a stranger and keeps her Add button,
+    // so only the host's own row is checked.
+    const hostRow = (await screen.findByText('Alan Turing')).closest(
+      'div',
+    ) as HTMLElement
     expect(
-      screen.queryByRole('button', { name: /^add$/i }),
+      within(hostRow).queryByRole('button', { name: /^add$/i }),
     ).not.toBeInTheDocument()
   })
 
