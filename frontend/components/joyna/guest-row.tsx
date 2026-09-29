@@ -42,11 +42,10 @@ interface GuestRowProps {
 /**
  * Renders one row of the Guest list. Trailing content depends on state,
  * in this priority order:
- *   1. host                → nothing
- *   2. editable (unlocked) → remove (×) button
- *   3. justAddedToNetwork  → "Added" chip (non-interactive)
- *   4. group === null      → "Add" to-network button (locked-state only)
- *   5. otherwise           → muted group-name text
+ *   1. editable (unlocked) → remove (×) button (never for the host)
+ *   2. justAddedToNetwork  → "Added" chip (non-interactive)
+ *   3. group === null      → "Add" to-network button (host included)
+ *   4. otherwise           → muted group-name text
  */
 export function GuestRow({
   guest,
@@ -55,7 +54,7 @@ export function GuestRow({
   onRemove,
   onAddToNetwork,
 }: GuestRowProps) {
-  const isStranger = !guest.isHost && guest.group === null
+  const isStranger = guest.group === null
 
   const avatarVariant = guest.isHost
     ? 'host'
@@ -66,9 +65,7 @@ export function GuestRow({
         : 'default'
 
   let trailing: ReactNode = null
-  if (guest.isHost) {
-    trailing = null
-  } else if (editable) {
+  if (editable && !guest.isHost) {
     trailing = (
       <button
         type="button"
@@ -141,12 +138,7 @@ export function GuestRow({
         </div>
       ) : (
         <>
-          <span
-            className={cn(
-              'flex items-center gap-1.5',
-              !guest.isHost && 'flex-1',
-            )}
-          >
+          <span className="flex flex-1 items-center gap-1.5">
             {guest.name}
             {guest.isHost && <HostBadge />}
           </span>

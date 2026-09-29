@@ -154,7 +154,12 @@ function StaticGuestList({
           </svg>
         )}
       </div>
-      {host && <GuestRow guest={host} />}
+      {host && (
+        <GuestRow
+          guest={host}
+          onAddToNetwork={locked ? undefined : onAddToNetwork}
+        />
+      )}
       {STATUS_ORDER.map(
         (status) =>
           grouped[status].length > 0 && (
@@ -244,22 +249,23 @@ function EventDetail() {
       const isViewer = attendee.userId === user?.id
       const name = isViewer ? 'You' : attendee.name
       const avatarName = isViewer ? attendee.name : undefined
-      if (attendee.isOwner) {
-        return {id: attendee.userId, name, avatarName, isHost: true}
-      }
       const connection = connections.find(
         (c) => c.contactId === attendee.userId,
       )
+      const group = isViewer
+        ? undefined
+        : connection
+          ? (connection.groupName ?? DEFAULT_GROUP_NAME)
+          : null
+      if (attendee.isOwner) {
+        return {id: attendee.userId, name, avatarName, isHost: true, group}
+      }
       return {
         id: attendee.userId,
         name,
         avatarName,
         status: inviteStatusToGuestStatus(attendee.status),
-        group: isViewer
-          ? undefined
-          : connection
-            ? (connection.groupName ?? DEFAULT_GROUP_NAME)
-            : null,
+        group,
         reason: attendee.declineReason,
       }
     })

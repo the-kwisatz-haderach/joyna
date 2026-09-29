@@ -181,6 +181,31 @@ describe('EventDetail', () => {
     ).not.toBeInTheDocument()
   })
 
+  it("lets an invitee add a host who isn't in their network via the guest list", async () => {
+    const user = userEvent.setup()
+    loginAsMockUser()
+    renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000007')
+
+    const addButton = await screen.findByRole('button', { name: /^add$/i })
+    await user.click(addButton)
+
+    expect(await screen.findByText('Acquaintances')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /^add$/i }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('does not offer an add-to-network button for a host already in the network', async () => {
+    loginAsMockUser()
+    renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000004')
+
+    await screen.findByRole('heading', { name: /turing award dinner/i })
+    await screen.findByText('Guest list')
+    expect(
+      screen.queryByRole('button', { name: /^add$/i }),
+    ).not.toBeInTheDocument()
+  })
+
   it('redirects to /events for an event id that does not exist', async () => {
     loginAsMockUser()
     renderEventDetail('00000000-0000-0000-0000-000000000000')

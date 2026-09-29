@@ -162,7 +162,13 @@ export function GuestList({
         )}
       </div>
 
-      {host && <GuestRow guest={host} />}
+      {host && (
+        <GuestRow
+          guest={host}
+          justAddedToNetwork={justAdded.has(host.id)}
+          onAddToNetwork={readOnly ? undefined : handleAddToNetwork}
+        />
+      )}
 
       {!hasAnyGuests && !editing && (
         <div className="mt-1.5 flex flex-col items-center gap-1 rounded-2xl border-[1.5px] border-dashed border-joyna-border-strong py-5 text-center text-joyna-ink-faint bg-white">
