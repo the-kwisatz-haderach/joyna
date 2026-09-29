@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -178,6 +178,37 @@ describe('EventDetail', () => {
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: /update guest list|add guests/i }),
+    ).not.toBeInTheDocument()
+  })
+
+  it("lets an invitee add a host who isn't in their network via the guest list", async () => {
+    const user = userEvent.setup()
+    loginAsMockUser()
+    renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000007')
+
+    const addButton = await screen.findByRole('button', { name: /^add$/i })
+    await user.click(addButton)
+
+    expect(await screen.findByText('Acquaintances')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /^add$/i }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('does not offer an add-to-network button for a host already in the network', async () => {
+    loginAsMockUser()
+    renderEventDetail('c1a2b3c4-1111-4a1a-8a1a-000000000004')
+
+    await screen.findByRole('heading', { name: /turing award dinner/i })
+    await screen.findByText('Guest list')
+
+    // Another guest (Hedy Lamarr) is a stranger and keeps her Add button,
+    // so only the host's own row is checked.
+    const hostRow = (await screen.findByText('Alan Turing')).closest(
+      'div',
+    ) as HTMLElement
+    expect(
+      within(hostRow).queryByRole('button', { name: /^add$/i }),
     ).not.toBeInTheDocument()
   })
 
