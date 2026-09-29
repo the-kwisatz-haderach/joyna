@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	webpush "github.com/SherClockHolmes/webpush-go"
 )
@@ -63,7 +64,15 @@ func (p *WebPusher) Send(ctx context.Context, endpoint, p256dhKey, authKey, titl
 		Keys:     webpush.Keys{Auth: authKey, P256dh: p256dhKey},
 	}
 	resp, err := webpush.SendNotificationWithContext(ctx, message, sub, &webpush.Options{
-		Subscriber:      p.vapidSubject,
+		// webpush-go only prefixes "mailto:" onto Subscriber when it doesn't
+		// already start with "https:" — it doesn't check for an existing
+		// "mailto:" prefix, so passing our already-fully-qualified
+		// VAPIDSubject straight through double-prefixes it into an invalid
+		// "mailto:mailto:..." sub claim. FCM ignores the malformed claim;
+		// Apple's web push service validates it strictly and rejects the
+		// request with 403. Stripping the prefix here lets the library
+		// re-add it correctly either way.
+		Subscriber:      strings.TrimPrefix(p.vapidSubject, "mailto:"),
 		VAPIDPublicKey:  p.vapidPublicKey,
 		VAPIDPrivateKey: p.vapidPrivateKey,
 		TTL:             60 * 60 * 24, // a day — stale reminders aren't worth delivering later
