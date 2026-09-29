@@ -73,7 +73,7 @@ function getBackTarget(pathname: string): {to: string; label: string} | null {
   if (pathname === '/network/add' || /^\/network\/[^/]+$/.test(pathname)) {
     return {to: '/network', label: 'Network'}
   }
-  if (pathname === '/profile/edit') {
+  if (pathname === '/profile/edit' || pathname === '/profile/notifications') {
     return {to: '/profile', label: 'Profile'}
   }
   return null
@@ -92,7 +92,7 @@ function TopMenu() {
   const hidden = useHideOnScroll()
   const unreadCount = useUnreadNotificationsCount(pathname)
   const showUnreadBadge = unreadCount > 0 && pathname !== '/notifications'
-  const profileActive = pathname === '/profile' || pathname === '/profile/edit'
+  const profileActive = pathname.startsWith('/profile')
 
   return (
     <header
