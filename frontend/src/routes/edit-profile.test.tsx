@@ -24,6 +24,7 @@ function renderEditProfile() {
     <AuthProvider>
       <MemoryRouter initialEntries={['/profile/edit']}>
         <Routes>
+          <Route path="/" element={<div>Landing page</div>} />
           <Route path="/profile" element={<div>Profile page</div>} />
           <Route path="/profile/edit" element={<EditProfile />} />
         </Routes>
@@ -80,5 +81,34 @@ describe('EditProfile', () => {
     const stored = JSON.parse(localStorage.getItem('joyna.currentUser') ?? '{}')
     expect(stored.name).toBe('Ada Byron')
     expect(stored.address).toBe('Stockholm')
+  })
+
+  it('keeps the account when the delete confirmation is cancelled', async () => {
+    const user = userEvent.setup()
+    loginAsMockUser()
+    renderEditProfile()
+
+    await user.click(screen.getByRole('button', { name: /^delete account$/i }))
+    expect(screen.getByText(/delete your account\?/i)).toBeInTheDocument()
+    await user.click(screen.getAllByRole('button', { name: /cancel/i })[0])
+
+    await waitFor(() => {
+      expect(screen.queryByText(/delete your account\?/i)).not.toBeInTheDocument()
+    })
+    expect(localStorage.getItem('joyna.currentUser')).not.toBeNull()
+  })
+
+  it('deletes the account after confirmation and signs the user out', async () => {
+    const user = userEvent.setup()
+    loginAsMockUser()
+    renderEditProfile()
+
+    await user.click(screen.getByRole('button', { name: /^delete account$/i }))
+    await user.click(screen.getByRole('button', { name: /yes, delete my account/i }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Landing page')).toBeInTheDocument()
+    })
+    expect(localStorage.getItem('joyna.currentUser')).toBeNull()
   })
 })
