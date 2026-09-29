@@ -15,6 +15,11 @@ on:
       context:
         required: true
         type: string
+      buildArgs:
+        description: 'Newline-separated KEY=VALUE pairs passed as --build-arg to docker build.'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -48,8 +53,29 @@ jobs:
           password: ${{ steps.auth.outputs.access_token }}
 
       - name: Build and Push Container
+        env:
+          BUILD_ARGS: ${{ inputs.buildArgs }}
+          # vars.* here resolve against the `environment:` set above, i.e.
+          # inputs.gh_env-scoped repo variables — this step is the only place
+          # in the deploy.yml -> build-and-push.yml call chain that runs with
+          # that environment context (a job that `uses:` a reusable workflow,
+          # like deploy.yml's build-frontend, can't declare `environment:`
+          # itself), so per-image env-scoped lookups have to happen here.
+          GOOGLE_MAPS_API_KEY: ${{ vars.GOOGLE_MAPS_API_KEY }}
+          GOOGLE_MAPS_MAP_ID: ${{ vars.GOOGLE_MAPS_MAP_ID }}
         run: |-
           REPO=${{ vars.GCP_ARTIFACTS_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/joyna
           TAG="$(git rev-parse --short HEAD)"
-          docker build -f "${{ inputs.dockerfile }}" -t "${REPO}/${{ inputs.imageName }}:${TAG}" "${{ inputs.context }}"
+
+          BUILD_ARG_FLAGS=()
+          while IFS= read -r line; do
+            [ -n "$line" ] && BUILD_ARG_FLAGS+=(--build-arg "$line")
+          done <<< "$BUILD_ARGS"
+
+          if [ "${{ inputs.imageName }}" = "frontend" ]; then
+            BUILD_ARG_FLAGS+=(--build-arg "VITE_GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_API_KEY")
+            BUILD_ARG_FLAGS+=(--build-arg "VITE_GOOGLE_MAPS_MAP_ID=$GOOGLE_MAPS_MAP_ID")
+          fi
+
+          docker build -f "${{ inputs.dockerfile }}" -t "${REPO}/${{ inputs.imageName }}:${TAG}" "${BUILD_ARG_FLAGS[@]}" "${{ inputs.context }}"
           docker push "${REPO}/${{ inputs.imageName }}:${TAG}"
