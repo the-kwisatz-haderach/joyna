@@ -6,6 +6,7 @@ package auth
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -109,5 +110,35 @@ func TestAuthRepository(t *testing.T) {
 		name := "Missing"
 		_, err := repo.UpdateUser(context.Background(), UpdateUserPayload{Name: &name}, uuid.NewString())
 		require.ErrorIs(t, err, ErrUserNotFound)
+	})
+
+	t.Run("DeleteUser anonymizes and frees the email", func(t *testing.T) {
+		email := "delete_test@test.dev"
+		address := "1 Gone St"
+		created, err := repo.CreateUser(ctx, "Delete Me", email, "hashed-password", &address)
+		require.NoError(t, err)
+
+		require.NoError(t, repo.DeleteUser(ctx, created.Id))
+
+		_, _, err = repo.GetUserByEmail(ctx, email)
+		require.ErrorIs(t, err, ErrUserNotFound)
+
+		var name string
+		var addr *string
+		var deletedAt *time.Time
+		require.NoError(t, pool.QueryRow(ctx,
+			`SELECT name, address, deleted_at FROM users WHERE id = $1`, created.Id,
+		).Scan(&name, &addr, &deletedAt))
+		require.Equal(t, "Inactive user", name)
+		require.Nil(t, addr)
+		require.NotNil(t, deletedAt)
+
+		fresh, err := repo.CreateUser(ctx, "Delete Me", email, "hashed-password", nil)
+		require.NoError(t, err)
+		require.NotEqual(t, created.Id, fresh.Id)
+	})
+
+	t.Run("DeleteUser not found", func(t *testing.T) {
+		require.ErrorIs(t, repo.DeleteUser(ctx, uuid.NewString()), ErrUserNotFound)
 	})
 }

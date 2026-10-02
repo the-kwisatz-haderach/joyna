@@ -187,6 +187,32 @@ paths:
             text/plain:
               schema:
                 type: string
+    delete:
+      tags: [Auth]
+      summary: Delete the authenticated user's account
+      description: >
+        Anonymizes the account as an "Inactive user" (past events and attendee lists are kept),
+        removes credentials, network connections, groups, templates, notifications, push
+        subscriptions and upcoming events owned by the user, and ends the session. The email can
+        be registered again afterwards and starts with no previous data.
+      operationId: deleteUser
+      responses:
+        '204':
+          description: Account deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: User not found
+          content:
+            text/plain:
+              schema:
+                type: string
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
 
   /events:
     get:
