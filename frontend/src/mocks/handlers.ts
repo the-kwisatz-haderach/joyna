@@ -249,6 +249,11 @@ export const handlers = [
     return HttpResponse.json(updated)
   }),
 
+  http.delete("/api/me", () => {
+    users = users.filter((user) => user.id !== currentUser.id)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
   http.get("/api/events", ({ request }) => {
     const url = new URL(request.url)
     const scope = url.searchParams.get("scope") ?? "owned"
